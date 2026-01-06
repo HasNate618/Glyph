@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>Glyph.Actions</RootNamespace>
+    <AssemblyName>Glyph.Actions</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Glyph.Core\Glyph.Core.csproj" />
+    <ProjectReference Include="..\Glyph.Win32\Glyph.Win32.csproj" />
+  </ItemGroup>
+
+</Project>

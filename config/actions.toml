@@ -1,0 +1,10 @@
+# Actions (prototype)
+# This file is not yet loaded by the runtime.
+
+[action.launchChrome]
+kind = "launch"
+exe = "C:/Program Files/Google/Chrome/Application/chrome.exe"
+
+[action.launchNotepad]
+kind = "launch"
+exe = "notepad.exe"

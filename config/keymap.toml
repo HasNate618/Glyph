@@ -1,0 +1,9 @@
+# Key bindings (prototype)
+# This file is not yet loaded by the runtime.
+
+[global]
+"r" = "layer.run"
+
+[global.run]
+"c" = "action.launchChrome"
+"n" = "action.launchNotepad"

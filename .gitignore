@@ -1,0 +1,39 @@
+# Build outputs
+**/bin/
+**/obj/
+
+# VS / MSBuild
+.vs/
+*.user
+*.userosscache
+*.suo
+*.cache
+*.log
+*.pdb
+*.ilk
+*.aps
+*.ncb
+*.VC.db
+*.VC.VC.opendb
+
+# Test results
+TestResults/
+
+# NuGet
+*.nupkg
+*.snupkg
+.nuget/
+packages/
+
+# WPF temp project
+**/*_wpftmp/
+
+# Rider
+.idea/
+
+# VS Code (uncomment if you don't want to commit editor settings)
+# .vscode/
+
+# OS
+.DS_Store
+Thumbs.db
