@@ -32,7 +32,7 @@ public static class KeymapYamlLoader
                 .Build();
 
             var root = deserializer.Deserialize<KeymapYamlRoot>(yaml);
-            if (root?.Bindings is null || root.Bindings.Count == 0)
+            if ((root?.Bindings is null || root.Bindings.Count == 0) && (root?.Apps is null || root.Apps.Count == 0))
             {
                 Logger.Info($"Keymaps: no bindings found in {KeymapsPath}");
                 return;
@@ -42,9 +42,67 @@ public static class KeymapYamlLoader
             var skippedUnknown = 0;
             var skippedInvalid = 0;
 
-            foreach (var node in root.Bindings)
+            if (root?.Bindings is { Count: > 0 })
             {
-                ApplyNode(engine, prefix: string.Empty, node, ref applied, ref skippedUnknown, ref skippedInvalid);
+                foreach (var node in root.Bindings)
+                {
+                    ApplyNode(engine, prefix: string.Empty, node, ref applied, ref skippedUnknown, ref skippedInvalid);
+                }
+            }
+
+            if (root?.Apps is { Count: > 0 })
+            {
+                foreach (var app in root.Apps)
+                {
+                    var process = (app?.Process ?? string.Empty).Trim();
+                    if (process.Length == 0)
+                    {
+                        skippedInvalid++;
+                        continue;
+                    }
+
+                    if (app?.Bindings is not { Count: > 0 })
+                    {
+                        continue;
+                    }
+
+                    // Label the program layer for this process with the process name
+                    // so the overlay shows the program name instead of a generic label.
+                    engine.SetPerAppPrefixDescription(process, "p", process);
+
+                    foreach (var node in app.Bindings)
+                    {
+                        // Place program-specific bindings under the program layer 'p'.
+                        ApplyAppNode(engine, process, prefix: "p", node, ref applied, ref skippedUnknown, ref skippedInvalid);
+                    }
+                }
+            }
+
+            if (root?.Groups is { Count: > 0 })
+            {
+                foreach (var group in root.Groups)
+                {
+                    if (group is null || group.Processes is null || group.Processes.Count == 0 || group.Bindings is null || group.Bindings.Count == 0)
+                    {
+                        skippedInvalid++;
+                        continue;
+                    }
+
+                    foreach (var process in group.Processes)
+                    {
+                        var proc = (process ?? string.Empty).Trim();
+                        if (proc.Length == 0) continue;
+
+                        // Use group.Name as the label if present, otherwise the process name.
+                        var label = string.IsNullOrWhiteSpace(group.Name) ? proc : group.Name;
+                        engine.SetPerAppPrefixDescription(proc, "p", label);
+
+                        foreach (var node in group.Bindings)
+                        {
+                            ApplyAppNode(engine, proc, prefix: "p", node, ref applied, ref skippedUnknown, ref skippedInvalid);
+                        }
+                    }
+                }
             }
 
             Logger.Info($"Keymaps loaded: applied={applied} unknownAction={skippedUnknown} invalid={skippedInvalid} ({KeymapsPath})");
@@ -119,6 +177,12 @@ public static class KeymapYamlLoader
         }
 
         var actionId = (node.Action ?? string.Empty).Trim();
+        var typeText = (node.Type ?? string.Empty).Trim();
+        var sendSpec = (node.Send ?? string.Empty).Trim();
+        var execPath = (node.Exec ?? string.Empty).Trim();
+        var execArgs = (node.ExecArgs ?? string.Empty).Trim();
+        var execCwd = (node.ExecCwd ?? string.Empty).Trim();
+
         if (actionId.Length > 0)
         {
             if (!ActionRuntime.KnownActionIds.Contains(actionId))
@@ -132,12 +196,112 @@ public static class KeymapYamlLoader
                 applied++;
             }
         }
+        else if (typeText.Length > 0)
+        {
+            engine.AddGlobalBinding(seq, new ActionRequest { TypeText = typeText }, label);
+            applied++;
+        }
+        else if (sendSpec.Length > 0)
+        {
+            engine.AddGlobalBinding(seq, new ActionRequest { SendSpec = sendSpec }, label);
+            applied++;
+        }
+        else if (execPath.Length > 0)
+        {
+            engine.AddGlobalBinding(seq, new ActionRequest { ExecPath = execPath, ExecArgs = string.IsNullOrWhiteSpace(execArgs) ? null : execArgs, ExecCwd = string.IsNullOrWhiteSpace(execCwd) ? null : execCwd }, label);
+            applied++;
+        }
 
         if (node.Children is { Count: > 0 })
         {
             foreach (var child in node.Children)
             {
                 ApplyNode(engine, seq, child, ref applied, ref skippedUnknown, ref skippedInvalid);
+            }
+        }
+    }
+
+    private static void ApplyAppNode(
+        SequenceEngine engine,
+        string processName,
+        string prefix,
+        KeymapYamlNode node,
+        ref int applied,
+        ref int skippedUnknown,
+        ref int skippedInvalid)
+    {
+        if (node is null)
+        {
+            skippedInvalid++;
+            return;
+        }
+
+        var key = (node.Key ?? string.Empty).Trim();
+        var label = (node.Label ?? string.Empty).Trim();
+
+        if (key.Length == 0 || label.Length == 0)
+        {
+            skippedInvalid++;
+            return;
+        }
+
+        // Allow multi-character keys like "mx".
+        if (key.Any(char.IsWhiteSpace))
+        {
+            skippedInvalid++;
+            return;
+        }
+
+        var seq = prefix + key;
+
+        // App-specific prefixes are discoverable only when that process is active.
+        var existing = engine.GetPerAppPrefixDescription(processName, seq);
+        if (string.IsNullOrWhiteSpace(existing))
+        {
+            engine.SetPerAppPrefixDescription(processName, seq, label);
+        }
+
+        var actionId = (node.Action ?? string.Empty).Trim();
+        var typeText = (node.Type ?? string.Empty).Trim();
+        var sendSpec = (node.Send ?? string.Empty).Trim();
+        var execPath = (node.Exec ?? string.Empty).Trim();
+        var execArgs = (node.ExecArgs ?? string.Empty).Trim();
+        var execCwd = (node.ExecCwd ?? string.Empty).Trim();
+
+        if (actionId.Length > 0)
+        {
+            if (!ActionRuntime.KnownActionIds.Contains(actionId))
+            {
+                skippedUnknown++;
+                Logger.Info($"Keymaps: unknown action '{actionId}' for app '{processName}' '{seq}' ({label})");
+            }
+            else
+            {
+                engine.AddPerAppBinding(processName, seq, new ActionRequest(actionId), label);
+                applied++;
+            }
+        }
+        else if (typeText.Length > 0)
+        {
+            engine.AddPerAppBinding(processName, seq, new ActionRequest { TypeText = typeText }, label);
+            applied++;
+        }
+        else if (sendSpec.Length > 0)
+        {
+            engine.AddPerAppBinding(processName, seq, new ActionRequest { SendSpec = sendSpec }, label);
+            applied++;
+        }
+        else if (execPath.Length > 0)
+        {
+            engine.AddPerAppBinding(processName, seq, new ActionRequest { ExecPath = execPath, ExecArgs = string.IsNullOrWhiteSpace(execArgs) ? null : execArgs, ExecCwd = string.IsNullOrWhiteSpace(execCwd) ? null : execCwd }, label);
+            applied++;
+        }
+
+        if (node.Children is { Count: > 0 })
+        {
+            foreach (var child in node.Children)
+            {
+                ApplyAppNode(engine, processName, seq, child, ref applied, ref skippedUnknown, ref skippedInvalid);
             }
         }
     }
@@ -150,10 +314,12 @@ public static class KeymapYamlLoader
         "#\n" +
         "# Schema:\n" +
         "# bindings: [ { key, label, action?, children? } ]\n" +
+        "# apps: [ { process, bindings: [ { key, label, action?, children? } ] } ]\n" +
         "#\n" +
         "# Notes:\n" +
         "# - key can be multi-character (ex: \"mx\"), which is useful for sequences like wmx.\n" +
         "# - action must be a known action id; unknown actions are skipped (but the prefix label stays).\n" +
+        "# - apps.process must match the active ProcessName (ex: WindowsTerminal, Code, chrome).\n" +
         "#\n" +
         "bindings:\n" +
         "  - key: r\n" +
@@ -163,7 +329,7 @@ public static class KeymapYamlLoader
         "        label: Open Browser\n" +
         "        action: openBrowser\n" +
         "      - key: t\n" +
-        "        label: Windows Terminal\n" +
+        "        label: Terminal (cmd)\n" +
         "        action: openTerminal\n" +
         "  - key: m\n" +
         "    label: Media\n" +
@@ -200,11 +366,33 @@ public static class KeymapYamlLoader
         "        action: windowClose\n" +
         "      - key: t\n" +
         "        label: Toggle Topmost\n" +
-        "        action: windowTopmost\n";
+        "        action: windowTopmost\n" +
+        "\n" +
+        "apps:\n" +
+        "  - process: WindowsTerminal\n" +
+        "    bindings:\n" +
+        "      - key: n\n" +
+        "        label: nvim .\n" +
+        "        action: typeNvimDot\n";
 }
 
 public sealed class KeymapYamlRoot
 {
+    public List<KeymapYamlNode>? Bindings { get; set; }
+    public List<KeymapYamlApp>? Apps { get; set; }
+    public List<KeymapYamlGroup>? Groups { get; set; }
+}
+
+public sealed class KeymapYamlApp
+{
+    public string? Process { get; set; }
+    public List<KeymapYamlNode>? Bindings { get; set; }
+}
+
+public sealed class KeymapYamlGroup
+{
+    public string? Name { get; set; }
+    public List<string>? Processes { get; set; }
     public List<KeymapYamlNode>? Bindings { get; set; }
 }
 
@@ -213,5 +401,13 @@ public sealed class KeymapYamlNode
     public string? Key { get; set; }
     public string? Label { get; set; }
     public string? Action { get; set; }
+    public string? Type { get; set; }
+    public string? Send { get; set; }
+    // exec: program path to run
+    public string? Exec { get; set; }
+    // execArgs: arguments to pass to the program
+    public string? ExecArgs { get; set; }
+    // execCwd: working directory for the launched program
+    public string? ExecCwd { get; set; }
     public List<KeymapYamlNode>? Children { get; set; }
 }

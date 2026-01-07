@@ -33,10 +33,10 @@ public sealed class SequenceEngine
         // Top-level (discoverable) prefixes
         global.SetDescription("r", "Run");
         global.SetDescription("m", "Media");
+        global.SetDescription("p", "Program");
         global.SetDescription("w", "Window");
 
         // Run layer
-        global.Add("rc", new ActionRequest("launchChrome"), "Chrome");
         global.Add("rb", new ActionRequest("openBrowser"), "Open Browser");
         global.Add("rt", new ActionRequest("openTerminal"), "Terminal");
         global.Add("rf", new ActionRequest("openExplorer"), "File Explorer");
@@ -58,14 +58,8 @@ public sealed class SequenceEngine
         global.Add("wc", new ActionRequest("windowClose"), "Close");
         global.Add("wt", new ActionRequest("windowTopmost"), "Toggle Topmost");
 
-        // App-specific bindings
+        // App-specific bindings (populated via YAML at runtime)
         var perApp = new Dictionary<string, Trie<ActionRequest>>(StringComparer.OrdinalIgnoreCase);
-
-        // When Windows Terminal is focused, leader+n types `nvim .` + Enter
-        var terminal = new Trie<ActionRequest>();
-        terminal.SetDescription("n", "nvim .");
-        terminal.Add("n", new ActionRequest("typeNvimDot"), "nvim . (enter)");
-        perApp["WindowsTerminal"] = terminal;
 
         // Leader key: F12 (VK_F12 = 0x7B)
         Func<KeyStroke, bool> isLeader = stroke =>
@@ -95,10 +89,10 @@ public sealed class SequenceEngine
         // Top-level (discoverable) prefixes
         global.SetDescription("r", "Run");
         global.SetDescription("m", "Media");
+        global.SetDescription("p", "Program");
         global.SetDescription("w", "Window");
 
         // Run layer
-        global.Add("rc", new ActionRequest("launchChrome"), "Chrome");
         global.Add("rb", new ActionRequest("openBrowser"), "Open Browser");
         global.Add("rt", new ActionRequest("openTerminal"), "Terminal");
         global.Add("rf", new ActionRequest("openExplorer"), "File Explorer");
@@ -120,14 +114,8 @@ public sealed class SequenceEngine
         global.Add("wc", new ActionRequest("windowClose"), "Close");
         global.Add("wt", new ActionRequest("windowTopmost"), "Toggle Topmost");
 
-        // App-specific bindings
+        // App-specific bindings (populated via YAML at runtime)
         var perApp = new Dictionary<string, Trie<ActionRequest>>(StringComparer.OrdinalIgnoreCase);
-
-        // When Windows Terminal is focused, leader+n types `nvim .` + Enter
-        var terminal = new Trie<ActionRequest>();
-        terminal.SetDescription("n", "nvim .");
-        terminal.Add("n", new ActionRequest("typeNvimDot"), "nvim . (enter)");
-        perApp["WindowsTerminal"] = terminal;
 
         return new SequenceEngine(global, perApp, TimeSpan.FromMilliseconds(2000), isLeaderKey);
     }
@@ -145,6 +133,44 @@ public sealed class SequenceEngine
     public void AddGlobalBinding(string sequence, ActionRequest action, string description)
     {
         _global.Add(sequence, action, description);
+    }
+
+    public void SetPerAppPrefixDescription(string processName, string prefix, string description)
+    {
+        if (string.IsNullOrWhiteSpace(processName)) throw new ArgumentException("Process name must be non-empty", nameof(processName));
+        if (string.IsNullOrWhiteSpace(prefix)) throw new ArgumentException("Prefix must be non-empty", nameof(prefix));
+        if (string.IsNullOrWhiteSpace(description)) throw new ArgumentException("Description must be non-empty", nameof(description));
+
+        if (!_perApp.TryGetValue(processName, out var trie))
+        {
+            trie = new Trie<ActionRequest>();
+            _perApp[processName] = trie;
+        }
+
+        trie.SetDescription(prefix, description);
+    }
+
+    public string? GetPerAppPrefixDescription(string processName, string prefix)
+    {
+        if (string.IsNullOrWhiteSpace(processName)) return null;
+        if (string.IsNullOrWhiteSpace(prefix)) return null;
+        if (!_perApp.TryGetValue(processName, out var trie)) return null;
+        return trie.GetDescription(prefix);
+    }
+
+    public void AddPerAppBinding(string processName, string sequence, ActionRequest action, string description)
+    {
+        if (string.IsNullOrWhiteSpace(processName)) throw new ArgumentException("Process name must be non-empty", nameof(processName));
+        if (string.IsNullOrWhiteSpace(sequence)) throw new ArgumentException("Sequence must be non-empty", nameof(sequence));
+        if (string.IsNullOrWhiteSpace(description)) throw new ArgumentException("Description must be non-empty", nameof(description));
+
+        if (!_perApp.TryGetValue(processName, out var trie))
+        {
+            trie = new Trie<ActionRequest>();
+            _perApp[processName] = trie;
+        }
+
+        trie.Add(sequence, action, description);
     }
 
     public static SequenceEngine CreateWithLeaderKey(Func<KeyStroke, bool> isLeaderKey)
@@ -278,7 +304,20 @@ public sealed class SequenceEngine
     }
 }
 
-public sealed record ActionRequest(string ActionId);
+public sealed record ActionRequest
+{
+    public string? ActionId { get; init; }
+    public string? TypeText { get; init; }
+    public string? SendSpec { get; init; }
+
+    // Exec support
+    public string? ExecPath { get; init; }
+    public string? ExecArgs { get; init; }
+    public string? ExecCwd { get; init; }
+
+    public ActionRequest() { }
+    public ActionRequest(string actionId) => ActionId = actionId;
+}
 
 public sealed record OverlayModel(string Sequence, IReadOnlyList<OverlayOption> Options);
 

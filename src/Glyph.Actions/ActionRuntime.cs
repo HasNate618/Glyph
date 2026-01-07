@@ -18,7 +18,7 @@ public sealed class ActionRuntime
         "openTerminal",
         "openExplorer",
         "openTaskManager",
-            "openBrowser",
+        "openBrowser",
 
         "mediaPlayPause",
         "mediaNext",
@@ -40,34 +40,65 @@ public sealed class ActionRuntime
 
     public Task ExecuteAsync(ActionRequest request, CancellationToken cancellationToken)
     {
-        // Prototype: hardcoded actions.
-        return request.ActionId switch
+        // Support both built-in action ids and inline key/type requests carried by ActionRequest.
+        if (request is null) return Task.CompletedTask;
+
+        if (!string.IsNullOrWhiteSpace(request.ActionId))
         {
-            "launchChrome" => LaunchAsync(FindChrome(), null, cancellationToken),
-            "openTerminal" => OpenDefaultTerminalAsync(cancellationToken),
-            "openExplorer" => LaunchAsync("explorer.exe", null, cancellationToken),
-            "openTaskManager" => LaunchAsync("taskmgr.exe", null, cancellationToken),
-            "openBrowser" => OpenDefaultBrowser(cancellationToken),
+            return request.ActionId switch
+            {
+                "launchChrome" => LaunchAsync(FindChrome(), null, cancellationToken),
+                "openTerminal" => OpenDefaultTerminalAsync(cancellationToken),
+                "openExplorer" => LaunchAsync("explorer.exe", null, cancellationToken),
+                "openTaskManager" => LaunchAsync("taskmgr.exe", null, cancellationToken),
+                "openBrowser" => OpenDefaultBrowser(cancellationToken),
 
-            // Media actions
-            "mediaPlayPause" => MediaKeyAsync(NativeMediaKey.MEDIA_PLAY_PAUSE, cancellationToken),
-            "mediaNext" => MediaKeyAsync(NativeMediaKey.MEDIA_NEXT_TRACK, cancellationToken),
-            "mediaPrev" => MediaKeyAsync(NativeMediaKey.MEDIA_PREV_TRACK, cancellationToken),
-            "volumeMute" => MediaKeyAsync(NativeMediaKey.VOLUME_MUTE, cancellationToken),
-            "openSpotify" => LaunchAsync("spotify:", null, cancellationToken),
-            "muteMic" => ToggleMicAsync(cancellationToken),
-            "mediaShuffle" => OpenSpotifyAndAttemptShuffle(cancellationToken),
+                // Media actions
+                "mediaPlayPause" => MediaKeyAsync(NativeMediaKey.MEDIA_PLAY_PAUSE, cancellationToken),
+                "mediaNext" => MediaKeyAsync(NativeMediaKey.MEDIA_NEXT_TRACK, cancellationToken),
+                "mediaPrev" => MediaKeyAsync(NativeMediaKey.MEDIA_PREV_TRACK, cancellationToken),
+                "volumeMute" => MediaKeyAsync(NativeMediaKey.VOLUME_MUTE, cancellationToken),
+                "openSpotify" => LaunchAsync("spotify:", null, cancellationToken),
+                "muteMic" => ToggleMicAsync(cancellationToken),
+                "mediaShuffle" => OpenSpotifyAndAttemptShuffle(cancellationToken),
 
-            // Window management
-            "windowMinimize" => WindowManagerActionAsync(WindowAction.Minimize, cancellationToken),
-            "windowMaximize" => WindowManagerActionAsync(WindowAction.Maximize, cancellationToken),
-            "windowRestore" => WindowManagerActionAsync(WindowAction.Restore, cancellationToken),
-            "windowClose" => WindowManagerActionAsync(WindowAction.Close, cancellationToken),
-            "windowTopmost" => WindowManagerActionAsync(WindowAction.ToggleTopmost, cancellationToken),
+                // Window management
+                "windowMinimize" => WindowManagerActionAsync(WindowAction.Minimize, cancellationToken),
+                "windowMaximize" => WindowManagerActionAsync(WindowAction.Maximize, cancellationToken),
+                "windowRestore" => WindowManagerActionAsync(WindowAction.Restore, cancellationToken),
+                "windowClose" => WindowManagerActionAsync(WindowAction.Close, cancellationToken),
+                "windowTopmost" => WindowManagerActionAsync(WindowAction.ToggleTopmost, cancellationToken),
 
-            "typeNvimDot" => TypeTextAsync("nvim .", cancellationToken),
-            _ => Task.CompletedTask,
-        };
+                "typeNvimDot" => TypeTextAsync("nvim .", cancellationToken),
+                _ => Task.CompletedTask,
+            };
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.TypeText))
+        {
+            return TypeTextAsync(request.TypeText, cancellationToken);
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.SendSpec))
+        {
+            try
+            {
+                Glyph.Win32.Input.InputSender.SendChordSpec(request.SendSpec);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error("Error sending chord spec", ex);
+            }
+
+            return Task.CompletedTask;
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.ExecPath))
+        {
+            return LaunchWithCwdAsync(request.ExecPath, request.ExecArgs, request.ExecCwd, cancellationToken);
+        }
+
+        return Task.CompletedTask;
     }
 
     private static Task MediaKeyAsync(NativeMediaKey key, CancellationToken cancellationToken)
@@ -102,61 +133,20 @@ public sealed class ActionRuntime
 
     private static Task OpenDefaultBrowser(CancellationToken cancellationToken)
     {
+        // Revert behavior: open the default system browser to Bing.
+        // This intentionally opens a Bing tab in the default browser.
         cancellationToken.ThrowIfCancellationRequested();
         try
         {
-            // Try to detect the system default browser executable from the registry.
-            string? defaultExe = GetDefaultBrowserExe();
-
-            // If default browser exe detected, try to focus a running instance.
-            if (!string.IsNullOrWhiteSpace(defaultExe))
-            {
-                try
-                {
-                    var exeName = Path.GetFileNameWithoutExtension(defaultExe);
-                    if (!string.IsNullOrWhiteSpace(exeName))
-                    {
-                        var procs = System.Diagnostics.Process.GetProcessesByName(exeName);
-                        foreach (var p in procs)
-                        {
-                            try
-                            {
-                                var h = p.MainWindowHandle;
-                                if (h != IntPtr.Zero)
-                                {
-                                    SetForegroundWindow(h);
-                                    return Task.CompletedTask;
-                                }
-                            }
-                            catch { }
-                        }
-                    }
-                }
-                catch { }
-
-                // Not running: open a safe HTTPS URL using the default handler
-                // rather than launching a specific browser executable. This
-                // ensures the user's system default browser is used.
-                var psiFallback = new ProcessStartInfo
-                {
-                    FileName = "https://www.bing.com",
-                    UseShellExecute = true,
-                };
-                Process.Start(psiFallback);
-                return Task.CompletedTask;
-            }
-
-            // As a last resort, open a safe HTTPS URL using the system default handler.
-            var psi = new ProcessStartInfo
+            Process.Start(new ProcessStartInfo
             {
                 FileName = "https://www.bing.com",
                 UseShellExecute = true,
-            };
-            Process.Start(psi);
+            });
         }
         catch (Exception ex)
         {
-            Logger.Error("Error opening default browser", ex);
+            Logger.Error("Error opening default browser (Bing)", ex);
         }
 
         return Task.CompletedTask;
@@ -221,39 +211,30 @@ public sealed class ActionRuntime
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        // Prefer Windows Terminal when available, then PowerShell (pwsh/powershell),
-        // then COMSPEC (usually cmd.exe), finally fallback to cmd.exe.
-        var candidates = new[]
+        // Explicit user preference: cmd.exe.
+        try
         {
-            (exe: "wt.exe", args: string.Empty),
-            (exe: "pwsh.exe", args: string.Empty),
-            (exe: "powershell.exe", args: string.Empty),
-            (exe: Environment.GetEnvironmentVariable("COMSPEC") ?? string.Empty, args: string.Empty),
-            (exe: "cmd.exe", args: string.Empty),
-        };
+            var exe = Environment.GetEnvironmentVariable("COMSPEC");
+            if (string.IsNullOrWhiteSpace(exe))
+            {
+                exe = "cmd.exe";
+            }
 
-        foreach (var c in candidates)
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = exe,
+                UseShellExecute = true,
+            });
+        }
+        catch (Exception ex)
         {
-            try
-            {
-                if (string.IsNullOrWhiteSpace(c.exe)) continue;
-                var psi = new ProcessStartInfo
-                {
-                    FileName = c.exe,
-                    Arguments = c.args,
-                    UseShellExecute = true,
-                };
-                Process.Start(psi);
-                return Task.CompletedTask;
-            }
-            catch
-            {
-                // Try next candidate
-            }
+            Logger.Error("Error opening terminal", ex);
         }
 
         return Task.CompletedTask;
     }
+
+    // Support for ActionRequest.TypeText and ActionRequest.SendSpec is handled below in ExecuteAsync.
 
     private static Task OpenSpotifyAndAttemptShuffle(CancellationToken cancellationToken)
     {
@@ -356,6 +337,7 @@ public sealed class ActionRuntime
                 FileName = exe,
                 Arguments = args ?? string.Empty,
                 UseShellExecute = true,
+                WindowStyle = ProcessWindowStyle.Hidden,
             };
 
             var proc = Process.Start(psi);
@@ -389,6 +371,44 @@ public sealed class ActionRuntime
             }
         }
         
+        return Task.CompletedTask;
+    }
+
+    private static Task LaunchWithCwdAsync(string exe, string? args, string? workingDirectory, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        try
+        {
+            Logger.Info($"Launching: {exe} {args ?? string.Empty} (cwd: {workingDirectory ?? ""})".Trim());
+
+            var psi = new ProcessStartInfo
+            {
+                FileName = exe,
+                Arguments = args ?? string.Empty,
+                UseShellExecute = true,
+            };
+
+            if (!string.IsNullOrWhiteSpace(workingDirectory))
+            {
+                psi.WorkingDirectory = workingDirectory;
+            }
+
+            var proc = Process.Start(psi);
+            if (proc is null)
+            {
+                Logger.Error($"Failed to start process: {exe}");
+            }
+            else
+            {
+                Logger.Info($"Process started (PID: {proc.Id}): {exe}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.Error($"Error launching {exe}", ex);
+        }
+
         return Task.CompletedTask;
     }
 
