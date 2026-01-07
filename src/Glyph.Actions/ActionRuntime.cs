@@ -44,54 +44,25 @@ public sealed class ActionRuntime
         "setThemeNord",
         "setThemeDarcula",
         "setThemeRosePine",
+        "reloadKeymaps",
     };
 
-    public Task ExecuteAsync(ActionRequest request, CancellationToken cancellationToken)
+
+    public async Task ExecuteAsync(ActionRequest request, CancellationToken cancellationToken)
     {
         // Support both built-in action ids and inline key/type requests carried by ActionRequest.
-        if (request is null) return Task.CompletedTask;
+        if (request is null) return;
 
         if (!string.IsNullOrWhiteSpace(request.ActionId))
         {
-            return request.ActionId switch
-            {
-                "launchChrome" => LaunchAsync(FindChrome(), null, cancellationToken),
-                "openTerminal" => OpenDefaultTerminalAsync(cancellationToken),
-                "openExplorer" => LaunchAsync("explorer.exe", null, cancellationToken),
-                "openTaskManager" => LaunchAsync("taskmgr.exe", null, cancellationToken),
-                "openBrowser" => OpenDefaultBrowser(cancellationToken),
-
-                // Media actions
-                "mediaPlayPause" => MediaKeyAsync(NativeMediaKey.MEDIA_PLAY_PAUSE, cancellationToken),
-                "mediaNext" => MediaKeyAsync(NativeMediaKey.MEDIA_NEXT_TRACK, cancellationToken),
-                "mediaPrev" => MediaKeyAsync(NativeMediaKey.MEDIA_PREV_TRACK, cancellationToken),
-                "volumeMute" => MediaKeyAsync(NativeMediaKey.VOLUME_MUTE, cancellationToken),
-                "openSpotify" => LaunchAsync("spotify:", null, cancellationToken),
-                "muteMic" => ToggleMicAsync(cancellationToken),
-                "mediaShuffle" => OpenSpotifyAndAttemptShuffle(cancellationToken),
-
-                // Window management
-                "windowMinimize" => WindowManagerActionAsync(WindowAction.Minimize, cancellationToken),
-                "windowMaximize" => WindowManagerActionAsync(WindowAction.Maximize, cancellationToken),
-                "windowRestore" => WindowManagerActionAsync(WindowAction.Restore, cancellationToken),
-                "windowClose" => WindowManagerActionAsync(WindowAction.Close, cancellationToken),
-                "windowTopmost" => WindowManagerActionAsync(WindowAction.ToggleTopmost, cancellationToken),
-
-                "typeNvimDot" => TypeTextAsync("nvim .", cancellationToken),
-                // Theme setters: write the base selector file so ThemeManager watcher applies it.
-                "setThemeFluent" => SetBaseThemeAsync("Fluent", cancellationToken),
-                "setThemeCatppuccinMocha" => SetBaseThemeAsync("CatppuccinMocha", cancellationToken),
-                "setThemeLight" => SetBaseThemeAsync("Light", cancellationToken),
-                "setThemeNord" => SetBaseThemeAsync("Nord", cancellationToken),
-                "setThemeDarcula" => SetBaseThemeAsync("Darcula", cancellationToken),
-                "setThemeRosePine" => SetBaseThemeAsync("RosePine", cancellationToken),
-                _ => Task.CompletedTask,
-            };
+            await ExecuteActionIdAsync(request.ActionId, cancellationToken);
+            return;
         }
 
+        // Handle TypeText first, then SendSpec (for chaining)
         if (!string.IsNullOrWhiteSpace(request.TypeText))
         {
-            return TypeTextAsync(request.TypeText, cancellationToken);
+            await TypeTextAsync(request.TypeText, cancellationToken);
         }
 
         if (!string.IsNullOrWhiteSpace(request.SendSpec))
@@ -104,16 +75,50 @@ public sealed class ActionRuntime
             {
                 Logger.Error("Error sending chord spec", ex);
             }
-
-            return Task.CompletedTask;
         }
 
         if (!string.IsNullOrWhiteSpace(request.ExecPath))
         {
-            return LaunchWithCwdAsync(request.ExecPath, request.ExecArgs, request.ExecCwd, cancellationToken);
+            await LaunchWithCwdAsync(request.ExecPath, request.ExecArgs, request.ExecCwd, cancellationToken);
         }
+    }
 
-        return Task.CompletedTask;
+    private async Task ExecuteActionIdAsync(string actionId, CancellationToken cancellationToken)
+    {
+        await (actionId switch
+        {
+            "launchChrome" => LaunchAsync(FindChrome(), null, cancellationToken),
+            "openTerminal" => OpenDefaultTerminalAsync(cancellationToken),
+            "openExplorer" => LaunchAsync("explorer.exe", null, cancellationToken),
+            "openTaskManager" => LaunchAsync("taskmgr.exe", null, cancellationToken),
+            "openBrowser" => OpenDefaultBrowser(cancellationToken),
+
+            // Media actions
+            "mediaPlayPause" => MediaKeyAsync(NativeMediaKey.MEDIA_PLAY_PAUSE, cancellationToken),
+            "mediaNext" => MediaKeyAsync(NativeMediaKey.MEDIA_NEXT_TRACK, cancellationToken),
+            "mediaPrev" => MediaKeyAsync(NativeMediaKey.MEDIA_PREV_TRACK, cancellationToken),
+            "volumeMute" => MediaKeyAsync(NativeMediaKey.VOLUME_MUTE, cancellationToken),
+            "openSpotify" => LaunchAsync("spotify:", null, cancellationToken),
+            "muteMic" => ToggleMicAsync(cancellationToken),
+            "mediaShuffle" => OpenSpotifyAndAttemptShuffle(cancellationToken),
+
+            // Window management
+            "windowMinimize" => WindowManagerActionAsync(WindowAction.Minimize, cancellationToken),
+            "windowMaximize" => WindowManagerActionAsync(WindowAction.Maximize, cancellationToken),
+            "windowRestore" => WindowManagerActionAsync(WindowAction.Restore, cancellationToken),
+            "windowClose" => WindowManagerActionAsync(WindowAction.Close, cancellationToken),
+            "windowTopmost" => WindowManagerActionAsync(WindowAction.ToggleTopmost, cancellationToken),
+
+            "typeNvimDot" => TypeTextAsync("nvim .", cancellationToken),
+            // Theme setters: write the base selector file so ThemeManager watcher applies it.
+            "setThemeFluent" => SetBaseThemeAsync("Fluent", cancellationToken),
+            "setThemeCatppuccinMocha" => SetBaseThemeAsync("CatppuccinMocha", cancellationToken),
+            "setThemeLight" => SetBaseThemeAsync("Light", cancellationToken),
+            "setThemeNord" => SetBaseThemeAsync("Nord", cancellationToken),
+            "setThemeDarcula" => SetBaseThemeAsync("Darcula", cancellationToken),
+            "setThemeRosePine" => SetBaseThemeAsync("RosePine", cancellationToken),
+            _ => Task.CompletedTask,
+        });
     }
 
     private static Task MediaKeyAsync(NativeMediaKey key, CancellationToken cancellationToken)
@@ -492,8 +497,7 @@ public sealed class ActionRuntime
                         Logger.Info($"Paste keystroke sent (Shift+Insert): {(pasteOk ? "ok" : "failed")}");
                     }
 
-                    var enterOk = InputSender.SendEnter();
-                    Logger.Info($"Enter sent: {(enterOk ? "ok" : "failed")}");
+                    // Don't auto-send Enter; let the user add `then: Enter` if needed
                     return;
                 }
             }
@@ -503,7 +507,7 @@ public sealed class ActionRuntime
             }
 
             _ = InputSender.SendText(text);
-            _ = InputSender.SendEnter();
+            // Don't auto-send Enter; let the user add `then: Enter` if needed
         }
         catch (Exception ex)
         {

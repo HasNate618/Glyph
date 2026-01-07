@@ -15,6 +15,14 @@ public sealed class Trie<TValue>
 
     private readonly Node _root = new();
 
+    public void Clear()
+    {
+        _root.Children.Clear();
+        _root.Value = null;
+        _root.HasValue = false;
+        _root.Description = null;
+    }
+
     public void Add(string sequence, TValue value, string description)
     {
         if (sequence.Length == 0)

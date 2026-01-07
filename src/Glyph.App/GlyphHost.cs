@@ -231,6 +231,14 @@ public sealed class GlyphHost : IDisposable
                 return;
             }
 
+            if (string.Equals(result.Action.ActionId, "reloadKeymaps", StringComparison.OrdinalIgnoreCase))
+            {
+                // Re-apply keymaps from YAML into the current engine instance so user edits take effect immediately.
+                Glyph.App.Config.KeymapYamlLoader.ApplyToEngine(_engine);
+                Logger.Info("Keymaps reloaded from YAML");
+                return;
+            }
+
             _ = _actionRuntime.ExecuteAsync(result.Action, CancellationToken.None);
         }
     }

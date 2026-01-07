@@ -23,6 +23,9 @@ public static class KeymapYamlLoader
     {
         try
         {
+            // Reset engine to built-in state before applying YAML so removed bindings are cleared.
+            engine.ResetToBuiltins();
+
             EnsureDefaultFileExists();
 
             var yaml = File.ReadAllText(KeymapsPath);
@@ -181,6 +184,7 @@ public static class KeymapYamlLoader
         var actionId = (node.Action ?? string.Empty).Trim();
         var typeText = (node.Type ?? string.Empty).Trim();
         var sendSpec = (node.Send ?? string.Empty).Trim();
+        var thenSpec = (node.Then ?? string.Empty).Trim();
         var execPath = (node.Exec ?? string.Empty).Trim();
         var execArgs = (node.ExecArgs ?? string.Empty).Trim();
         var execCwd = (node.ExecCwd ?? string.Empty).Trim();
@@ -197,6 +201,12 @@ public static class KeymapYamlLoader
                 engine.AddGlobalBinding(seq, new ActionRequest(actionId), label);
                 applied++;
             }
+        }
+        else if (typeText.Length > 0 && thenSpec.Length > 0)
+        {
+            // Chain TypeText + SendSpec: type text, then send key
+            engine.AddGlobalBinding(seq, new ActionRequest { TypeText = typeText, SendSpec = thenSpec }, label);
+            applied++;
         }
         else if (typeText.Length > 0)
         {
@@ -266,6 +276,7 @@ public static class KeymapYamlLoader
         var actionId = (node.Action ?? string.Empty).Trim();
         var typeText = (node.Type ?? string.Empty).Trim();
         var sendSpec = (node.Send ?? string.Empty).Trim();
+        var thenSpec = (node.Then ?? string.Empty).Trim();
         var execPath = (node.Exec ?? string.Empty).Trim();
         var execArgs = (node.ExecArgs ?? string.Empty).Trim();
         var execCwd = (node.ExecCwd ?? string.Empty).Trim();
@@ -282,6 +293,12 @@ public static class KeymapYamlLoader
                 engine.AddPerAppBinding(processName, seq, new ActionRequest(actionId), label);
                 applied++;
             }
+        }
+        else if (typeText.Length > 0 && thenSpec.Length > 0)
+        {
+            // Chain TypeText + SendSpec: type text, then send key
+            engine.AddPerAppBinding(processName, seq, new ActionRequest { TypeText = typeText, SendSpec = thenSpec }, label);
+            applied++;
         }
         else if (typeText.Length > 0)
         {
@@ -405,6 +422,7 @@ public sealed class KeymapYamlNode
     public string? Action { get; set; }
     public string? Type { get; set; }
     public string? Send { get; set; }
+    public string? Then { get; set; }
     // exec: program path to run
     public string? Exec { get; set; }
     // execArgs: arguments to pass to the program

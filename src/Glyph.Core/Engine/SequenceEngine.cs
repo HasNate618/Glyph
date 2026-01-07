@@ -29,66 +29,14 @@ public sealed class SequenceEngine
     public static SequenceEngine CreatePrototype()
     {
         var global = new Trie<ActionRequest>();
-
-        // Top-level (discoverable) prefixes
-        global.SetDescription("o", "Open");
-        global.SetDescription("m", "Media");
-        global.SetDescription("p", "Program");
-        global.SetDescription("t", "Text");
-        global.SetDescription("w", "Window");
-        global.SetDescription("g", "Glyph");
-
-        // Open layer
-        global.Add("ob", new ActionRequest("openBrowser"), "Open Browser");
-        global.Add("ot", new ActionRequest("openTerminal"), "Terminal");
-        global.Add("of", new ActionRequest("openExplorer"), "File Explorer");
-        global.Add("om", new ActionRequest("openTaskManager"), "Task Manager");
-        // 'og' used to open the Glyph GUI; moved to the dedicated 'g' layer.
-
-        // Glyph layer
-        global.Add("go", new ActionRequest("openGlyphGui"), "Open Glyph GUI");
-        global.Add("gq", new ActionRequest("quitGlyph"), "Quit Glyph");
-        // Theme sublayer under Glyph (gt)
-        global.Add("gtf", new ActionRequest("setThemeFluent"), "Fluent");
-        global.Add("gtc", new ActionRequest("setThemeCatppuccinMocha"), "Catppuccin");
-        global.Add("gtl", new ActionRequest("setThemeLight"), "Light");
-        global.Add("gtn", new ActionRequest("setThemeNord"), "Nord");
-        global.Add("gtd", new ActionRequest("setThemeDarcula"), "Darcula");
-        global.Add("gtr", new ActionRequest("setThemeRosePine"), "RosePine");
-
-        // Text layer
-        global.Add("tc", new ActionRequest { SendSpec = "Ctrl+C" }, "Copy");
-        global.Add("tv", new ActionRequest { SendSpec = "Ctrl+V" }, "Paste");
-        global.Add("tx", new ActionRequest { SendSpec = "Ctrl+X" }, "Cut");
-        global.Add("ta", new ActionRequest { SendSpec = "Ctrl+A" }, "Select All");
-        global.Add("tz", new ActionRequest { SendSpec = "Ctrl+Z" }, "Undo");
-        global.Add("ty", new ActionRequest { SendSpec = "Ctrl+Y" }, "Redo");
-        global.Add("tf", new ActionRequest { SendSpec = "Ctrl+F" }, "Find");
-        global.Add("tr", new ActionRequest { SendSpec = "Ctrl+H" }, "Replace");
-        global.Add("td", new ActionRequest { SendSpec = "Ctrl+D" }, "Duplicate Line");
-
-        // Media layer
-        global.Add("mp", new ActionRequest("mediaPlayPause"), "Play / Pause");
-        global.Add("mn", new ActionRequest("mediaNext"), "Next Track");
-        global.Add("mb", new ActionRequest("mediaPrev"), "Previous Track");
-        global.Add("mo", new ActionRequest("openSpotify"), "Open Spotify");
-        global.Add("mv", new ActionRequest("volumeMute"), "Toggle Mute");
-        global.Add("mm", new ActionRequest("muteMic"), "Toggle Microphone Mute");
-        global.Add("ms", new ActionRequest("mediaShuffle"), "Shuffle (Spotify)");
-
-        // Window management layer
-        global.Add("wn", new ActionRequest("windowMinimize"), "Minimize");
-        global.Add("wmx", new ActionRequest("windowMaximize"), "Maximize");
-        global.Add("wr", new ActionRequest("windowRestore"), "Restore");
-        global.Add("wc", new ActionRequest("windowClose"), "Close");
-        global.Add("wt", new ActionRequest("windowTopmost"), "Toggle Topmost");
+        PopulateBuiltins(global);
 
         // App-specific bindings (populated via YAML at runtime)
         var perApp = new Dictionary<string, Trie<ActionRequest>>(StringComparer.OrdinalIgnoreCase);
 
-        // Leader key: F12 (VK_F12 = 0x7B)
+        // Leader key: CapsLock (VK_CAPITAL = 0x14)
         Func<KeyStroke, bool> isLeader = stroke =>
-            stroke.VkCode == 0x7B && !stroke.Ctrl && !stroke.Shift && !stroke.Alt && !stroke.Win;
+            stroke.VkCode == 0x14 && !stroke.Ctrl && !stroke.Shift && !stroke.Alt && !stroke.Win;
 
         return new SequenceEngine(global, perApp, TimeSpan.FromMilliseconds(2000), isLeader);
     }
@@ -110,59 +58,7 @@ public sealed class SequenceEngine
     public static SequenceEngine CreatePrototype(Func<KeyStroke, bool> isLeaderKey)
     {
         var global = new Trie<ActionRequest>();
-
-        // Top-level (discoverable) prefixes
-        global.SetDescription("o", "Open");
-        global.SetDescription("m", "Media");
-        global.SetDescription("p", "Program");
-        global.SetDescription("t", "Text");
-        global.SetDescription("w", "Window");
-        global.SetDescription("g", "Glyph");
-
-        // Open layer
-        global.Add("ob", new ActionRequest("openBrowser"), "Open Browser");
-        global.Add("ot", new ActionRequest("openTerminal"), "Terminal");
-        global.Add("of", new ActionRequest("openExplorer"), "File Explorer");
-        global.Add("om", new ActionRequest("openTaskManager"), "Task Manager");
-        // 'og' used to open the Glyph GUI; moved to the dedicated 'g' layer.
-
-        // Glyph layer
-        global.Add("go", new ActionRequest("openGlyphGui"), "Open Glyph GUI");
-        global.Add("gq", new ActionRequest("quitGlyph"), "Quit Glyph");
-        // Theme sublayer under Glyph (gt)
-        global.Add("gtf", new ActionRequest("setThemeFluent"), "Fluent");
-        global.Add("gtc", new ActionRequest("setThemeCatppuccinMocha"), "Catppuccin");
-        global.Add("gtl", new ActionRequest("setThemeLight"), "Light");
-        global.Add("gtn", new ActionRequest("setThemeNord"), "Nord");
-        global.Add("gtd", new ActionRequest("setThemeDarcula"), "Darcula");
-        global.Add("gtr", new ActionRequest("setThemeRosePine"), "RosePine");
-
-        // Text layer
-        global.Add("tc", new ActionRequest { SendSpec = "Ctrl+C" }, "Copy");
-        global.Add("tv", new ActionRequest { SendSpec = "Ctrl+V" }, "Paste");
-        global.Add("tx", new ActionRequest { SendSpec = "Ctrl+X" }, "Cut");
-        global.Add("ta", new ActionRequest { SendSpec = "Ctrl+A" }, "Select All");
-        global.Add("tz", new ActionRequest { SendSpec = "Ctrl+Z" }, "Undo");
-        global.Add("ty", new ActionRequest { SendSpec = "Ctrl+Y" }, "Redo");
-        global.Add("tf", new ActionRequest { SendSpec = "Ctrl+F" }, "Find");
-        global.Add("tr", new ActionRequest { SendSpec = "Ctrl+H" }, "Replace");
-        global.Add("td", new ActionRequest { SendSpec = "Ctrl+D" }, "Duplicate Line");
-
-        // Media layer
-        global.Add("mp", new ActionRequest("mediaPlayPause"), "Play / Pause");
-        global.Add("mn", new ActionRequest("mediaNext"), "Next Track");
-        global.Add("mb", new ActionRequest("mediaPrev"), "Previous Track");
-        global.Add("mo", new ActionRequest("openSpotify"), "Open Spotify");
-        global.Add("mv", new ActionRequest("volumeMute"), "Toggle Mute");
-        global.Add("mm", new ActionRequest("muteMic"), "Toggle Microphone Mute");
-        global.Add("ms", new ActionRequest("mediaShuffle"), "Shuffle (Spotify)");
-
-        // Window management layer
-        global.Add("wn", new ActionRequest("windowMinimize"), "Minimize");
-        global.Add("wmx", new ActionRequest("windowMaximize"), "Maximize");
-        global.Add("wr", new ActionRequest("windowRestore"), "Restore");
-        global.Add("wc", new ActionRequest("windowClose"), "Close");
-        global.Add("wt", new ActionRequest("windowTopmost"), "Toggle Topmost");
+        PopulateBuiltins(global);
 
         // App-specific bindings (populated via YAML at runtime)
         var perApp = new Dictionary<string, Trie<ActionRequest>>(StringComparer.OrdinalIgnoreCase);
@@ -198,6 +94,75 @@ public sealed class SequenceEngine
         }
 
         trie.SetDescription(prefix, description);
+    }
+
+    public void ResetToBuiltins()
+    {
+        // Clear existing global bindings and per-app bindings, then repopulate built-ins.
+        _global.Clear();
+        _perApp.Clear();
+        PopulateBuiltins(_global);
+    }
+
+    private static void PopulateBuiltins(Trie<ActionRequest> global)
+    {
+        // Top-level (discoverable) prefixes
+        global.SetDescription("o", "Open");
+        global.SetDescription("m", "Media");
+        global.SetDescription("p", "Program");
+        global.SetDescription("t", "Text");
+        global.SetDescription("w", "Window");
+        global.SetDescription(",", "Glyph");
+        // Repurpose 'g' for Git commands
+        global.SetDescription("g", "Git");
+        // Glyph -> Theme sublayer
+        global.SetDescription("gt", "Theme");
+
+        // Open layer
+        global.Add("ob", new ActionRequest("openBrowser"), "Open Browser");
+        global.Add("ot", new ActionRequest("openTerminal"), "Terminal");
+        global.Add("of", new ActionRequest("openExplorer"), "File Explorer");
+        global.Add("om", new ActionRequest("openTaskManager"), "Task Manager");
+
+        // Glyph layer (now uses ',' as the prefix)
+        global.Add(",o", new ActionRequest("openGlyphGui"), "Open Glyph GUI");
+        global.Add(",q", new ActionRequest("quitGlyph"), "Quit Glyph");
+        // Theme sublayer under Glyph (',t')
+        global.Add(",tf", new ActionRequest("setThemeFluent"), "Fluent");
+        global.Add(",tc", new ActionRequest("setThemeCatppuccinMocha"), "Catppuccin");
+        global.Add(",tl", new ActionRequest("setThemeLight"), "Light");
+        global.Add(",tn", new ActionRequest("setThemeNord"), "Nord");
+        global.Add(",td", new ActionRequest("setThemeDarcula"), "Darcula");
+        global.Add(",tr", new ActionRequest("setThemeRosePine"), "RosePine");
+        // Reload config
+        global.Add(",r", new ActionRequest("reloadKeymaps"), "Reload keymaps");
+
+        // Text layer
+        global.Add("tc", new ActionRequest { SendSpec = "Ctrl+C" }, "Copy");
+        global.Add("tv", new ActionRequest { SendSpec = "Ctrl+V" }, "Paste");
+        global.Add("tx", new ActionRequest { SendSpec = "Ctrl+X" }, "Cut");
+        global.Add("ta", new ActionRequest { SendSpec = "Ctrl+A" }, "Select All");
+        global.Add("tz", new ActionRequest { SendSpec = "Ctrl+Z" }, "Undo");
+        global.Add("ty", new ActionRequest { SendSpec = "Ctrl+Y" }, "Redo");
+        global.Add("tf", new ActionRequest { SendSpec = "Ctrl+F" }, "Find");
+        global.Add("tr", new ActionRequest { SendSpec = "Ctrl+H" }, "Replace");
+        global.Add("td", new ActionRequest { SendSpec = "Ctrl+D" }, "Duplicate Line");
+
+        // Media layer
+        global.Add("mp", new ActionRequest("mediaPlayPause"), "Play / Pause");
+        global.Add("mn", new ActionRequest("mediaNext"), "Next Track");
+        global.Add("mb", new ActionRequest("mediaPrev"), "Previous Track");
+        global.Add("mo", new ActionRequest("openSpotify"), "Open Spotify");
+        global.Add("mv", new ActionRequest("volumeMute"), "Toggle Mute");
+        global.Add("mm", new ActionRequest("muteMic"), "Toggle Microphone Mute");
+        global.Add("ms", new ActionRequest("mediaShuffle"), "Shuffle (Spotify)");
+
+        // Window management layer
+        global.Add("wn", new ActionRequest("windowMinimize"), "Minimize");
+        global.Add("wmx", new ActionRequest("windowMaximize"), "Maximize");
+        global.Add("wr", new ActionRequest("windowRestore"), "Restore");
+        global.Add("wc", new ActionRequest("windowClose"), "Close");
+        global.Add("wt", new ActionRequest("windowTopmost"), "Toggle Topmost");
     }
 
     public string? GetPerAppPrefixDescription(string processName, string prefix)
@@ -250,6 +215,17 @@ public sealed class SequenceEngine
             }
 
             return EngineResult.None;
+        }
+
+        // Double-press leader key (CapsLock twice) triggers actual CapsLock
+        if (_isLeaderKey(stroke) && string.IsNullOrEmpty(_buffer))
+        {
+            Logger.Info("Leader double-press detected, toggling CapsLock");
+            Reset();
+            return new EngineResult(
+                Consumed: true,
+                Overlay: null,
+                Action: new ActionRequest { SendSpec = "CapsLock" });
         }
 
         // While active, Esc cancels.
@@ -306,9 +282,13 @@ public sealed class SequenceEngine
                 if (k.Key == 'p' && !string.IsNullOrWhiteSpace(activeProcessName))
                 {
                     var per = GetPerAppPrefixDescription(activeProcessName, "p");
-                    if (string.IsNullOrWhiteSpace(per))
+                    if (!string.IsNullOrWhiteSpace(per))
                     {
-                        desc = activeProcessName;
+                        desc = per;
+                    }
+                    else
+                    {
+                        desc = activeProcessName!;
                     }
                 }
 
@@ -404,8 +384,7 @@ public sealed class SequenceEngine
             NextKeys: nextKeys);
     }
 }
-
-public sealed record ActionRequest
+public sealed class ActionRequest
 {
     public string? ActionId { get; init; }
     public string? TypeText { get; init; }

@@ -549,6 +549,7 @@ public static class InputSender
         if (t == "enter" || t == "return") return NativeMethods.VK_RETURN;
         if (t == "tab") return 0x09;
         if (t == "space" || t == " ") return 0x20;
+        if (t == "capslock" || t == "caps" || t == "capital") return 0x14;
         if (t == "left" || t == "arrowleft" || t == "arrow-left" || t == "leftarrow" || t == "left-arrow" || t == "left_arrow") return 0x25;
         if (t == "up" || t == "arrowup" || t == "arrow-up" || t == "uparrow" || t == "up-arrow" || t == "up_arrow") return 0x26;
         if (t == "right" || t == "arrowright" || t == "arrow-right" || t == "rightarrow" || t == "right-arrow" || t == "right_arrow") return 0x27;
