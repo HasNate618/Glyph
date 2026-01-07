@@ -1,9 +1,0 @@
-<Project>
-  <PropertyGroup>
-    <TargetFramework>net8.0-windows</TargetFramework>
-    <OutputType>Exe</OutputType>
-    <RootNamespace>Glyph</RootNamespace>
-    <AssemblyName>Glyph</AssemblyName>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-  </PropertyGroup>
-</Project>
