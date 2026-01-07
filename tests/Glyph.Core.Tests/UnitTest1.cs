@@ -10,8 +10,8 @@ public class SequenceEngineTests
     {
         var engine = SequenceEngine.CreatePrototype();
 
-        // Leader key: Ctrl+Shift+NumPad * (VK_MULTIPLY = 0x6A)
-        var leader = KeyStroke.FromVkCode(0x6A, ctrl: true, shift: true, alt: false, win: false);
+        // Leader key: F12 (VK_F12 = 0x7B)
+        var leader = KeyStroke.FromVkCode(0x7B, ctrl: false, shift: false, alt: false, win: false);
 
         var result = engine.Handle(leader, DateTimeOffset.UtcNow, activeProcessName: null);
 
@@ -26,7 +26,7 @@ public class SequenceEngineTests
         var engine = SequenceEngine.CreatePrototype();
         var now = DateTimeOffset.UtcNow;
 
-        var leader = KeyStroke.FromVkCode(0x6A, ctrl: true, shift: true, alt: false, win: false);
+        var leader = KeyStroke.FromVkCode(0x7B, ctrl: false, shift: false, alt: false, win: false);
 
         _ = engine.Handle(leader, now, activeProcessName: null);
         _ = engine.Handle(new KeyStroke('r', Ctrl: false, Shift: false, Alt: false, Win: false), now.AddMilliseconds(10), activeProcessName: null);
@@ -44,7 +44,7 @@ public class SequenceEngineTests
         var engine = SequenceEngine.CreatePrototype();
         var now = DateTimeOffset.UtcNow;
 
-        var leader = KeyStroke.FromVkCode(0x6A, ctrl: true, shift: true, alt: false, win: false);
+        var leader = KeyStroke.FromVkCode(0x7B, ctrl: false, shift: false, alt: false, win: false);
 
         _ = engine.Handle(leader, now, activeProcessName: null);
         _ = engine.Handle(new KeyStroke('r', Ctrl: false, Shift: false, Alt: false, Win: false), now.AddMilliseconds(10), activeProcessName: null);
@@ -62,7 +62,7 @@ public class SequenceEngineTests
         var engine = SequenceEngine.CreatePrototype();
         var now = DateTimeOffset.UtcNow;
 
-        var leader = KeyStroke.FromVkCode(0x6A, ctrl: true, shift: true, alt: false, win: false);
+        var leader = KeyStroke.FromVkCode(0x7B, ctrl: false, shift: false, alt: false, win: false);
 
         _ = engine.Handle(leader, now, activeProcessName: null);
         _ = engine.Handle(new KeyStroke('r', Ctrl: false, Shift: false, Alt: false, Win: false), now.AddMilliseconds(10), activeProcessName: null);

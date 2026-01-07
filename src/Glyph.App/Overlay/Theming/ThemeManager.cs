@@ -38,6 +38,20 @@ public static class ThemeManager
         StartWatcher(path);
     }
 
+    public static void Reload()
+    {
+        // Re-read base theme selector + reload user theme overrides.
+        try
+        {
+            ApplyBaseThemeFromSelector();
+            TryLoadUserTheme(DefaultUserThemePath);
+        }
+        catch (Exception ex)
+        {
+            Logger.Error("Failed to reload theme", ex);
+        }
+    }
+
     private static void ApplyBaseThemeFromSelector()
     {
         try
@@ -74,18 +88,18 @@ public static class ThemeManager
         catch (Exception ex)
         {
             Logger.Error("Failed to apply base theme selector", ex);
-            ApplyBaseTheme("Default");
+            ApplyBaseTheme("Fluent");
         }
     }
 
     private static void ApplyBaseTheme(string baseName)
     {
-        if (Application.Current is null)
+        if (System.Windows.Application.Current is null)
         {
             return;
         }
 
-        var merged = Application.Current.Resources.MergedDictionaries;
+        var merged = System.Windows.Application.Current.Resources.MergedDictionaries;
         if (_baseDictionary is not null)
         {
             merged.Remove(_baseDictionary);
@@ -146,7 +160,7 @@ public static class ThemeManager
 
         _lastReloadAttemptUtc = now;
 
-        Application.Current?.Dispatcher?.BeginInvoke(() =>
+        System.Windows.Application.Current?.Dispatcher?.BeginInvoke(() =>
         {
             TryLoadUserTheme(path);
         });
@@ -193,12 +207,12 @@ public static class ThemeManager
 
     private static void ApplyUserTheme(ResourceDictionary dictionary)
     {
-        if (Application.Current is null)
+        if (System.Windows.Application.Current is null)
         {
             return;
         }
 
-        var merged = Application.Current.Resources.MergedDictionaries;
+        var merged = System.Windows.Application.Current.Resources.MergedDictionaries;
 
         if (_userDictionary is not null)
         {
@@ -212,7 +226,7 @@ public static class ThemeManager
 
     private static void RemoveUserTheme()
     {
-        if (Application.Current is null)
+        if (System.Windows.Application.Current is null)
         {
             return;
         }
@@ -222,7 +236,7 @@ public static class ThemeManager
             return;
         }
 
-        Application.Current.Resources.MergedDictionaries.Remove(_userDictionary);
+        System.Windows.Application.Current.Resources.MergedDictionaries.Remove(_userDictionary);
         _userDictionary = null;
         Logger.Info("User theme removed (theme file missing)");
     }

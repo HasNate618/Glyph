@@ -24,5 +24,9 @@ Glyph supports built-in themes and user overrides.
 	- `CatppuccinMocha`
 - Optionally override any resources by creating `%APPDATA%\Glyph\theme.xaml` (a `ResourceDictionary`).
 
-## Config (coming next)
-Sample config files live in `config/` and will be wired into runtime as the next step.
+## Leader Key
+- Default leader is `F12`.
+- You can change it in the Settings window (tray icon → Settings). Glyph supports recording multi-stroke leaders.
+
+## Config
+Glyph persists settings to `%APPDATA%\Glyph\config.json`.

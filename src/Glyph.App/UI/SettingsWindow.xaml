@@ -1,0 +1,51 @@
+<Window x:Class="Glyph.App.UI.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Glyph" Height="240" Width="520"
+        WindowStartupLocation="CenterScreen">
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" FontSize="18" FontWeight="SemiBold" Text="Glyph Settings" />
+            <TextBlock Grid.Column="1" x:Name="CurrentLeaderText" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="Gray" Text="Leader: (loading...)" />
+        </Grid>
+
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,8,0,8">
+            <GroupBox Header="Leader Key" Width="340">
+                <StackPanel Margin="8">
+                    <TextBlock TextWrapping="Wrap" Foreground="Gray" Margin="0,0,0,8"
+                               Text="Click Record, then press the leader keys. For sequences, press multiple keys in order. Click Record again to stop." />
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Button x:Name="RecordButton" Width="120" Content="Record" />
+                        <TextBlock x:Name="RecordedLeaderText" Margin="12,0,0,0" VerticalAlignment="Center" Text="(not recording)" />
+                    </StackPanel>
+                </StackPanel>
+            </GroupBox>
+
+            <GroupBox Header="Theme" Width="160" Margin="12,0,0,0">
+                <StackPanel Margin="8">
+                    <ComboBox x:Name="ThemeCombo" Width="120">
+                        <ComboBoxItem Tag="Fluent">Fluent</ComboBoxItem>
+                        <ComboBoxItem Tag="CatppuccinMocha">Catppuccin</ComboBoxItem>
+                    </ComboBox>
+                </StackPanel>
+            </GroupBox>
+        </StackPanel>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,0,0,12">
+            <Button x:Name="ApplyButton" Width="140" Margin="0,0,8,0" Content="Apply" />
+        </StackPanel>
+
+        <TextBlock Grid.Row="3" TextWrapping="Wrap" Foreground="Gray">Changes auto-save when you edit settings. Use Apply to update the running instance.</TextBlock>
+    </Grid>
+</Window>

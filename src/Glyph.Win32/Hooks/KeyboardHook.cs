@@ -10,6 +10,7 @@ public sealed class KeyboardHook : IDisposable
     private IntPtr _hookHandle;
 
     public event EventHandler<KeyboardHookEventArgs>? KeyDown;
+    public event EventHandler<KeyboardHookEventArgs>? KeyUp;
 
     public KeyboardHook()
     {
@@ -65,6 +66,24 @@ public sealed class KeyboardHook : IDisposable
 
                 var args = new KeyboardHookEventArgs(data.vkCode, data.scanCode, data.flags);
                 KeyDown?.Invoke(this, args);
+
+                if (args.Suppress)
+                {
+                    return (IntPtr)1;
+                }
+            }
+            else if (message == NativeMethods.WM_KEYUP || message == NativeMethods.WM_SYSKEYUP)
+            {
+                var data = Marshal.PtrToStructure<NativeMethods.KbdLlHookStruct>(lParam);
+
+                // Don't process injected input.
+                if ((data.flags & (NativeMethods.LLKHF_INJECTED | NativeMethods.LLKHF_LOWER_IL_INJECTED)) != 0)
+                {
+                    return NativeMethods.CallNextHookEx(_hookHandle, nCode, wParam, lParam);
+                }
+
+                var args = new KeyboardHookEventArgs(data.vkCode, data.scanCode, data.flags);
+                KeyUp?.Invoke(this, args);
 
                 if (args.Suppress)
                 {

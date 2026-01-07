@@ -48,11 +48,50 @@ public sealed class SequenceEngine
         terminal.Add("n", new ActionRequest("typeNvimDot"), "nvim . (enter)");
         perApp["WindowsTerminal"] = terminal;
 
-        // Leader key: Ctrl+Shift+NumPad * (VK_MULTIPLY = 0x6A)
+        // Leader key: F12 (VK_F12 = 0x7B)
         Func<KeyStroke, bool> isLeader = stroke =>
-            stroke.VkCode == 0x6A && stroke.Ctrl && stroke.Shift && !stroke.Alt;
+            stroke.VkCode == 0x7B && !stroke.Ctrl && !stroke.Shift && !stroke.Alt && !stroke.Win;
 
         return new SequenceEngine(global, perApp, TimeSpan.FromMilliseconds(2000), isLeader);
+    }
+
+    public bool IsSessionActive => _active;
+
+    public EngineResult BeginSession(DateTimeOffset now, string? activeProcessName)
+    {
+        _lastInput = now;
+        _active = true;
+        _buffer = string.Empty;
+
+        return new EngineResult(
+            Consumed: true,
+            Overlay: BuildOverlay(activeProcessName),
+            Action: null);
+    }
+
+    public static SequenceEngine CreatePrototype(Func<KeyStroke, bool> isLeaderKey)
+    {
+        var global = new Trie<ActionRequest>();
+
+        // Top-level (discoverable) prefixes
+        global.SetDescription("r", "Run");
+
+        // Run layer
+        global.Add("rc", new ActionRequest("launchChrome"), "Chrome");
+        global.Add("rt", new ActionRequest("openTerminal"), "Windows Terminal");
+        global.Add("rf", new ActionRequest("openExplorer"), "File Explorer");
+        global.Add("rm", new ActionRequest("openTaskManager"), "Task Manager");
+
+        // App-specific bindings
+        var perApp = new Dictionary<string, Trie<ActionRequest>>(StringComparer.OrdinalIgnoreCase);
+
+        // When Windows Terminal is focused, leader+n types `nvim .` + Enter
+        var terminal = new Trie<ActionRequest>();
+        terminal.SetDescription("n", "nvim .");
+        terminal.Add("n", new ActionRequest("typeNvimDot"), "nvim . (enter)");
+        perApp["WindowsTerminal"] = terminal;
+
+        return new SequenceEngine(global, perApp, TimeSpan.FromMilliseconds(2000), isLeaderKey);
     }
 
     public static SequenceEngine CreateWithLeaderKey(Func<KeyStroke, bool> isLeaderKey)

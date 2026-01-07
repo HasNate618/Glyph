@@ -1,19 +1,49 @@
 ﻿using System.Windows;
 
 using Glyph.App.Overlay.Theming;
+using Glyph.App.Tray;
 using Glyph.Core.Logging;
 
 namespace Glyph.App;
 
-public partial class App : Application
+public partial class App : System.Windows.Application
 {
     private GlyphHost? _host;
+    private TrayIconService? _tray;
+
+    public void ApplyConfig(Glyph.App.Config.AppConfig cfg)
+    {
+        try
+        {
+            if (cfg is null) return;
+
+            if (_host is not null)
+            {
+                var seq = (cfg.LeaderSequence is { Count: > 0 })
+                    ? cfg.LeaderSequence
+                    : (cfg.Leader is null ? null : new List<Glyph.App.Config.LeaderKeyConfig> { cfg.Leader });
+
+                _host.UpdateLeaderSequence(seq);
+            }
+
+            if (!string.IsNullOrWhiteSpace(cfg.BaseTheme))
+            {
+                var path = Glyph.App.Overlay.Theming.ThemeManager.DefaultBaseThemeSelectorPath;
+                System.IO.File.WriteAllText(path, cfg.BaseTheme);
+                Glyph.App.Overlay.Theming.ThemeManager.Reload();
+            }
+        }
+        catch
+        {
+            // best-effort
+        }
+    }
 
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
 
-        ShutdownMode = ShutdownMode.OnExplicitShutdown;
+        ShutdownMode = System.Windows.ShutdownMode.OnExplicitShutdown;
 
         Logger.Info("Glyph.App starting (background mode)");
 
@@ -22,12 +52,17 @@ public partial class App : Application
 
         _host = new GlyphHost();
         _host.Start();
+
+        // Tray icon for background UX
+        _tray = new TrayIconService();
+        _tray.Start();
     }
 
     protected override void OnExit(ExitEventArgs e)
     {
         try
         {
+            _tray?.Dispose();
             _host?.Dispose();
         }
         catch
