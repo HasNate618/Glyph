@@ -1,0 +1,180 @@
+# Glyph keymaps
+#
+# This file is loaded on startup from:
+#   %APPDATA%\Glyph\keymaps.yaml
+#
+# Schema:
+# bindings: [ { key, label, action?, children? } ]
+#
+# Notes:
+# - key can be multi-character (ex: "mx"), which is useful for sequences like wmx.
+# - action must be a known action id; unknown actions are skipped (but the prefix label stays).
+
+bindings:
+  - key: o
+    label: Open
+    children:
+      - key: b
+        label: Open Browser
+        action: openBrowser
+      - key: t
+        label: Terminal
+        action: openTerminal
+      - key: v
+        label: VSCode
+        exec: code
+      - key: s
+        label: Steam
+        exec: 'C:\Program Files (x86)\Steam\steam.exe'
+  - key: m
+    label: Media
+    children:
+      - key: p
+        label: Play / Pause
+        action: mediaPlayPause
+      - key: n
+        label: Next Track
+        action: mediaNext
+      - key: b
+        label: Previous Track
+        action: mediaPrev
+      - key: v
+        label: Toggle Volume Mute
+        action: volumeMute
+      - key: m
+        label: Toggle Microphone Mute
+        action: muteMic
+  - key: w
+    label: Window
+    children:
+      - key: n
+        label: Minimize
+        action: windowMinimize
+      - key: mx
+        label: Maximize
+        action: windowMaximize
+      - key: r
+        label: Restore
+        action: windowRestore
+      - key: c
+        label: Close
+        action: windowClose,
+      - key: t
+        label: Toggle Topmost
+        action: windowTopmost
+
+  - key: ","
+    label: Glyph
+    children:
+      - key: o
+        label: Open Glyph GUI
+        action: openGlyphGui
+      - key: q
+        label: Quit Glyph
+        action: quitGlyph
+      - key: t
+        label: Theme
+        children:
+          - key: f
+            label: Fluent
+            action: setThemeFluent
+          - key: c
+            label: Catppuccin Mocha
+            action: setThemeCatppuccinMocha
+          - key: l
+            label: Light
+            action: setThemeLight
+          - key: n
+            label: Nord
+            action: setThemeNord
+          - key: d
+            label: Darcula
+            action: setThemeDarcula
+          - key: r
+            label: RosePine
+            action: setThemeRosePine
+
+  - key: g
+    label: Git
+    children:
+      - key: s
+        label: Status
+        type: git status
+        then: Enter
+      - key: a
+        label: Add All
+        type: git add .
+      - key: c
+        label: Commit
+        type: 'git commit ""'
+        then: Left
+      - key: p
+        label: Push
+        type: git push
+      - key: l
+        label: Pull
+        type: git pull
+      - key: b
+        label: Branches
+        type: git branch
+
+apps:
+  - process: WindowsTerminal
+    bindings:
+      - key: n
+        label: nvim .
+        type: nvim .
+  - process: Code
+    bindings:
+      - key: s
+        label: Save All
+        send: Ctrl+K S
+      - key: b
+        label: Toggle Side Bar
+        send: Ctrl+B
+      - key: l
+        label: Open Secondary Side Bar
+        send: Ctrl+Alt+B
+      - key: j
+        label: Toggle Panel
+        send: Ctrl+J
+groups:
+  - name: Browser
+    processes: [ chrome, msedge, firefox, brave, opera, zen ]
+    bindings:
+      - key: t
+        label: New Tab
+        send: Ctrl+T
+      - key: w
+        label: Close Tab
+        send: Ctrl+W
+      - key: f
+        label: Find
+        send: Ctrl+F
+      - key: h
+        label: History
+        send: Ctrl+H
+      - key: u
+        label: Reopen Closed Tab
+        send: Ctrl+Shift+T
+      - key: r
+        label: Reload
+        send: Ctrl+R
+      - key: l
+        label: Focus Address Bar
+        send: Alt+D
+      - key: s
+        label: Save Page
+        send: Ctrl+Alt+Shift+S
+      - key: p
+        label: Print Page
+        send: Ctrl+P
+      - key: d
+        label: Bookmark Page
+        send: Ctrl+D
+      - key: j
+        label: Downloads
+        send: Ctrl+J
+      - key: k
+        label: Switch Workspace
+        send: Ctrl+Alt+Left

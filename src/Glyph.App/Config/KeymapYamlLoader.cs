@@ -127,9 +127,24 @@ public static class KeymapYamlLoader
         {
             return;
         }
+        // Require a repository default file when running from source so maintainers
+        // can edit and verify defaults easily. Do NOT fall back to an embedded template.
+        try
+        {
+            var repoDefault = Path.Combine(Directory.GetCurrentDirectory(), "src", "Glyph.App", "Config", "default_keymaps.yaml");
+            if (File.Exists(repoDefault))
+            {
+                File.Copy(repoDefault, KeymapsPath);
+                Logger.Info($"Copied repository default keymaps to: {KeymapsPath}");
+                return;
+            }
 
-        File.WriteAllText(KeymapsPath, DefaultYaml);
-        Logger.Info($"Created default keymaps file: {KeymapsPath}");
+            Logger.Info($"Repository default keymaps not found at {repoDefault}; not creating {KeymapsPath}");
+        }
+        catch (Exception ex)
+        {
+            Logger.Info($"Could not copy repo default keymaps: {ex.Message}");
+        }
     }
 
     private static void ApplyNode(
@@ -325,74 +340,8 @@ public static class KeymapYamlLoader
         }
     }
 
-    private const string DefaultYaml =
-        "# Glyph keymaps\n" +
-        "#\n" +
-        "# This file is loaded on startup from:\n" +
-        "#   %APPDATA%\\Glyph\\keymaps.yaml\n" +
-        "#\n" +
-        "# Schema:\n" +
-        "# bindings: [ { key, label, action?, children? } ]\n" +
-        "# apps: [ { process, bindings: [ { key, label, action?, children? } ] } ]\n" +
-        "#\n" +
-        "# Notes:\n" +
-        "# - key can be multi-character (ex: \"mx\"), which is useful for sequences like wmx.\n" +
-        "# - action must be a known action id; unknown actions are skipped (but the prefix label stays).\n" +
-        "# - apps.process must match the active ProcessName (ex: WindowsTerminal, Code, chrome).\n" +
-        "#\n" +
-        "bindings:\n" +
-        "  - key: o\n" +
-        "    label: Open\n" +
-        "    children:\n" +
-        "      - key: b\n" +
-        "        label: Open Browser\n" +
-        "        action: openBrowser\n" +
-        "      - key: t\n" +
-        "        label: Terminal (cmd)\n" +
-        "        action: openTerminal\n" +
-        "  - key: m\n" +
-        "    label: Media\n" +
-        "    children:\n" +
-        "      - key: p\n" +
-        "        label: Play / Pause\n" +
-        "        action: mediaPlayPause\n" +
-        "      - key: n\n" +
-        "        label: Next Track\n" +
-        "        action: mediaNext\n" +
-        "      - key: b\n" +
-        "        label: Previous Track\n" +
-        "        action: mediaPrev\n" +
-        "      - key: v\n" +
-        "        label: Toggle Volume Mute\n" +
-        "        action: volumeMute\n" +
-        "      - key: m\n" +
-        "        label: Toggle Microphone Mute\n" +
-        "        action: muteMic\n" +
-        "  - key: w\n" +
-        "    label: Window\n" +
-        "    children:\n" +
-        "      - key: n\n" +
-        "        label: Minimize\n" +
-        "        action: windowMinimize\n" +
-        "      - key: mx\n" +
-        "        label: Maximize\n" +
-        "        action: windowMaximize\n" +
-        "      - key: r\n" +
-        "        label: Restore\n" +
-        "        action: windowRestore\n" +
-        "      - key: c\n" +
-        "        label: Close\n" +
-        "        action: windowClose\n" +
-        "      - key: t\n" +
-        "        label: Toggle Topmost\n" +
-        "        action: windowTopmost\n" +
-        "\n" +
-        "apps:\n" +
-        "  - process: WindowsTerminal\n" +
-        "    bindings:\n" +
-        "      - key: n\n" +
-        "        label: nvim .\n" +
-        "        action: typeNvimDot\n";
+    // Embedded defaults removed; KeymapYamlLoader now requires a repository
+    // default_keymaps.yaml to be present when initializing defaults.
 }
 
 public sealed class KeymapYamlRoot
