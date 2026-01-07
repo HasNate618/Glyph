@@ -6,6 +6,10 @@
     <ProjectReference Include="..\Glyph.Actions\Glyph.Actions.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="YamlDotNet" Version="13.1.1" />
+  </ItemGroup>
+
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>

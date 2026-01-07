@@ -41,6 +41,8 @@ public sealed class GlyphHost : IDisposable
             // suppress every keystroke that participates in the leader sequence.
             _engine = SequenceEngine.CreatePrototype(_ => false);
         }
+
+        Glyph.App.Config.KeymapYamlLoader.ApplyToEngine(_engine);
         _actionRuntime = new ActionRuntime();
         _overlay = new OverlayWindow();
 
@@ -303,6 +305,8 @@ public sealed class GlyphHost : IDisposable
         {
             _engine = SequenceEngine.CreatePrototype(_ => false);
         }
+
+        Glyph.App.Config.KeymapYamlLoader.ApplyToEngine(_engine);
 
         Logger.Info($"Leader updated from settings (len={_leaderSequence.Count})");
     }

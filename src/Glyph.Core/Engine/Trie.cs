@@ -82,6 +82,23 @@ public sealed class Trie<TValue>
             Value: node.HasValue ? node.Value : null,
             NextKeys: nextKeys);
     }
+
+    public string? GetDescription(string prefix)
+    {
+        if (prefix.Length == 0) return null;
+
+        var node = _root;
+        foreach (var ch in prefix)
+        {
+            if (!node.Children.TryGetValue(ch, out var next))
+            {
+                return null;
+            }
+            node = next;
+        }
+
+        return node.Description;
+    }
 }
 
 public readonly record struct TrieNextKey(char Key, string Description);

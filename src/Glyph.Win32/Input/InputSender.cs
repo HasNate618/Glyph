@@ -348,6 +348,45 @@ public static class InputSender
         return SendInputs(inputs);
     }
 
+    public static bool SendMediaKey(ushort vk)
+    {
+        var inputs = new[]
+        {
+            new NativeMethods.INPUT
+            {
+                type = NativeMethods.INPUT_KEYBOARD,
+                U = new NativeMethods.InputUnion
+                {
+                    ki = new NativeMethods.KEYBDINPUT
+                    {
+                        wVk = vk,
+                        wScan = 0,
+                        dwFlags = 0,
+                        time = 0,
+                        dwExtraInfo = IntPtr.Zero,
+                    },
+                },
+            },
+            new NativeMethods.INPUT
+            {
+                type = NativeMethods.INPUT_KEYBOARD,
+                U = new NativeMethods.InputUnion
+                {
+                    ki = new NativeMethods.KEYBDINPUT
+                    {
+                        wVk = vk,
+                        wScan = 0,
+                        dwFlags = NativeMethods.KEYEVENTF_KEYUP,
+                        time = 0,
+                        dwExtraInfo = IntPtr.Zero,
+                    },
+                },
+            },
+        };
+
+        return SendInputs(inputs);
+    }
+
     private static bool SendInputs(IReadOnlyList<NativeMethods.INPUT> inputs)
     {
         if (inputs.Count == 0)

@@ -32,12 +32,31 @@ public sealed class SequenceEngine
 
         // Top-level (discoverable) prefixes
         global.SetDescription("r", "Run");
+        global.SetDescription("m", "Media");
+        global.SetDescription("w", "Window");
 
         // Run layer
         global.Add("rc", new ActionRequest("launchChrome"), "Chrome");
-        global.Add("rt", new ActionRequest("openTerminal"), "Windows Terminal");
+        global.Add("rb", new ActionRequest("openBrowser"), "Open Browser");
+        global.Add("rt", new ActionRequest("openTerminal"), "Terminal");
         global.Add("rf", new ActionRequest("openExplorer"), "File Explorer");
         global.Add("rm", new ActionRequest("openTaskManager"), "Task Manager");
+
+        // Media layer
+        global.Add("mp", new ActionRequest("mediaPlayPause"), "Play / Pause");
+        global.Add("mn", new ActionRequest("mediaNext"), "Next Track");
+        global.Add("mb", new ActionRequest("mediaPrev"), "Previous Track");
+        global.Add("mo", new ActionRequest("openSpotify"), "Open Spotify");
+        global.Add("mv", new ActionRequest("volumeMute"), "Toggle Mute");
+        global.Add("mm", new ActionRequest("muteMic"), "Toggle Microphone Mute");
+        global.Add("ms", new ActionRequest("mediaShuffle"), "Shuffle (Spotify)");
+
+        // Window management layer
+        global.Add("wn", new ActionRequest("windowMinimize"), "Minimize");
+        global.Add("wmx", new ActionRequest("windowMaximize"), "Maximize");
+        global.Add("wr", new ActionRequest("windowRestore"), "Restore");
+        global.Add("wc", new ActionRequest("windowClose"), "Close");
+        global.Add("wt", new ActionRequest("windowTopmost"), "Toggle Topmost");
 
         // App-specific bindings
         var perApp = new Dictionary<string, Trie<ActionRequest>>(StringComparer.OrdinalIgnoreCase);
@@ -75,12 +94,31 @@ public sealed class SequenceEngine
 
         // Top-level (discoverable) prefixes
         global.SetDescription("r", "Run");
+        global.SetDescription("m", "Media");
+        global.SetDescription("w", "Window");
 
         // Run layer
         global.Add("rc", new ActionRequest("launchChrome"), "Chrome");
-        global.Add("rt", new ActionRequest("openTerminal"), "Windows Terminal");
+        global.Add("rb", new ActionRequest("openBrowser"), "Open Browser");
+        global.Add("rt", new ActionRequest("openTerminal"), "Terminal");
         global.Add("rf", new ActionRequest("openExplorer"), "File Explorer");
         global.Add("rm", new ActionRequest("openTaskManager"), "Task Manager");
+
+        // Media layer
+        global.Add("mp", new ActionRequest("mediaPlayPause"), "Play / Pause");
+        global.Add("mn", new ActionRequest("mediaNext"), "Next Track");
+        global.Add("mb", new ActionRequest("mediaPrev"), "Previous Track");
+        global.Add("mo", new ActionRequest("openSpotify"), "Open Spotify");
+        global.Add("mv", new ActionRequest("volumeMute"), "Toggle Mute");
+        global.Add("mm", new ActionRequest("muteMic"), "Toggle Microphone Mute");
+        global.Add("ms", new ActionRequest("mediaShuffle"), "Shuffle (Spotify)");
+
+        // Window management layer
+        global.Add("wn", new ActionRequest("windowMinimize"), "Minimize");
+        global.Add("wmx", new ActionRequest("windowMaximize"), "Maximize");
+        global.Add("wr", new ActionRequest("windowRestore"), "Restore");
+        global.Add("wc", new ActionRequest("windowClose"), "Close");
+        global.Add("wt", new ActionRequest("windowTopmost"), "Toggle Topmost");
 
         // App-specific bindings
         var perApp = new Dictionary<string, Trie<ActionRequest>>(StringComparer.OrdinalIgnoreCase);
@@ -92,6 +130,21 @@ public sealed class SequenceEngine
         perApp["WindowsTerminal"] = terminal;
 
         return new SequenceEngine(global, perApp, TimeSpan.FromMilliseconds(2000), isLeaderKey);
+    }
+
+    public void SetPrefixDescription(string prefix, string description)
+    {
+        _global.SetDescription(prefix, description);
+    }
+
+    public string? GetPrefixDescription(string prefix)
+    {
+        return _global.GetDescription(prefix);
+    }
+
+    public void AddGlobalBinding(string sequence, ActionRequest action, string description)
+    {
+        _global.Add(sequence, action, description);
     }
 
     public static SequenceEngine CreateWithLeaderKey(Func<KeyStroke, bool> isLeaderKey)
