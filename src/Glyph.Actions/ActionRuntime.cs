@@ -35,6 +35,7 @@ public sealed class ActionRuntime
         "windowTopmost",
 
         "typeNvimDot",
+        "openGlyphGui",
         "quitGlyph",
     };
 

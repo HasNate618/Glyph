@@ -61,14 +61,16 @@ public static class KeymapYamlLoader
                         continue;
                     }
 
-                    if (app?.Bindings is not { Count: > 0 })
-                    {
-                        continue;
-                    }
-
                     // Label the program layer for this process with the process name
                     // so the overlay shows the program name instead of a generic label.
                     engine.SetPerAppPrefixDescription(process, "p", process);
+
+                    if (app?.Bindings is not { Count: > 0 })
+                    {
+                        // No bindings for this app; still set the label so the overlay
+                        // displays the process name rather than a generic "Program".
+                        continue;
+                    }
 
                     foreach (var node in app.Bindings)
                     {
@@ -322,8 +324,8 @@ public static class KeymapYamlLoader
         "# - apps.process must match the active ProcessName (ex: WindowsTerminal, Code, chrome).\n" +
         "#\n" +
         "bindings:\n" +
-        "  - key: r\n" +
-        "    label: Run\n" +
+        "  - key: o\n" +
+        "    label: Open\n" +
         "    children:\n" +
         "      - key: b\n" +
         "        label: Open Browser\n" +

@@ -73,7 +73,11 @@ public sealed class Trie<TValue>
 
         var nextKeys = node.Children
             .OrderBy(kvp => kvp.Key)
-            .Select(kvp => new TrieNextKey(kvp.Key, kvp.Value.Description ?? string.Empty))
+            .Select(kvp => new TrieNextKey(
+                Key: kvp.Key,
+                Description: kvp.Value.Description ?? string.Empty,
+                Continues: kvp.Value.Children.Count > 0,
+                Completes: kvp.Value.HasValue))
             .ToImmutableArray();
 
         return new TrieLookupResult<TValue>(
@@ -101,7 +105,7 @@ public sealed class Trie<TValue>
     }
 }
 
-public readonly record struct TrieNextKey(char Key, string Description);
+public readonly record struct TrieNextKey(char Key, string Description, bool Continues, bool Completes);
 
 public readonly record struct TrieLookupResult<TValue>(
     bool IsValidPrefix,

@@ -31,16 +31,17 @@ public sealed class SequenceEngine
         var global = new Trie<ActionRequest>();
 
         // Top-level (discoverable) prefixes
-        global.SetDescription("r", "Run");
+        global.SetDescription("o", "Open");
         global.SetDescription("m", "Media");
         global.SetDescription("p", "Program");
         global.SetDescription("w", "Window");
 
-        // Run layer
-        global.Add("rb", new ActionRequest("openBrowser"), "Open Browser");
-        global.Add("rt", new ActionRequest("openTerminal"), "Terminal");
-        global.Add("rf", new ActionRequest("openExplorer"), "File Explorer");
-        global.Add("rm", new ActionRequest("openTaskManager"), "Task Manager");
+        // Open layer
+        global.Add("ob", new ActionRequest("openBrowser"), "Open Browser");
+        global.Add("ot", new ActionRequest("openTerminal"), "Terminal");
+        global.Add("of", new ActionRequest("openExplorer"), "File Explorer");
+        global.Add("om", new ActionRequest("openTaskManager"), "Task Manager");
+        global.Add("og", new ActionRequest("openGlyphGui"), "Glyph Settings");
 
         // Media layer
         global.Add("mp", new ActionRequest("mediaPlayPause"), "Play / Pause");
@@ -87,16 +88,17 @@ public sealed class SequenceEngine
         var global = new Trie<ActionRequest>();
 
         // Top-level (discoverable) prefixes
-        global.SetDescription("r", "Run");
+        global.SetDescription("o", "Open");
         global.SetDescription("m", "Media");
         global.SetDescription("p", "Program");
         global.SetDescription("w", "Window");
 
-        // Run layer
-        global.Add("rb", new ActionRequest("openBrowser"), "Open Browser");
-        global.Add("rt", new ActionRequest("openTerminal"), "Terminal");
-        global.Add("rf", new ActionRequest("openExplorer"), "File Explorer");
-        global.Add("rm", new ActionRequest("openTaskManager"), "Task Manager");
+        // Open layer
+        global.Add("ob", new ActionRequest("openBrowser"), "Open Browser");
+        global.Add("ot", new ActionRequest("openTerminal"), "Terminal");
+        global.Add("of", new ActionRequest("openExplorer"), "File Explorer");
+        global.Add("om", new ActionRequest("openTaskManager"), "Task Manager");
+        global.Add("og", new ActionRequest("openGlyphGui"), "Glyph Settings");
 
         // Media layer
         global.Add("mp", new ActionRequest("mediaPlayPause"), "Play / Pause");
@@ -216,7 +218,6 @@ public sealed class SequenceEngine
         }
 
         _buffer += stroke.Key.Value;
-        Logger.Info($"Buffer: {_buffer}");
 
         var lookup = LookupMerged(_buffer, activeProcessName);
         if (!lookup.IsValidPrefix)
@@ -245,9 +246,49 @@ public sealed class SequenceEngine
 
     private OverlayModel BuildOverlay(string? activeProcessName, IReadOnlyList<TrieNextKey>? next = null)
     {
-        var options = (next ?? LookupMerged(_buffer, activeProcessName).NextKeys)
-            .Select(k => new OverlayOption(k.Key.ToString(), k.Description))
+        var nextKeys = (next ?? LookupMerged(_buffer, activeProcessName).NextKeys);
+
+        var options = nextKeys
+            .Select(k =>
+            {
+                var desc = k.Description;
+
+                // If this is the program prefix and there's no per-app description,
+                // prefer the active process name instead of the generic "Program" label.
+                if (k.Key == 'p' && !string.IsNullOrWhiteSpace(activeProcessName))
+                {
+                    var per = GetPerAppPrefixDescription(activeProcessName, "p");
+                    if (string.IsNullOrWhiteSpace(per))
+                    {
+                        desc = activeProcessName;
+                    }
+                }
+
+                return new OverlayOption(
+                    Key: k.Key.ToString(),
+                    Description: desc,
+                    IsLayer: k.Continues,
+                    IsAction: k.Completes);
+            })
             .ToList();
+
+        // If the user has entered a layer that contains no bindings, show a helpful message.
+        if (options.Count == 0)
+        {
+            var seq = $"Leader {_buffer}".TrimEnd();
+            string msg;
+            // If this is the program layer (p) and we have an active process, mention it.
+            if (!string.IsNullOrWhiteSpace(activeProcessName) && _buffer.StartsWith("p", StringComparison.Ordinal))
+            {
+                msg = $"No keys defined for {activeProcessName}";
+            }
+            else
+            {
+                msg = "No keys defined for this layer";
+            }
+
+            return new OverlayModel(seq, new List<OverlayOption> { new OverlayOption("—", msg, false, false) });
+        }
 
         return new OverlayModel($"Leader {_buffer}".TrimEnd(), options);
     }
@@ -280,20 +321,32 @@ public sealed class SequenceEngine
         }
 
         // Merge next keys (union), but prefer app descriptions when overlapping.
-        var merged = new Dictionary<char, string>();
+        var merged = new Dictionary<char, TrieNextKey>();
         foreach (var nk in global.NextKeys)
         {
-            merged[nk.Key] = nk.Description;
+            merged[nk.Key] = nk;
         }
 
         foreach (var nk in app.Value.NextKeys)
         {
-            merged[nk.Key] = nk.Description;
+            if (merged.TryGetValue(nk.Key, out var existing))
+            {
+                // Merge flags, but prefer app description when present.
+                merged[nk.Key] = new TrieNextKey(
+                    Key: nk.Key,
+                    Description: string.IsNullOrWhiteSpace(nk.Description) ? existing.Description : nk.Description,
+                    Continues: nk.Continues || existing.Continues,
+                    Completes: nk.Completes || existing.Completes);
+            }
+            else
+            {
+                merged[nk.Key] = nk;
+            }
         }
 
         var nextKeys = merged
             .OrderBy(kvp => kvp.Key)
-            .Select(kvp => new TrieNextKey(kvp.Key, kvp.Value))
+            .Select(kvp => kvp.Value)
             .ToList();
 
         return new TrieLookupResult<ActionRequest>(
@@ -321,7 +374,7 @@ public sealed record ActionRequest
 
 public sealed record OverlayModel(string Sequence, IReadOnlyList<OverlayOption> Options);
 
-public sealed record OverlayOption(string Key, string Description);
+public sealed record OverlayOption(string Key, string Description, bool IsLayer, bool IsAction);
 
 public readonly record struct EngineResult(bool Consumed, OverlayModel? Overlay, ActionRequest? Action)
 {

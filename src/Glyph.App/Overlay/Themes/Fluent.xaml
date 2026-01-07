@@ -9,6 +9,13 @@
   <SolidColorBrush x:Key="Glyph.Overlay.KeycapBackground" Color="#3A3A3A" />
   <SolidColorBrush x:Key="Glyph.Overlay.KeycapForeground" Color="#FFFFFF" />
 
+  <!-- Per-state keycap styling (action vs layer) - subtle contrast -->
+  <SolidColorBrush x:Key="Glyph.Overlay.KeycapBackgroundAction" Color="#3A3A3A" />
+  <SolidColorBrush x:Key="Glyph.Overlay.KeycapForegroundAction" Color="#FFFFFFFF" />
+  <SolidColorBrush x:Key="Glyph.Overlay.KeycapBorderAction" Color="#FF4DA6C6" />
+  <SolidColorBrush x:Key="Glyph.Overlay.KeycapBackgroundLayer" Color="#424242" />
+  <SolidColorBrush x:Key="Glyph.Overlay.KeycapForegroundLayer" Color="#FFF5F5F5" />
+
   <FontFamily x:Key="Glyph.Overlay.FontFamily">Segoe UI Variable, Segoe UI, Arial</FontFamily>
 
   <CornerRadius x:Key="Glyph.Overlay.PanelCornerRadius">12</CornerRadius>

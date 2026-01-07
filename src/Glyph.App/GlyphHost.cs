@@ -77,17 +77,6 @@ public sealed class GlyphHost : IDisposable
         ReconcileModifierCandidates();
         _currentlyDown.Add(e.VkCode);
 
-        // Special-case: if the leader is a single modifier key (Alt/Ctrl/Shift/Win),
-        // treat it as a "tap to open leader" gesture.
-        // We suppress the modifier key DOWN event so Windows never sees the modifier held,
-        // preventing stuck-modifier behavior (e.g., Alt+<key> everywhere) if we later
-        // consume the corresponding key-up.
-        if (_leaderSequence.Count == 1 && IsModifierVk(_leaderSequence[0].VkCode) && ModifierMatchesVk(e.VkCode, _leaderSequence[0].VkCode))
-        {
-            _modifierCandidates[e.VkCode] = false;
-            e.Suppress = true;
-            return;
-        }
         var stroke = KeyStroke.FromVkCode(
             e.VkCode,
             ctrl: NativeMethods.IsKeyDown(VirtualKey.VK_CONTROL),
@@ -96,6 +85,30 @@ public sealed class GlyphHost : IDisposable
             win: NativeMethods.IsKeyDown(VirtualKey.VK_LWIN) || NativeMethods.IsKeyDown(VirtualKey.VK_RWIN));
 
         var activeProcess = ForegroundApp.TryGetProcessName();
+
+        // Single-stroke modifier leader: begin session immediately on key-down.
+        // We suppress the modifier key DOWN so Windows never sees it held.
+        if (_leaderSequence.Count == 1 && IsModifierVk(_leaderSequence[0].VkCode) && ModifierMatchesVk(e.VkCode, _leaderSequence[0].VkCode))
+        {
+            if (!_engine.IsSessionActive)
+            {
+                var began = _engine.BeginSession(DateTimeOffset.UtcNow, activeProcess);
+                if (began.Overlay is not null)
+                {
+                    System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
+                    {
+                        _overlay.Update(began.Overlay);
+                        if (!_overlay.IsVisible)
+                        {
+                            _overlay.Show();
+                        }
+                    });
+                }
+            }
+
+            e.Suppress = true;
+            return;
+        }
 
         // If there are any active modifier candidates and this keydown is NOT the same modifier,
         // abort those candidates (user pressed another key while modifier held).
@@ -112,17 +125,27 @@ public sealed class GlyphHost : IDisposable
         }
 
         // Multi-stroke leader detection (when engine session is inactive).
-        // Allow modifiers, but consume modifier steps on key-up to avoid breaking normal modifier+key combos.
+        // Consume modifier steps on key-down as well to avoid an artificial "wait for key-up" delay.
         if (_leaderSequence.Count > 1 && !_engine.IsSessionActive)
         {
             var expected = _leaderSequence[_leaderProgress];
             if (IsModifierVk(expected.VkCode))
             {
-                // Candidate modifier down (do not consume now; wait for key-up)
-                if (ModifierMatchesVk(e.VkCode, expected.VkCode))
+                if (TryConsumeLeaderStroke(stroke, activeProcess, out var beganSession))
                 {
-                    _modifierCandidates[e.VkCode] = false;
-                    Logger.Info($"Modifier candidate down (multi-stroke): 0x{e.VkCode:X}");
+                    e.Suppress = true;
+                    if (beganSession is not null)
+                    {
+                        System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
+                        {
+                            _overlay.Update(beganSession.Value.Overlay!);
+                            if (!_overlay.IsVisible)
+                            {
+                                _overlay.Show();
+                            }
+                        });
+                    }
+                    return;
                 }
             }
             else
@@ -133,7 +156,7 @@ public sealed class GlyphHost : IDisposable
                     if (beganSession is not null)
                     {
                         // Show overlay immediately.
-                        System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                        System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
                         {
                             _overlay.Update(beganSession.Value.Overlay!);
                             if (!_overlay.IsVisible)
@@ -156,7 +179,7 @@ public sealed class GlyphHost : IDisposable
 
         if (result.Overlay is not null)
         {
-            System.Windows.Application.Current.Dispatcher.Invoke(() =>
+            System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
             {
                 _overlay.Update(result.Overlay);
                 if (!_overlay.IsVisible)
@@ -167,7 +190,7 @@ public sealed class GlyphHost : IDisposable
         }
         else
         {
-            System.Windows.Application.Current.Dispatcher.Invoke(() =>
+            System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
             {
                 if (_overlay.IsVisible)
                 {
@@ -179,9 +202,32 @@ public sealed class GlyphHost : IDisposable
         if (result.Action is not null)
         {
             Logger.Info($"Action triggered: {result.Action.ActionId} (app={activeProcess ?? "?"})");
+                    if (string.Equals(result.Action.ActionId, "openGlyphGui", StringComparison.OrdinalIgnoreCase))
+                    {
+                        System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
+                        {
+                            var window = System.Windows.Application.Current.Windows.OfType<UI.SettingsWindow>().FirstOrDefault() ?? new UI.SettingsWindow();
+
+                            if (!window.IsVisible)
+                            {
+                                window.Show();
+                            }
+
+                            if (window.WindowState == WindowState.Minimized)
+                            {
+                                window.WindowState = WindowState.Normal;
+                            }
+
+                            window.Activate();
+                            window.Topmost = true;
+                            window.Topmost = false;
+                            window.Focus();
+                        });
+                        return;
+                    }
             if (string.Equals(result.Action.ActionId, "quitGlyph", StringComparison.OrdinalIgnoreCase))
             {
-                System.Windows.Application.Current.Dispatcher.Invoke(System.Windows.Application.Current.Shutdown);
+                System.Windows.Application.Current.Dispatcher.BeginInvoke(() => System.Windows.Application.Current.Shutdown());
                 return;
             }
 
@@ -217,7 +263,7 @@ public sealed class GlyphHost : IDisposable
 
                     if (began.Overlay is not null)
                     {
-                        System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                        System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
                         {
                             _overlay.Update(began.Overlay);
                             if (!_overlay.IsVisible)
@@ -250,7 +296,7 @@ public sealed class GlyphHost : IDisposable
                             // Important: do NOT suppress modifier events; suppressing can lead to a stuck modifier state.
                             if (beganSession is not null)
                             {
-                                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                                System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
                                 {
                                     _overlay.Update(beganSession.Value.Overlay!);
                                     if (!_overlay.IsVisible)
@@ -386,6 +432,12 @@ public sealed class GlyphHost : IDisposable
     private static bool StrokeMatchesLeader(KeyStroke stroke, Glyph.App.Config.LeaderKeyConfig l)
     {
         if (l.VkCode == 0) return false;
+        // For modifier leader steps, ignore modifier flags and match by VK (generic ↔ sided).
+        if (IsModifierVk(l.VkCode))
+        {
+            return ModifierMatchesVk(stroke.VkCode, l.VkCode);
+        }
+
         if (stroke.VkCode != l.VkCode) return false;
 
         // If the recorded leader step is a direction-specific modifier (Left/Right Ctrl/Shift/Alt),
@@ -417,8 +469,6 @@ public sealed class GlyphHost : IDisposable
         }
 
         var expected = _leaderSequence[_leaderProgress];
-        // Log for diagnostics
-        Logger.Info($"Leader check: progress={_leaderProgress}/{_leaderSequence.Count} got vk=0x{stroke.VkCode:X} ctrl={stroke.Ctrl} shift={stroke.Shift} alt={stroke.Alt} win={stroke.Win} expected=0x{expected.VkCode:X} ctrl={expected.Ctrl} shift={expected.Shift} alt={expected.Alt} win={expected.Win}");
 
         if (StrokeMatchesLeader(stroke, expected))
         {

@@ -55,8 +55,8 @@ Global binding (uses built-in action):
 
 ```yaml
 bindings:
-	- key: r
-		label: Run
+	- key: o
+		label: Open
 		children:
 			- key: t
 				label: Terminal
