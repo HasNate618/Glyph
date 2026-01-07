@@ -34,14 +34,38 @@ public sealed class SequenceEngine
         global.SetDescription("o", "Open");
         global.SetDescription("m", "Media");
         global.SetDescription("p", "Program");
+        global.SetDescription("t", "Text");
         global.SetDescription("w", "Window");
+        global.SetDescription("g", "Glyph");
 
         // Open layer
         global.Add("ob", new ActionRequest("openBrowser"), "Open Browser");
         global.Add("ot", new ActionRequest("openTerminal"), "Terminal");
         global.Add("of", new ActionRequest("openExplorer"), "File Explorer");
         global.Add("om", new ActionRequest("openTaskManager"), "Task Manager");
-        global.Add("og", new ActionRequest("openGlyphGui"), "Glyph Settings");
+        // 'og' used to open the Glyph GUI; moved to the dedicated 'g' layer.
+
+        // Glyph layer
+        global.Add("go", new ActionRequest("openGlyphGui"), "Open Glyph GUI");
+        global.Add("gq", new ActionRequest("quitGlyph"), "Quit Glyph");
+        // Theme sublayer under Glyph (gt)
+        global.Add("gtf", new ActionRequest("setThemeFluent"), "Fluent");
+        global.Add("gtc", new ActionRequest("setThemeCatppuccinMocha"), "Catppuccin");
+        global.Add("gtl", new ActionRequest("setThemeLight"), "Light");
+        global.Add("gtn", new ActionRequest("setThemeNord"), "Nord");
+        global.Add("gtd", new ActionRequest("setThemeDarcula"), "Darcula");
+        global.Add("gtr", new ActionRequest("setThemeRosePine"), "RosePine");
+
+        // Text layer
+        global.Add("tc", new ActionRequest { SendSpec = "Ctrl+C" }, "Copy");
+        global.Add("tv", new ActionRequest { SendSpec = "Ctrl+V" }, "Paste");
+        global.Add("tx", new ActionRequest { SendSpec = "Ctrl+X" }, "Cut");
+        global.Add("ta", new ActionRequest { SendSpec = "Ctrl+A" }, "Select All");
+        global.Add("tz", new ActionRequest { SendSpec = "Ctrl+Z" }, "Undo");
+        global.Add("ty", new ActionRequest { SendSpec = "Ctrl+Y" }, "Redo");
+        global.Add("tf", new ActionRequest { SendSpec = "Ctrl+F" }, "Find");
+        global.Add("tr", new ActionRequest { SendSpec = "Ctrl+H" }, "Replace");
+        global.Add("td", new ActionRequest { SendSpec = "Ctrl+D" }, "Duplicate Line");
 
         // Media layer
         global.Add("mp", new ActionRequest("mediaPlayPause"), "Play / Pause");
@@ -91,14 +115,38 @@ public sealed class SequenceEngine
         global.SetDescription("o", "Open");
         global.SetDescription("m", "Media");
         global.SetDescription("p", "Program");
+        global.SetDescription("t", "Text");
         global.SetDescription("w", "Window");
+        global.SetDescription("g", "Glyph");
 
         // Open layer
         global.Add("ob", new ActionRequest("openBrowser"), "Open Browser");
         global.Add("ot", new ActionRequest("openTerminal"), "Terminal");
         global.Add("of", new ActionRequest("openExplorer"), "File Explorer");
         global.Add("om", new ActionRequest("openTaskManager"), "Task Manager");
-        global.Add("og", new ActionRequest("openGlyphGui"), "Glyph Settings");
+        // 'og' used to open the Glyph GUI; moved to the dedicated 'g' layer.
+
+        // Glyph layer
+        global.Add("go", new ActionRequest("openGlyphGui"), "Open Glyph GUI");
+        global.Add("gq", new ActionRequest("quitGlyph"), "Quit Glyph");
+        // Theme sublayer under Glyph (gt)
+        global.Add("gtf", new ActionRequest("setThemeFluent"), "Fluent");
+        global.Add("gtc", new ActionRequest("setThemeCatppuccinMocha"), "Catppuccin");
+        global.Add("gtl", new ActionRequest("setThemeLight"), "Light");
+        global.Add("gtn", new ActionRequest("setThemeNord"), "Nord");
+        global.Add("gtd", new ActionRequest("setThemeDarcula"), "Darcula");
+        global.Add("gtr", new ActionRequest("setThemeRosePine"), "RosePine");
+
+        // Text layer
+        global.Add("tc", new ActionRequest { SendSpec = "Ctrl+C" }, "Copy");
+        global.Add("tv", new ActionRequest { SendSpec = "Ctrl+V" }, "Paste");
+        global.Add("tx", new ActionRequest { SendSpec = "Ctrl+X" }, "Cut");
+        global.Add("ta", new ActionRequest { SendSpec = "Ctrl+A" }, "Select All");
+        global.Add("tz", new ActionRequest { SendSpec = "Ctrl+Z" }, "Undo");
+        global.Add("ty", new ActionRequest { SendSpec = "Ctrl+Y" }, "Redo");
+        global.Add("tf", new ActionRequest { SendSpec = "Ctrl+F" }, "Find");
+        global.Add("tr", new ActionRequest { SendSpec = "Ctrl+H" }, "Replace");
+        global.Add("td", new ActionRequest { SendSpec = "Ctrl+D" }, "Duplicate Line");
 
         // Media layer
         global.Add("mp", new ActionRequest("mediaPlayPause"), "Play / Pause");

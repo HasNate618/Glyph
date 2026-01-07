@@ -4,6 +4,33 @@ Glyph is a Windows leader-key, discoverable multi-stroke keymap overlay.
 
 This repo contains the app, a YAML-configurable keymap loader, and a small set of built-in actions. The short guide below covers configuration and examples.
 
+## What is Glyph — and why use it?
+
+Glyph is a tiny, focused productivity layer for power users who want to work faster without leaving the keyboard.
+
+- What: Glyph is a discoverable, leader-key driven overlay that lets you trigger actions, launch apps, send complex key chords, and type snippets using short, memorable sequences.
+- Why: It reduces context switching and menu hunting — trigger commonly used workflows (open project terminals, control media, navigate the browser, trigger IDE shortcuts) with a two‑keystroke flow.
+
+Benefits at a glance:
+
+- Speed: perform repetitive tasks with minimal keystrokes.
+- Discoverability: overlay shows possible next keys so sequences are learnable and self-documenting.
+- Customizable: YAML keymaps let you tailor bindings per-app or share groups across browsers and editors.
+- Safe automation: `exec`/`send`/`type` provide flexible actions while staying local and auditable in YAML.
+
+Who it's for:
+
+- Developers who want fast editor/terminal navigation and project commands.
+- Power users who prefer keyboard-driven workflows.
+- Anyone who wants a lightweight, extensible hotkey layer without heavyweight global macro tools.
+
+Key use-cases:
+
+- Quick launcher: fuzzy-launch projects, files, or applications.
+- App-specific helpers: per-app layers (e.g., VS Code shortcuts under `p`) so the same leader can do different things per app.
+- Clipboard & snippets: paste common text templates, addresses, or code snippets with a leader binding.
+- Window/layout control: tile, move, and restore window layouts across monitors.
+
 ## Quick start
 - Build: `dotnet build Glyph.sln`
 - Run: `dotnet run --project src/Glyph.App/Glyph.App.csproj` (or use `run.bat` for a detached run)
@@ -107,3 +134,20 @@ The loader supports `execArgs` and `execCwd` for more complex launches. Glyph la
 ## Where defaults live
 
 - Default keymap template: `src/Glyph.App/Config/KeymapYamlLoader.cs`
+
+
+## Selling points / Elevator pitch
+
+Glyph gives teams and individuals an instant productivity boost: a tiny, discoverable keyboard layer that replaces mouse-driven menus with short, memorable sequences. It's simple to configure (YAML), respects application context, and is designed for low-latency, reliable global input on Windows.
+
+Install it, add a few app-specific bindings, and you’ll find repeated tasks drop from 6+ keystrokes and mouse moves to 1–2 quick taps.
+
+## Contributing / Roadmap
+
+Contributions and feature ideas are welcome. See `docs/possibilities.md` for a long list of ideas and potential next steps (command palette, clipboard history, snippets, macros, plugin API).
+
+If you want to add a feature or help polish UX, open an issue or create a PR against this repo.
+
+---
+
+Updated README: `README.md`

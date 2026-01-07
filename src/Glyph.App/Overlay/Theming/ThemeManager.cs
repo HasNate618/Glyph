@@ -28,7 +28,7 @@ public static class ThemeManager
         "Glyph",
         "theme.xaml");
 
-    private static FileSystemWatcher? _watcher;
+    private static readonly List<FileSystemWatcher> _watchers = new();
     private static ResourceDictionary? _userDictionary;
     private static ResourceDictionary? _baseDictionary;
 
@@ -40,6 +40,8 @@ public static class ThemeManager
 
         TryLoadUserTheme(path);
         StartWatcher(path);
+        // Also watch the base theme selector so runtime changes (via actions) apply immediately.
+        StartWatcher(DefaultBaseThemeSelectorPath);
     }
 
     public static void Reload()
@@ -135,17 +137,32 @@ public static class ThemeManager
 
             Directory.CreateDirectory(dir);
 
-            _watcher?.Dispose();
-            _watcher = new FileSystemWatcher(dir, file)
+            var watcher = new FileSystemWatcher(dir, file)
             {
                 NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName | NotifyFilters.CreationTime,
                 EnableRaisingEvents = true
             };
 
-            _watcher.Changed += (_, _) => DebouncedReload(path);
-            _watcher.Created += (_, _) => DebouncedReload(path);
-            _watcher.Renamed += (_, _) => DebouncedReload(path);
-            _watcher.Deleted += (_, _) => DebouncedReload(path);
+            // If we're watching the base selector file, trigger base theme application;
+            // otherwise treat it as a user theme change.
+            var selectorPath = Path.GetFullPath(DefaultBaseThemeSelectorPath);
+            var targetPath = Path.GetFullPath(path);
+            if (string.Equals(selectorPath, targetPath, StringComparison.OrdinalIgnoreCase))
+            {
+                watcher.Changed += (_, _) => DebouncedApplyBaseThemeSelector(path);
+                watcher.Created += (_, _) => DebouncedApplyBaseThemeSelector(path);
+                watcher.Renamed += (_, _) => DebouncedApplyBaseThemeSelector(path);
+                watcher.Deleted += (_, _) => DebouncedApplyBaseThemeSelector(path);
+            }
+            else
+            {
+                watcher.Changed += (_, _) => DebouncedReload(path);
+                watcher.Created += (_, _) => DebouncedReload(path);
+                watcher.Renamed += (_, _) => DebouncedReload(path);
+                watcher.Deleted += (_, _) => DebouncedReload(path);
+            }
+
+            _watchers.Add(watcher);
 
             Logger.Info($"Theme watcher active: {path}");
         }
@@ -171,6 +188,22 @@ public static class ThemeManager
         System.Windows.Application.Current?.Dispatcher?.BeginInvoke(() =>
         {
             TryLoadUserTheme(path);
+        });
+    }
+
+    private static void DebouncedApplyBaseThemeSelector(string path)
+    {
+        var now = DateTime.UtcNow;
+        if ((now - _lastReloadAttemptUtc).TotalMilliseconds < 150)
+        {
+            return;
+        }
+
+        _lastReloadAttemptUtc = now;
+
+        System.Windows.Application.Current?.Dispatcher?.BeginInvoke(() =>
+        {
+            ApplyBaseThemeFromSelector();
         });
     }
 

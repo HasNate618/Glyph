@@ -37,6 +37,13 @@ public sealed class ActionRuntime
         "typeNvimDot",
         "openGlyphGui",
         "quitGlyph",
+        // Theme actions
+        "setThemeFluent",
+        "setThemeCatppuccinMocha",
+        "setThemeLight",
+        "setThemeNord",
+        "setThemeDarcula",
+        "setThemeRosePine",
     };
 
     public Task ExecuteAsync(ActionRequest request, CancellationToken cancellationToken)
@@ -71,6 +78,13 @@ public sealed class ActionRuntime
                 "windowTopmost" => WindowManagerActionAsync(WindowAction.ToggleTopmost, cancellationToken),
 
                 "typeNvimDot" => TypeTextAsync("nvim .", cancellationToken),
+                // Theme setters: write the base selector file so ThemeManager watcher applies it.
+                "setThemeFluent" => SetBaseThemeAsync("Fluent", cancellationToken),
+                "setThemeCatppuccinMocha" => SetBaseThemeAsync("CatppuccinMocha", cancellationToken),
+                "setThemeLight" => SetBaseThemeAsync("Light", cancellationToken),
+                "setThemeNord" => SetBaseThemeAsync("Nord", cancellationToken),
+                "setThemeDarcula" => SetBaseThemeAsync("Darcula", cancellationToken),
+                "setThemeRosePine" => SetBaseThemeAsync("RosePine", cancellationToken),
                 _ => Task.CompletedTask,
             };
         }
@@ -372,6 +386,30 @@ public sealed class ActionRuntime
             }
         }
         
+        return Task.CompletedTask;
+    }
+
+    private static Task SetBaseThemeAsync(string baseName, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        try
+        {
+            var path = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                "Glyph",
+                "theme.base");
+
+            var dir = Path.GetDirectoryName(path);
+            if (!string.IsNullOrWhiteSpace(dir)) Directory.CreateDirectory(dir);
+
+            File.WriteAllText(path, baseName);
+            Logger.Info($"Set base theme to: {baseName} (wrote {path})");
+        }
+        catch (Exception ex)
+        {
+            Logger.Error($"Failed to set base theme to {baseName}", ex);
+        }
+
         return Task.CompletedTask;
     }
 
