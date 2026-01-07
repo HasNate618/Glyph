@@ -74,7 +74,20 @@ public sealed class GlyphHost : IDisposable
 
     private void OnGlobalKeyDown(object? sender, KeyboardHookEventArgs e)
     {
+        ReconcileModifierCandidates();
         _currentlyDown.Add(e.VkCode);
+
+        // Special-case: if the leader is a single modifier key (Alt/Ctrl/Shift/Win),
+        // treat it as a "tap to open leader" gesture.
+        // We suppress the modifier key DOWN event so Windows never sees the modifier held,
+        // preventing stuck-modifier behavior (e.g., Alt+<key> everywhere) if we later
+        // consume the corresponding key-up.
+        if (_leaderSequence.Count == 1 && IsModifierVk(_leaderSequence[0].VkCode) && ModifierMatchesVk(e.VkCode, _leaderSequence[0].VkCode))
+        {
+            _modifierCandidates[e.VkCode] = false;
+            e.Suppress = true;
+            return;
+        }
         var stroke = KeyStroke.FromVkCode(
             e.VkCode,
             ctrl: NativeMethods.IsKeyDown(VirtualKey.VK_CONTROL),
@@ -106,7 +119,7 @@ public sealed class GlyphHost : IDisposable
             if (IsModifierVk(expected.VkCode))
             {
                 // Candidate modifier down (do not consume now; wait for key-up)
-                if (e.VkCode == expected.VkCode)
+                if (ModifierMatchesVk(e.VkCode, expected.VkCode))
                 {
                     _modifierCandidates[e.VkCode] = false;
                     Logger.Info($"Modifier candidate down (multi-stroke): 0x{e.VkCode:X}");
@@ -134,59 +147,45 @@ public sealed class GlyphHost : IDisposable
             }
         }
 
-        // Single-step leader: we rely on engine unless the single leader is a modifier,
-        // in which case we avoid consuming on keydown (we'll handle on key-up).
-        if (_leaderSequence.Count == 1 && IsModifierVk(_leaderSequence[0].VkCode))
+        var result = _engine.Handle(stroke, DateTimeOffset.UtcNow, activeProcess);
+
+        if (result.Consumed)
         {
-            // For single-step modifier leaders, only match on key-up to avoid consuming modifier-down.
-            // Add to modifier candidates for key-up handling.
-            if (IsModifierVk(e.VkCode) && e.VkCode == _leaderSequence[0].VkCode)
+            e.Suppress = true;
+        }
+
+        if (result.Overlay is not null)
+        {
+            System.Windows.Application.Current.Dispatcher.Invoke(() =>
             {
-                _modifierCandidates[e.VkCode] = false; // mark for key-up check
-            }
+                _overlay.Update(result.Overlay);
+                if (!_overlay.IsVisible)
+                {
+                    _overlay.Show();
+                }
+            });
         }
         else
         {
-            var result = _engine.Handle(stroke, DateTimeOffset.UtcNow, activeProcess);
-
-            if (result.Consumed)
+            System.Windows.Application.Current.Dispatcher.Invoke(() =>
             {
-                e.Suppress = true;
-            }
-
-            if (result.Overlay is not null)
-            {
-                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                if (_overlay.IsVisible)
                 {
-                    _overlay.Update(result.Overlay);
-                    if (!_overlay.IsVisible)
-                    {
-                        _overlay.Show();
-                    }
-                });
-            }
-            else
-            {
-                System.Windows.Application.Current.Dispatcher.Invoke(() =>
-                {
-                    if (_overlay.IsVisible)
-                    {
-                        _overlay.Hide();
-                    }
-                });
-            }
-
-            if (result.Action is not null)
-            {
-                Logger.Info($"Action triggered: {result.Action.ActionId} (app={activeProcess ?? "?"})");
-                if (string.Equals(result.Action.ActionId, "quitGlyph", StringComparison.OrdinalIgnoreCase))
-                {
-                    System.Windows.Application.Current.Dispatcher.Invoke(System.Windows.Application.Current.Shutdown);
-                    return;
+                    _overlay.Hide();
                 }
+            });
+        }
 
-                _ = _actionRuntime.ExecuteAsync(result.Action, CancellationToken.None);
+        if (result.Action is not null)
+        {
+            Logger.Info($"Action triggered: {result.Action.ActionId} (app={activeProcess ?? "?"})");
+            if (string.Equals(result.Action.ActionId, "quitGlyph", StringComparison.OrdinalIgnoreCase))
+            {
+                System.Windows.Application.Current.Dispatcher.Invoke(System.Windows.Application.Current.Shutdown);
+                return;
             }
+
+            _ = _actionRuntime.ExecuteAsync(result.Action, CancellationToken.None);
         }
     }
 
@@ -203,6 +202,35 @@ public sealed class GlyphHost : IDisposable
             win: NativeMethods.IsKeyDown(VirtualKey.VK_LWIN) || NativeMethods.IsKeyDown(VirtualKey.VK_RWIN));
 
         var activeProcess = ForegroundApp.TryGetProcessName();
+
+        // Single-stroke modifier leader: begin session on key-up, suppressing the key-up.
+        // Because we also suppress the modifier key-down, Windows never sees the modifier held.
+        if (_leaderSequence.Count == 1 && IsModifierVk(_leaderSequence[0].VkCode) && ModifierMatchesVk(e.VkCode, _leaderSequence[0].VkCode))
+        {
+            if (_modifierCandidates.TryGetValue(e.VkCode, out var abortedSingle))
+            {
+                _modifierCandidates.Remove(e.VkCode);
+                if (!abortedSingle && !_engine.IsSessionActive)
+                {
+                    var began = _engine.BeginSession(DateTimeOffset.UtcNow, activeProcess);
+                    e.Suppress = true;
+
+                    if (began.Overlay is not null)
+                    {
+                        System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                        {
+                            _overlay.Update(began.Overlay);
+                            if (!_overlay.IsVisible)
+                            {
+                                _overlay.Show();
+                            }
+                        });
+                    }
+                }
+            }
+
+            return;
+        }
 
         // If a modifier candidate exists for this vk (single-stroke modifier leader), match it on key-up.
         if (_modifierCandidates.TryGetValue(e.VkCode, out var aborted))
@@ -236,48 +264,7 @@ public sealed class GlyphHost : IDisposable
                     }
                 }
 
-                // Single-stroke modifier leader: run engine handle on key-up.
-                Logger.Info($"Modifier candidate key-up (single-stroke): 0x{e.VkCode:X}, attempting engine handle");
-                var result = _engine.Handle(stroke, DateTimeOffset.UtcNow, activeProcess);
-
-                if (result.Consumed)
-                {
-                    e.Suppress = true;
-                }
-
-                if (result.Overlay is not null)
-                {
-                    System.Windows.Application.Current.Dispatcher.Invoke(() =>
-                    {
-                        _overlay.Update(result.Overlay);
-                        if (!_overlay.IsVisible)
-                        {
-                            _overlay.Show();
-                        }
-                    });
-                }
-                else
-                {
-                    System.Windows.Application.Current.Dispatcher.Invoke(() =>
-                    {
-                        if (_overlay.IsVisible)
-                        {
-                            _overlay.Hide();
-                        }
-                    });
-                }
-
-                if (result.Action is not null)
-                {
-                    Logger.Info($"Action triggered: {result.Action.ActionId} (app={activeProcess ?? "?"})");
-                    if (string.Equals(result.Action.ActionId, "quitGlyph", StringComparison.OrdinalIgnoreCase))
-                    {
-                        System.Windows.Application.Current.Dispatcher.Invoke(System.Windows.Application.Current.Shutdown);
-                        return;
-                    }
-
-                    _ = _actionRuntime.ExecuteAsync(result.Action, CancellationToken.None);
-                }
+                // (Single-stroke modifier leaders are handled above.)
             }
             else
             {
@@ -288,7 +275,52 @@ public sealed class GlyphHost : IDisposable
 
     private static bool IsModifierVk(int vk)
     {
-        return vk == 0x10 || vk == 0x11 || vk == 0x12 || (vk >= 0xA0 && vk <= 0xA5);
+        // Generic: VK_SHIFT=0x10, VK_CONTROL=0x11, VK_MENU(Alt)=0x12
+        // Sided: VK_LSHIFT=0xA0, VK_RSHIFT=0xA1, VK_LCONTROL=0xA2, VK_RCONTROL=0xA3, VK_LMENU=0xA4, VK_RMENU=0xA5
+        // Windows: VK_LWIN=0x5B, VK_RWIN=0x5C
+        return vk == 0x10 || vk == 0x11 || vk == 0x12 || vk == 0x5B || vk == 0x5C || (vk >= 0xA0 && vk <= 0xA5);
+    }
+
+    private static bool ModifierMatchesVk(int actualVk, int expectedVk)
+    {
+        if (actualVk == expectedVk) return true;
+
+        // Allow generic ↔ sided matches.
+        return expectedVk switch
+        {
+            // Shift
+            0x10 => actualVk == 0xA0 || actualVk == 0xA1,
+            0xA0 or 0xA1 => actualVk == 0x10,
+
+            // Ctrl
+            0x11 => actualVk == 0xA2 || actualVk == 0xA3,
+            0xA2 or 0xA3 => actualVk == 0x11,
+
+            // Alt
+            0x12 => actualVk == 0xA4 || actualVk == 0xA5,
+            0xA4 or 0xA5 => actualVk == 0x12,
+
+            // Win
+            0x5B => actualVk == 0x5C,
+            0x5C => actualVk == 0x5B,
+
+            _ => false,
+        };
+    }
+
+    private void ReconcileModifierCandidates()
+    {
+        if (_modifierCandidates.Count == 0) return;
+
+        // If we missed a key-up event, don't leave a stale candidate hanging around.
+        // This is especially important for modifier leaders.
+        foreach (var vk in _modifierCandidates.Keys.ToList())
+        {
+            if (!NativeMethods.IsKeyDown(vk))
+            {
+                _modifierCandidates.Remove(vk);
+            }
+        }
     }
 
     public void UpdateLeaderSequence(IReadOnlyList<Glyph.App.Config.LeaderKeyConfig>? sequence)
