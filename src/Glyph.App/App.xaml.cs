@@ -1,5 +1,6 @@
 ﻿using System.Windows;
 
+using Glyph.App.Overlay.Theming;
 using Glyph.Core.Logging;
 
 namespace Glyph.App;
@@ -15,6 +16,10 @@ public partial class App : Application
         ShutdownMode = ShutdownMode.OnExplicitShutdown;
 
         Logger.Info("Glyph.App starting (background mode)");
+
+        // Load user theme overrides (if present) and start hot-reload watcher.
+        ThemeManager.Initialize();
+
         _host = new GlyphHost();
         _host.Start();
     }

@@ -116,17 +116,22 @@ public sealed class ActionRuntime
                     Logger.Info($"Clipboard set for paste: {(setOk ? "ok" : "failed")}");
                     // Removed delay to send input instantly.
 
-                    var pasteOk1 = InputSender.SendShiftInsert();
-                    Logger.Info($"Paste keystroke sent (Shift+Insert): {(pasteOk1 ? "ok" : "failed")}");
-                    // Removed delay to send input instantly.
+                    // IMPORTANT: only send one paste gesture, otherwise text can be pasted multiple times.
+                    // Prefer Ctrl+Shift+V (Windows Terminal default), fall back if SendInput fails.
+                    var pasteOk = InputSender.SendCtrlShiftV();
+                    Logger.Info($"Paste keystroke sent (Ctrl+Shift+V): {(pasteOk ? "ok" : "failed")}");
 
-                    var pasteOk2 = InputSender.SendCtrlShiftV();
-                    Logger.Info($"Paste keystroke sent (Ctrl+Shift+V): {(pasteOk2 ? "ok" : "failed")}");
-                    // Removed delay to send input instantly.
+                    if (!pasteOk)
+                    {
+                        pasteOk = InputSender.SendCtrlV();
+                        Logger.Info($"Paste keystroke sent (Ctrl+V): {(pasteOk ? "ok" : "failed")}");
+                    }
 
-                    var pasteOk3 = InputSender.SendCtrlV();
-                    Logger.Info($"Paste keystroke sent (Ctrl+V): {(pasteOk3 ? "ok" : "failed")}");
-                    // Removed delay to send input instantly.
+                    if (!pasteOk)
+                    {
+                        pasteOk = InputSender.SendShiftInsert();
+                        Logger.Info($"Paste keystroke sent (Shift+Insert): {(pasteOk ? "ok" : "failed")}");
+                    }
 
                     var enterOk = InputSender.SendEnter();
                     Logger.Info($"Enter sent: {(enterOk ? "ok" : "failed")}");

@@ -10,7 +10,19 @@ Glyph is a Windows leader-key, layered key sequence engine with a discoverable o
 `dotnet build Glyph.sln`
 
 ## Run
-`dotnet run --project src/Glyph.App/Glyph.App.csproj`
+Because Glyph runs as a background app (global hook + overlay), `dotnet run` will keep running until you quit Glyph.
+
+- Detached run (recommended): `run.bat`
+- Attached run (foreground): `dotnet run --project src/Glyph.App/Glyph.App.csproj`
+
+## Themes
+Glyph supports built-in themes and user overrides.
+
+- Select a built-in base theme by writing one of these into `%APPDATA%\Glyph\theme.base`:
+	- `Default`
+	- `FluentWin11`
+	- `CatppuccinMocha`
+- Optionally override any resources by creating `%APPDATA%\Glyph\theme.xaml` (a `ResourceDictionary`).
 
 ## Config (coming next)
 Sample config files live in `config/` and will be wired into runtime as the next step.

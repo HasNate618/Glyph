@@ -96,6 +96,14 @@ public static class NativeMethods
     {
         [FieldOffset(0)]
         public KEYBDINPUT ki;
+
+        // Include the other union variants to ensure the union is sized correctly.
+        // If the union is too small, SendInput can fail with ERROR_INVALID_PARAMETER (87).
+        [FieldOffset(0)]
+        public MOUSEINPUT mi;
+
+        [FieldOffset(0)]
+        public HARDWAREINPUT hi;
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -106,6 +114,25 @@ public static class NativeMethods
         public uint dwFlags;
         public uint time;
         public IntPtr dwExtraInfo;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct MOUSEINPUT
+    {
+        public int dx;
+        public int dy;
+        public uint mouseData;
+        public uint dwFlags;
+        public uint time;
+        public IntPtr dwExtraInfo;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct HARDWAREINPUT
+    {
+        public uint uMsg;
+        public ushort wParamL;
+        public ushort wParamH;
     }
 
     [DllImport("user32.dll", SetLastError = true)]

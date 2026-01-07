@@ -1,6 +1,8 @@
 using System.Windows;
+using System.Windows.Interop;
 
 using Glyph.Core.Engine;
+using Glyph.Win32.Windowing;
 
 namespace Glyph.App;
 
@@ -23,6 +25,23 @@ public partial class OverlayWindow : Window
         WindowStartupLocation = WindowStartupLocation.Manual;
         Loaded += (_, _) => PositionBottomRight();
         SizeChanged += (_, _) => PositionBottomRight();
+
+        SourceInitialized += (_, _) =>
+        {
+            try
+            {
+                var hwnd = new WindowInteropHelper(this).Handle;
+                if (hwnd != IntPtr.Zero)
+                {
+                    WindowEffects.ApplyBestEffortBackdrop(hwnd);
+                    WindowEffects.TrySetRoundedCorners(hwnd);
+                }
+            }
+            catch
+            {
+                // Best-effort visuals only.
+            }
+        };
     }
 
     private void PositionBottomRight()

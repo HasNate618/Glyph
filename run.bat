@@ -29,6 +29,16 @@ echo   Press Esc to cancel
 echo.
 
 cd /d "%~dp0.."
-dotnet run --project src/Glyph.App/Glyph.App.csproj
+dotnet build Glyph.sln -c Debug
+if errorlevel 1 (
+    echo.
+    echo Build failed.
+    pause
+    exit /b 1
+)
+
+echo.
+echo Launching Glyph detached (this window can be closed)...
+start "Glyph" "src\Glyph.App\bin\Debug\net8.0-windows\Glyph.App.exe"
 
 pause

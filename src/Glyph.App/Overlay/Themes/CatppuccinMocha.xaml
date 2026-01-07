@@ -1,0 +1,18 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <!-- Catppuccin Mocha-inspired theme (best-effort) -->
+
+  <SolidColorBrush x:Key="Glyph.Overlay.BackgroundBrush" Color="#BF1E1E2E" />
+  <SolidColorBrush x:Key="Glyph.Overlay.SequenceForeground" Color="#FFCDD6F4" />
+  <SolidColorBrush x:Key="Glyph.Overlay.OptionForeground" Color="#FFEBA0AC" />
+
+  <SolidColorBrush x:Key="Glyph.Overlay.KeycapBackground" Color="#FF313244" />
+  <SolidColorBrush x:Key="Glyph.Overlay.KeycapForeground" Color="#FFCDD6F4" />
+
+  <FontFamily x:Key="Glyph.Overlay.FontFamily">Segoe UI Variable, Segoe UI, Arial</FontFamily>
+
+  <CornerRadius x:Key="Glyph.Overlay.PanelCornerRadius">12</CornerRadius>
+  <CornerRadius x:Key="Glyph.Overlay.KeycapCornerRadius">8</CornerRadius>
+
+</ResourceDictionary>
