@@ -1,0 +1,17 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <!-- Light theme -->
+  <SolidColorBrush x:Key="Glyph.Overlay.BackgroundBrush" Color="#E6FFFFFF" /> <!-- slightly translucent white -->
+  <SolidColorBrush x:Key="Glyph.Overlay.SequenceForeground" Color="#FF111827" />
+  <SolidColorBrush x:Key="Glyph.Overlay.OptionForeground" Color="#FF374151" />
+
+  <SolidColorBrush x:Key="Glyph.Overlay.KeycapBackground" Color="#FFF3F4F6" />
+  <SolidColorBrush x:Key="Glyph.Overlay.KeycapForeground" Color="#FF111827" />
+
+  <FontFamily x:Key="Glyph.Overlay.FontFamily">Segoe UI Variable, Segoe UI, Arial</FontFamily>
+
+  <CornerRadius x:Key="Glyph.Overlay.PanelCornerRadius">10</CornerRadius>
+  <CornerRadius x:Key="Glyph.Overlay.KeycapCornerRadius">6</CornerRadius>
+
+</ResourceDictionary>

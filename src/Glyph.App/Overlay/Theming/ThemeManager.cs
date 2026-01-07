@@ -11,6 +11,10 @@ public static class ThemeManager
     // Select a built-in base theme by writing one of:
     //   Fluent
     //   CatppuccinMocha
+    //   Light
+    //   Nord
+    //   Darcula
+    //   RosePine
     // to: %APPDATA%\Glyph\theme.base
     public static readonly string DefaultBaseThemeSelectorPath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
@@ -77,7 +81,11 @@ public static class ThemeManager
 
             // Clamp to known built-ins.
             if (!string.Equals(baseName, "Fluent", StringComparison.OrdinalIgnoreCase) &&
-                !string.Equals(baseName, "CatppuccinMocha", StringComparison.OrdinalIgnoreCase))
+                !string.Equals(baseName, "CatppuccinMocha", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(baseName, "Light", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(baseName, "Nord", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(baseName, "Darcula", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(baseName, "RosePine", StringComparison.OrdinalIgnoreCase))
             {
                 Logger.Info($"Unknown base theme '{baseName}', falling back to Fluent");
                 baseName = "Fluent";

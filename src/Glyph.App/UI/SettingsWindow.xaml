@@ -37,6 +37,10 @@
                     <ComboBox x:Name="ThemeCombo" Width="120">
                         <ComboBoxItem Tag="Fluent">Fluent</ComboBoxItem>
                         <ComboBoxItem Tag="CatppuccinMocha">Catppuccin</ComboBoxItem>
+                        <ComboBoxItem Tag="Light">Light</ComboBoxItem>
+                        <ComboBoxItem Tag="Nord">Nord</ComboBoxItem>
+                        <ComboBoxItem Tag="Darcula">Darcula</ComboBoxItem>
+                        <ComboBoxItem Tag="RosePine">RosePine</ComboBoxItem>
                     </ComboBox>
                 </StackPanel>
             </GroupBox>
