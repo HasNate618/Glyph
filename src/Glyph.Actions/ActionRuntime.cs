@@ -120,7 +120,6 @@ public sealed class ActionRuntime
             "windowClose" => WindowManagerActionAsync(WindowAction.Close, cancellationToken),
             "windowTopmost" => WindowManagerActionAsync(WindowAction.ToggleTopmost, cancellationToken),
 
-            "typeNvimDot" => TypeTextAsync("nvim .", cancellationToken),
             // Theme setters: write the base selector file so ThemeManager watcher applies it.
             "setThemeFluent" => SetBaseThemeAsync("Fluent", cancellationToken),
             "setThemeCatppuccinMocha" => SetBaseThemeAsync("CatppuccinMocha", cancellationToken),

@@ -7,9 +7,6 @@
   A Windows-first, highly configurable leader-key driven command overlay
 </p>
 
----
-
-## What it is
 
 Glyph is a small productivity layer for Windows: press the <strong>glyph key</strong> to open an overlay, then type short sequences to trigger actions.
 
