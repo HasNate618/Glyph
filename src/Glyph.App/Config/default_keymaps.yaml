@@ -68,31 +68,62 @@ bindings:
     children:
       - key: c
         label: Copy
-        send: Ctrl+C
+        steps:
+          - send: Ctrl+C
       - key: v
         label: Paste
-        send: Ctrl+V
+        steps:
+          - send: Ctrl+V
       - key: x
         label: Cut
-        send: Ctrl+X
+        steps:
+          - send: Ctrl+X
       - key: a
         label: Select All
-        send: Ctrl+A
-      - key: z
+        steps:
+          - send: Ctrl+A
+      - key: u
         label: Undo
-        send: Ctrl+Z
-      - key: y
-        label: Redo
-        send: Ctrl+Y
-      - key: f
-        label: Find
-        send: Ctrl+F
+        steps:
+          - send: Ctrl+Z
       - key: r
         label: Replace
-        send: Ctrl+H
+        steps:
+          - send: Ctrl+H
+      - key: f
+        label: Find
+        steps:
+          - send: Ctrl+F
+
+      # Vim-style operations: use multi-stroke keys for safe, program-friendly edits
+      - key: yy
+        label: Yank Line
+        steps:
+          - send: Home
+          - send: Shift+End
+          - send: Shift+End
+          - send: Ctrl+C
+
+      - key: dd
+        label: Delete Line
+        steps:
+          - send: Home
+          - send: Shift+End
+          - send: Back
       - key: d
         label: Duplicate Line
-        send: Ctrl+D
+        steps:
+          - send: Home
+          - send: Shift+End
+          - send: Ctrl+C
+          - send: End
+          - send: Enter
+          - send: Ctrl+V
+
+      - key: p
+        label: Paste (after yank)
+        steps:
+          - send: Ctrl+V
 
   - key: ","
     label: Glyph
@@ -153,7 +184,7 @@ bindings:
       - key: b
         label: Branches
         type: git branch
-
+        
 apps:
   - process: WindowsTerminal
     bindings:

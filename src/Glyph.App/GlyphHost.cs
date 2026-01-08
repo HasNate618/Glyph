@@ -17,6 +17,28 @@ public sealed class GlyphHost : IDisposable
     private readonly ActionRuntime _actionRuntime;
     private readonly OverlayWindow _overlay;
 
+    private readonly object _engineSync = new();
+    private CancellationTokenSource? _pendingActionCts;
+
+    private static void FireAndForget(Task task)
+    {
+        task.ContinueWith(
+            t =>
+            {
+                if (t.Exception is not null)
+                {
+                    Logger.Error("Fire-and-forget task failed", t.Exception);
+                }
+                else
+                {
+                    Logger.Error("Fire-and-forget task failed", new Exception("Task faulted without Exception"));
+                }
+            },
+            CancellationToken.None,
+            TaskContinuationOptions.OnlyOnFaulted,
+            TaskScheduler.Default);
+    }
+
     private List<Glyph.App.Config.LeaderKeyConfig> _leaderSequence;
     private int _leaderProgress;
     private readonly HashSet<int> _currentlyDown = new();
@@ -74,6 +96,8 @@ public sealed class GlyphHost : IDisposable
 
     private void OnGlobalKeyDown(object? sender, KeyboardHookEventArgs e)
     {
+        CancelPendingAction();
+
         ReconcileModifierCandidates();
         _currentlyDown.Add(e.VkCode);
 
@@ -92,7 +116,11 @@ public sealed class GlyphHost : IDisposable
         {
             if (!_engine.IsSessionActive)
             {
-                var began = _engine.BeginSession(DateTimeOffset.UtcNow, activeProcess);
+                EngineResult began;
+                lock (_engineSync)
+                {
+                    began = _engine.BeginSession(DateTimeOffset.UtcNow, activeProcess);
+                }
                 if (began.Overlay is not null)
                 {
                     System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
@@ -170,7 +198,11 @@ public sealed class GlyphHost : IDisposable
             }
         }
 
-        var result = _engine.Handle(stroke, DateTimeOffset.UtcNow, activeProcess);
+        EngineResult result;
+        lock (_engineSync)
+        {
+            result = _engine.Handle(stroke, DateTimeOffset.UtcNow, activeProcess);
+        }
 
         if (result.Consumed)
         {
@@ -190,17 +222,25 @@ public sealed class GlyphHost : IDisposable
         }
         else
         {
-            System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
+            FireAndForget(System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
             {
                 if (_overlay.IsVisible)
                 {
                     _overlay.Hide();
                 }
-            });
+            }).Task);
         }
 
         if (result.Action is not null)
         {
+            // If the engine reports an ambiguous completion, delay execution briefly
+            // so the user can type the next key (e.g. `d` vs `dd`).
+            if (result.ExecuteAfter is not null)
+            {
+                ScheduleDelayedAction(result.Action, result.ExecuteAfter.Value, activeProcess);
+                return;
+            }
+
             Logger.Info($"Action triggered: {result.Action.ActionId} (app={activeProcess ?? "?"})");
                     if (string.Equals(result.Action.ActionId, "openGlyphGui", StringComparison.OrdinalIgnoreCase))
                     {
@@ -239,8 +279,81 @@ public sealed class GlyphHost : IDisposable
                 return;
             }
 
-            _ = _actionRuntime.ExecuteAsync(result.Action, CancellationToken.None);
+                FireAndForget(_actionRuntime.ExecuteAsync(result.Action, CancellationToken.None));
         }
+    }
+
+    private void CancelPendingAction()
+    {
+        var cts = _pendingActionCts;
+        if (cts is null) return;
+
+        _pendingActionCts = null;
+        try
+        {
+            cts.Cancel();
+        }
+        catch
+        {
+            // best-effort
+        }
+        finally
+        {
+            cts.Dispose();
+        }
+    }
+
+    private void ScheduleDelayedAction(ActionRequest action, TimeSpan delay, string? activeProcess)
+    {
+        CancelPendingAction();
+
+        var cts = new CancellationTokenSource();
+        _pendingActionCts = cts;
+
+        FireAndForget(Task.Run(async () =>
+        {
+            try
+            {
+                await Task.Delay(delay, cts.Token);
+            }
+            catch (TaskCanceledException)
+            {
+                return;
+            }
+
+            // Only execute if we are still the pending action.
+            if (!ReferenceEquals(_pendingActionCts, cts)) return;
+            _pendingActionCts = null;
+            cts.Dispose();
+
+            // End the engine session before executing so subsequent input starts cleanly.
+            lock (_engineSync)
+            {
+                _engine.EndSession();
+            }
+
+            FireAndForget(System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            {
+                if (_overlay.IsVisible)
+                {
+                    _overlay.Hide();
+                }
+            }).Task);
+
+            Logger.Info($"Delayed action triggered: {action.ActionId} (app={activeProcess ?? "?"})");
+
+            if (string.Equals(action.ActionId, "reloadKeymaps", StringComparison.OrdinalIgnoreCase))
+            {
+                lock (_engineSync)
+                {
+                    Glyph.App.Config.KeymapYamlLoader.ApplyToEngine(_engine);
+                }
+                Logger.Info("Keymaps reloaded from YAML");
+                return;
+            }
+
+            FireAndForget(_actionRuntime.ExecuteAsync(action, CancellationToken.None));
+        }));
     }
 
     private void OnGlobalKeyUp(object? sender, KeyboardHookEventArgs e)
@@ -382,17 +495,28 @@ public sealed class GlyphHost : IDisposable
         _leaderSequence = NormalizeLeader(sequence);
         _leaderProgress = 0;
 
+        CancelPendingAction();
+
         if (_leaderSequence.Count == 1)
         {
             var single = _leaderSequence[0];
-            _engine = SequenceEngine.CreatePrototype(stroke => StrokeMatchesLeader(stroke, single));
+            lock (_engineSync)
+            {
+                _engine = SequenceEngine.CreatePrototype(stroke => StrokeMatchesLeader(stroke, single));
+            }
         }
         else
         {
-            _engine = SequenceEngine.CreatePrototype(_ => false);
+            lock (_engineSync)
+            {
+                _engine = SequenceEngine.CreatePrototype(_ => false);
+            }
         }
 
-        Glyph.App.Config.KeymapYamlLoader.ApplyToEngine(_engine);
+        lock (_engineSync)
+        {
+            Glyph.App.Config.KeymapYamlLoader.ApplyToEngine(_engine);
+        }
 
         Logger.Info($"Leader updated from settings (len={_leaderSequence.Count})");
     }
@@ -485,7 +609,10 @@ public sealed class GlyphHost : IDisposable
             if (_leaderProgress >= _leaderSequence.Count)
             {
                 _leaderProgress = 0;
-                beganSession = _engine.BeginSession(DateTimeOffset.UtcNow, activeProcessName);
+                lock (_engineSync)
+                {
+                    beganSession = _engine.BeginSession(DateTimeOffset.UtcNow, activeProcessName);
+                }
                 Logger.Info("Leader sequence complete — session begun");
             }
 

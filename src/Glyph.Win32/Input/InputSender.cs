@@ -554,6 +554,14 @@ public static class InputSender
         if (t == "up" || t == "arrowup" || t == "arrow-up" || t == "uparrow" || t == "up-arrow" || t == "up_arrow") return 0x26;
         if (t == "right" || t == "arrowright" || t == "arrow-right" || t == "rightarrow" || t == "right-arrow" || t == "right_arrow") return 0x27;
         if (t == "down" || t == "arrowdown" || t == "arrow-down" || t == "downarrow" || t == "down-arrow" || t == "down_arrow") return 0x28;
+        if (t == "home") return 0x24;
+        if (t == "end") return 0x23;
+        if (t == "delete" || t == "del") return 0x2E;
+        if (t == "insert" || t == "ins") return 0x2D;
+        if (t == "pageup" || t == "page-up" || t == "pgup") return 0x21;
+        if (t == "pagedown" || t == "page-down" || t == "pgdn") return 0x22;
+        if (t == "backspace" || t == "bs" || t == "back") return 0x08;
+        if (t == "esc" || t == "escape") return 0x1B;
         return 0;
     }
 

@@ -8,6 +8,7 @@ public sealed class SequenceEngine
     private readonly Trie<ActionRequest> _global;
     private readonly Dictionary<string, Trie<ActionRequest>> _perApp;
     private readonly TimeSpan _timeout;
+    private readonly TimeSpan _disambiguationTimeout;
     private readonly Func<KeyStroke, bool> _isLeaderKey;
 
     private bool _active;
@@ -23,6 +24,7 @@ public sealed class SequenceEngine
         _global = global;
         _perApp = perApp;
         _timeout = timeout;
+        _disambiguationTimeout = TimeSpan.FromMilliseconds(250);
         _isLeaderKey = isLeaderKey;
     }
 
@@ -42,6 +44,11 @@ public sealed class SequenceEngine
 
     public bool IsSessionActive => _active;
 
+    public void EndSession()
+    {
+        Reset();
+    }
+
     public EngineResult BeginSession(DateTimeOffset now, string? activeProcessName)
     {
         _lastInput = now;
@@ -51,7 +58,8 @@ public sealed class SequenceEngine
         return new EngineResult(
             Consumed: true,
             Overlay: BuildOverlay(activeProcessName),
-            Action: null);
+            Action: null,
+            ExecuteAfter: null);
     }
 
     public static SequenceEngine CreatePrototype(Func<KeyStroke, bool> isLeaderKey)
@@ -147,7 +155,8 @@ public sealed class SequenceEngine
                 return new EngineResult(
                     Consumed: true,
                     Overlay: BuildOverlay(activeProcessName),
-                    Action: null);
+                    Action: null,
+                    ExecuteAfter: null);
             }
 
             return EngineResult.None;
@@ -161,7 +170,8 @@ public sealed class SequenceEngine
             return new EngineResult(
                 Consumed: true,
                 Overlay: null,
-                Action: new ActionRequest { SendSpec = "CapsLock" });
+                Action: new ActionRequest { SendSpec = "CapsLock" },
+                ExecuteAfter: null);
         }
 
         // While active, Esc cancels.
@@ -174,7 +184,7 @@ public sealed class SequenceEngine
         // Ignore non-text keys during session (prototype).
         if (stroke.Key is null || stroke.Key == ' ')
         {
-            return new EngineResult(Consumed: true, Overlay: BuildOverlay(activeProcessName), Action: null);
+            return new EngineResult(Consumed: true, Overlay: BuildOverlay(activeProcessName), Action: null, ExecuteAfter: null);
         }
 
         _buffer += stroke.Key.Value;
@@ -190,12 +200,25 @@ public sealed class SequenceEngine
         if (lookup.IsComplete && lookup.Value is not null)
         {
             var action = lookup.Value;
+
+            // If this sequence is both complete *and* a valid prefix for longer sequences,
+            // delay execution briefly to allow fast disambiguation (e.g. `d` vs `dd`).
+            if (lookup.NextKeys.Count > 0)
+            {
+                Logger.Info($"Ambiguous complete sequence: {_buffer} (delaying { _disambiguationTimeout.TotalMilliseconds }ms)");
+                return new EngineResult(
+                    Consumed: true,
+                    Overlay: BuildOverlay(activeProcessName, lookup.NextKeys),
+                    Action: action,
+                    ExecuteAfter: _disambiguationTimeout);
+            }
+
             Logger.Info($"Complete sequence: {_buffer} -> {action.ActionId}");
             Reset();
-            return new EngineResult(Consumed: true, Overlay: null, Action: action);
+            return new EngineResult(Consumed: true, Overlay: null, Action: action, ExecuteAfter: null);
         }
 
-        return new EngineResult(Consumed: true, Overlay: BuildOverlay(activeProcessName, lookup.NextKeys), Action: null);
+        return new EngineResult(Consumed: true, Overlay: BuildOverlay(activeProcessName, lookup.NextKeys), Action: null, ExecuteAfter: null);
     }
 
     private void Reset()
@@ -208,35 +231,73 @@ public sealed class SequenceEngine
     {
         var nextKeys = (next ?? LookupMerged(_buffer, activeProcessName).NextKeys);
 
-        var options = nextKeys
-            .Select(k =>
+        // Expand multi-character completions (one-step lookahead) so keys like "mx" render as
+        // a single option at the current layer instead of showing an empty "m" intermediate.
+        var basePrefix = _buffer;
+        var byKey = new Dictionary<string, OverlayOption>(StringComparer.Ordinal);
+
+        foreach (var k in nextKeys)
+        {
+            var desc = k.Description;
+
+            // If this is the top-level program prefix ('p') and there's no per-app
+            // description, prefer the active process name instead of the generic
+            // "Program" label. Only substitute when the current buffer is empty.
+            if (k.Key == 'p' && string.IsNullOrEmpty(_buffer) && !string.IsNullOrWhiteSpace(activeProcessName))
             {
-                var desc = k.Description;
+                var per = GetPerAppPrefixDescription(activeProcessName, "p");
+                desc = !string.IsNullOrWhiteSpace(per) ? per : activeProcessName!;
+            }
 
-                // If this is the top-level program prefix ('p') and there's no per-app
-                // description, prefer the active process name instead of the generic
-                // "Program" label. Only substitute when the current buffer is empty
-                // (i.e. the option represents the program layer itself) to avoid
-                // overwriting unrelated 'p' keys in deeper sublayers.
-                if (k.Key == 'p' && string.IsNullOrEmpty(_buffer) && !string.IsNullOrWhiteSpace(activeProcessName))
-                {
-                    var per = GetPerAppPrefixDescription(activeProcessName, "p");
-                    if (!string.IsNullOrWhiteSpace(per))
-                    {
-                        desc = per;
-                    }
-                    else
-                    {
-                        desc = activeProcessName!;
-                    }
-                }
-
-                return new OverlayOption(
-                    Key: k.Key.ToString(),
+            // Only include the single-key option if it has a label or completes an action.
+            // Otherwise, it tends to show up as a blank entry (e.g. the "m" in "mx").
+            var includeSingle = k.Completes || !string.IsNullOrWhiteSpace(desc);
+            if (includeSingle)
+            {
+                var keyString = k.Key.ToString();
+                byKey[keyString] = new OverlayOption(
+                    Key: keyString,
                     Description: desc,
                     IsLayer: k.Continues,
                     IsAction: k.Completes);
-            })
+            }
+
+            // One-step lookahead: if this key continues, add any immediate 2-char completions.
+            // Only include these when the single-key would be omitted (e.g. empty intermediate)
+            // or when the completion is a repeated-key disambiguation (e.g. `d` + `d` -> `dd`).
+            // This avoids rendering nested keys (grandchildren) in overlays.
+            if (k.Continues)
+            {
+                var childLookup = LookupMerged(basePrefix + k.Key, activeProcessName);
+                foreach (var child in childLookup.NextKeys)
+                {
+                    if (!child.Completes) continue;
+
+                    var keyString = string.Concat(k.Key, child.Key);
+                    var childDesc = child.Description;
+                    if (string.IsNullOrWhiteSpace(childDesc))
+                    {
+                        // If the completion has no label, it isn't useful in discovery.
+                        continue;
+                    }
+
+                    // Only include lookahead completions when helpful:
+                    // - the single-key would not be shown (includeSingle == false), or
+                    // - the completion is a repeated-key (e.g., 'd'->'dd').
+                    if (!includeSingle || (child.Key == k.Key && k.Completes))
+                    {
+                        byKey[keyString] = new OverlayOption(
+                            Key: keyString,
+                            Description: childDesc,
+                            IsLayer: child.Continues,
+                            IsAction: true);
+                    }
+                }
+            }
+        }
+
+        var options = byKey.Values
+            .OrderBy(o => o.Key, StringComparer.Ordinal)
             .ToList();
 
         // If the user has entered a layer that contains no bindings, show a helpful message.
@@ -343,10 +404,13 @@ public sealed class ActionRequest
 
 public sealed record OverlayModel(string Sequence, IReadOnlyList<OverlayOption> Options);
 
-public sealed record OverlayOption(string Key, string Description, bool IsLayer, bool IsAction);
-
-public readonly record struct EngineResult(bool Consumed, OverlayModel? Overlay, ActionRequest? Action)
+public sealed record OverlayOption(string Key, string Description, bool IsLayer, bool IsAction)
 {
-    public static EngineResult None => new(false, null, null);
-    public static EngineResult ConsumedNoOverlay => new(true, null, null);
+    public IReadOnlyList<string> KeyCaps { get; } = Key.Select(c => c.ToString()).ToArray();
+}
+
+public readonly record struct EngineResult(bool Consumed, OverlayModel? Overlay, ActionRequest? Action, TimeSpan? ExecuteAfter)
+{
+    public static EngineResult None => new(false, null, null, null);
+    public static EngineResult ConsumedNoOverlay => new(true, null, null, null);
 }
