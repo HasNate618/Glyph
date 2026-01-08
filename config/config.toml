@@ -1,7 +1,0 @@
-# Glyph settings (prototype)
-
-# Session timeout in milliseconds
-sessionTimeoutMs = 2000
-
-# Leader gesture (prototype)
-# This prototype uses Ctrl+Shift+Space, hardcoded in code for now.

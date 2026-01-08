@@ -23,8 +23,9 @@ public static class KeymapYamlLoader
     {
         try
         {
-            // Reset engine to built-in state before applying YAML so removed bindings are cleared.
-            engine.ResetToBuiltins();
+            // Clear engine before applying YAML so removed bindings are cleared and
+            // all keymaps remain fully defined by YAML (no built-in keymaps).
+            engine.ClearAllBindings();
 
             EnsureDefaultFileExists();
 

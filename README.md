@@ -44,6 +44,43 @@ bindings:
 			- send: Left
 ```
 
+Vim-like text tools (examples)
+
+You can create simple "vim-like" text tools that work across editors using `steps:` sequences of key sends. These are editor-agnostic examples; tweak for your preferred editor.
+
+Delete current line (vim `dd`):
+
+```yaml
+bindings:
+	- key: t
+		label: Text
+		bindings:
+			- key: dd
+				label: Delete Line
+				steps:
+					- send: Home
+					- send: Shift+End
+					- send: Delete
+```
+
+Duplicate current line (editor-agnostic):
+
+```yaml
+bindings:
+	- key: t
+		label: Text
+		bindings:
+			- key: du
+				label: Duplicate Line
+				steps:
+					- send: Home
+					- send: Shift+End
+					- send: Ctrl+C
+					- send: End
+					- send: Enter
+					- send: Ctrl+V
+```
+
 Per-app example (placed under `apps`):
 
 ```yaml
@@ -66,7 +103,7 @@ Files of interest
 
 Glyph is a Windows leader-key, discoverable multi-stroke keymap overlay.
 
-This repo contains the app, a YAML-configurable keymap loader, and a small set of built-in actions. The short guide below covers configuration and examples.
+This repo contains the app and a YAML-configurable keymap loader. Keymaps are not hard-coded: the default bindings live in YAML so everything is transparent and customizable.
 
 ## What is Glyph — and why use it?
 
@@ -118,8 +155,9 @@ Node fields (for each binding):
 - `key` (required): short string (single or multi-char, e.g., `v` or `rs`)
 - `label` (required): user-visible label shown in the overlay
 - `action` (optional): a built-in action id
-- `type` (optional): literal text to type (Enter is sent after typing)
+- `type` (optional): literal text to type (does not auto-send Enter)
 - `send` (optional): chord spec to send, e.g. `Ctrl+T` or `Ctrl+Shift+T`
+- `steps` (optional): ordered list of steps (each step may contain `action`, `type`, `send`, or `exec`) for arbitrary chaining
 - `exec` (optional): executable/command to run (path or program name)
 - `execArgs` (optional): arguments to pass to the `exec`
 - `execCwd` (optional): working directory for `exec`
@@ -127,7 +165,7 @@ Node fields (for each binding):
 
 Notes:
 
-- Loader precedence: `action` → `type` → `send` → `exec` (the loader uses the first populated field).
+- If you need action chaining, use `steps:` (recommended).
 - Keys must not contain whitespace.
 - For `exec`, prefer the GUI exe (e.g., `Code.exe`) instead of a CLI shim (e.g., `code`) to avoid console flashes.
 

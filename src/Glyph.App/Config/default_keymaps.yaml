@@ -58,10 +58,41 @@ bindings:
         action: windowRestore
       - key: c
         label: Close
-        action: windowClose,
+        action: windowClose
       - key: t
         label: Toggle Topmost
         action: windowTopmost
+
+  - key: t
+    label: Text
+    children:
+      - key: c
+        label: Copy
+        send: Ctrl+C
+      - key: v
+        label: Paste
+        send: Ctrl+V
+      - key: x
+        label: Cut
+        send: Ctrl+X
+      - key: a
+        label: Select All
+        send: Ctrl+A
+      - key: z
+        label: Undo
+        send: Ctrl+Z
+      - key: y
+        label: Redo
+        send: Ctrl+Y
+      - key: f
+        label: Find
+        send: Ctrl+F
+      - key: r
+        label: Replace
+        send: Ctrl+H
+      - key: d
+        label: Duplicate Line
+        send: Ctrl+D
 
   - key: ","
     label: Glyph
@@ -69,6 +100,9 @@ bindings:
       - key: o
         label: Open Glyph GUI
         action: openGlyphGui
+      - key: r
+        label: Reload keymaps
+        action: reloadKeymaps
       - key: q
         label: Quit Glyph
         action: quitGlyph

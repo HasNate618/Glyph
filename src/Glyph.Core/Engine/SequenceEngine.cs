@@ -29,7 +29,6 @@ public sealed class SequenceEngine
     public static SequenceEngine CreatePrototype()
     {
         var global = new Trie<ActionRequest>();
-        PopulateBuiltins(global);
 
         // App-specific bindings (populated via YAML at runtime)
         var perApp = new Dictionary<string, Trie<ActionRequest>>(StringComparer.OrdinalIgnoreCase);
@@ -58,7 +57,6 @@ public sealed class SequenceEngine
     public static SequenceEngine CreatePrototype(Func<KeyStroke, bool> isLeaderKey)
     {
         var global = new Trie<ActionRequest>();
-        PopulateBuiltins(global);
 
         // App-specific bindings (populated via YAML at runtime)
         var perApp = new Dictionary<string, Trie<ActionRequest>>(StringComparer.OrdinalIgnoreCase);
@@ -96,73 +94,12 @@ public sealed class SequenceEngine
         trie.SetDescription(prefix, description);
     }
 
-    public void ResetToBuiltins()
+    public void ClearAllBindings()
     {
-        // Clear existing global bindings and per-app bindings, then repopulate built-ins.
+        // Clear existing global bindings and per-app bindings.
+        // All keymaps should come from YAML so behavior is transparent and fully customizable.
         _global.Clear();
         _perApp.Clear();
-        PopulateBuiltins(_global);
-    }
-
-    private static void PopulateBuiltins(Trie<ActionRequest> global)
-    {
-        // Top-level (discoverable) prefixes
-        global.SetDescription("o", "Open");
-        global.SetDescription("m", "Media");
-        global.SetDescription("p", "Program");
-        global.SetDescription("t", "Text");
-        global.SetDescription("w", "Window");
-        global.SetDescription(",", "Glyph");
-        // Repurpose 'g' for Git commands
-        global.SetDescription("g", "Git");
-        // Glyph -> Theme sublayer
-        global.SetDescription("gt", "Theme");
-
-        // Open layer
-        global.Add("ob", new ActionRequest("openBrowser"), "Open Browser");
-        global.Add("ot", new ActionRequest("openTerminal"), "Terminal");
-        global.Add("of", new ActionRequest("openExplorer"), "File Explorer");
-        global.Add("om", new ActionRequest("openTaskManager"), "Task Manager");
-
-        // Glyph layer (now uses ',' as the prefix)
-        global.Add(",o", new ActionRequest("openGlyphGui"), "Open Glyph GUI");
-        global.Add(",q", new ActionRequest("quitGlyph"), "Quit Glyph");
-        // Theme sublayer under Glyph (',t')
-        global.Add(",tf", new ActionRequest("setThemeFluent"), "Fluent");
-        global.Add(",tc", new ActionRequest("setThemeCatppuccinMocha"), "Catppuccin");
-        global.Add(",tl", new ActionRequest("setThemeLight"), "Light");
-        global.Add(",tn", new ActionRequest("setThemeNord"), "Nord");
-        global.Add(",td", new ActionRequest("setThemeDarcula"), "Darcula");
-        global.Add(",tr", new ActionRequest("setThemeRosePine"), "RosePine");
-        // Reload config
-        global.Add(",r", new ActionRequest("reloadKeymaps"), "Reload keymaps");
-
-        // Text layer
-        global.Add("tc", new ActionRequest { SendSpec = "Ctrl+C" }, "Copy");
-        global.Add("tv", new ActionRequest { SendSpec = "Ctrl+V" }, "Paste");
-        global.Add("tx", new ActionRequest { SendSpec = "Ctrl+X" }, "Cut");
-        global.Add("ta", new ActionRequest { SendSpec = "Ctrl+A" }, "Select All");
-        global.Add("tz", new ActionRequest { SendSpec = "Ctrl+Z" }, "Undo");
-        global.Add("ty", new ActionRequest { SendSpec = "Ctrl+Y" }, "Redo");
-        global.Add("tf", new ActionRequest { SendSpec = "Ctrl+F" }, "Find");
-        global.Add("tr", new ActionRequest { SendSpec = "Ctrl+H" }, "Replace");
-        global.Add("td", new ActionRequest { SendSpec = "Ctrl+D" }, "Duplicate Line");
-
-        // Media layer
-        global.Add("mp", new ActionRequest("mediaPlayPause"), "Play / Pause");
-        global.Add("mn", new ActionRequest("mediaNext"), "Next Track");
-        global.Add("mb", new ActionRequest("mediaPrev"), "Previous Track");
-        global.Add("mo", new ActionRequest("openSpotify"), "Open Spotify");
-        global.Add("mv", new ActionRequest("volumeMute"), "Toggle Mute");
-        global.Add("mm", new ActionRequest("muteMic"), "Toggle Microphone Mute");
-        global.Add("ms", new ActionRequest("mediaShuffle"), "Shuffle (Spotify)");
-
-        // Window management layer
-        global.Add("wn", new ActionRequest("windowMinimize"), "Minimize");
-        global.Add("wmx", new ActionRequest("windowMaximize"), "Maximize");
-        global.Add("wr", new ActionRequest("windowRestore"), "Restore");
-        global.Add("wc", new ActionRequest("windowClose"), "Close");
-        global.Add("wt", new ActionRequest("windowTopmost"), "Toggle Topmost");
     }
 
     public string? GetPerAppPrefixDescription(string processName, string prefix)
@@ -191,7 +128,6 @@ public sealed class SequenceEngine
     public static SequenceEngine CreateWithLeaderKey(Func<KeyStroke, bool> isLeaderKey)
     {
         var global = new Trie<ActionRequest>();
-        global.Add("rn", new ActionRequest("launchNotepad"), "Notepad");
         return new SequenceEngine(global, new Dictionary<string, Trie<ActionRequest>>(StringComparer.OrdinalIgnoreCase), TimeSpan.FromMilliseconds(2000), isLeaderKey);
     }
 
