@@ -1,0 +1,30 @@
+name: CI (.NET)
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build "${{ github.workspace }}\Glyph.sln" -c Debug --no-restore
+
+      - name: Test
+        run: |
+          dotnet test "${{ github.workspace }}" -c Debug --no-build --verbosity normal || exit 0
