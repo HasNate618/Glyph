@@ -1,0 +1,83 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+
+    env:
+      CONFIGURATION: Release
+      RUNTIME: win-x64
+      PROJECT_PATH: src/Glyph.App/Glyph.App.csproj
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build "${{ github.workspace }}\\Glyph.sln" -c ${{ env.CONFIGURATION }} --no-restore
+
+      - name: Test
+        run: dotnet test "${{ github.workspace }}" -c ${{ env.CONFIGURATION }} --no-build --verbosity normal
+
+      - name: Publish
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+
+          $tag = "${{ github.ref_name }}"
+          $outDir = Join-Path "${{ github.workspace }}" "artifacts\\publish\\${{ env.RUNTIME }}"
+          New-Item -ItemType Directory -Force -Path $outDir | Out-Null
+
+          dotnet publish "${{ env.PROJECT_PATH }}" -c "${{ env.CONFIGURATION }}" -r "${{ env.RUNTIME }}" --self-contained true -o "$outDir"
+
+          "PUBLISH_DIR=$outDir" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "TAG=$tag" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Package artifacts
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+
+          $tag = $env:TAG
+          $publishDir = $env:PUBLISH_DIR
+
+          $zipName = "Glyph-${{ env.RUNTIME }}-$tag.zip"
+          $zipPath = Join-Path "${{ github.workspace }}" "artifacts\\$zipName"
+          if (Test-Path $zipPath) { Remove-Item -Force $zipPath }
+
+          Compress-Archive -Path (Join-Path $publishDir '*') -DestinationPath $zipPath -Force
+
+          $hash = (Get-FileHash -Path $zipPath -Algorithm SHA256).Hash.ToLowerInvariant()
+          $sumsPath = Join-Path "${{ github.workspace }}" "artifacts\\SHA256SUMS.txt"
+          "$hash  $zipName" | Out-File -FilePath $sumsPath -Encoding ascii
+
+          "ZIP_PATH=$zipPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "SUMS_PATH=$sumsPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          generate_release_notes: true
+          prerelease: ${{ contains(github.ref_name, '-beta') || contains(github.ref_name, '-rc') }}
+          files: |
+            ${{ env.ZIP_PATH }}
+            ${{ env.SUMS_PATH }}
