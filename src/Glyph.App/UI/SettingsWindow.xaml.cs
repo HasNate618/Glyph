@@ -54,9 +54,9 @@ public partial class SettingsWindow : Window
         {
             var cfg = AppConfig.Load();
 
-            var leaderSeq = NormalizeLeaderSequence(cfg);
-            CurrentLeaderText.Text = DescribeLeaderSequence(leaderSeq);
-            RecordedLeaderText.Text = DescribeLeaderSequence(leaderSeq);
+            var leaderSeq = NormalizeGlyphSequence(cfg);
+            CurrentGlyphText.Text = DescribeGlyphSequence(leaderSeq);
+            RecordedGlyphText.Text = DescribeGlyphSequence(leaderSeq);
 
             if (!string.IsNullOrWhiteSpace(cfg.BaseTheme))
             {
@@ -92,16 +92,16 @@ public partial class SettingsWindow : Window
         {
             var cfg = AppConfig.Load();
 
-            // Leader: always driven by recorded sequence in this UI.
-            // If nothing recorded, keep existing (or default) and do NOT write invalid empty leader.
-            if (_recordedLeaderSequence is { Count: > 0 })
+            // Glyph: always driven by recorded sequence in this UI.
+            // If nothing recorded, keep existing (or default) and do NOT write invalid empty glyph.
+            if (_recordedGlyphSequence is { Count: > 0 })
             {
-                // Reject invalid / accidental leader steps such as Space (VK_SPACE = 0x20).
-                var sanitized = _recordedLeaderSequence.Where(s => s.VkCode != 0 && s.VkCode != 0x20).ToList();
+                // Reject invalid / accidental glyph steps such as Space (VK_SPACE = 0x20).
+                var sanitized = _recordedGlyphSequence.Where(s => s.VkCode != 0 && s.VkCode != 0x20).ToList();
                 if (sanitized.Count > 0)
                 {
-                    cfg.LeaderSequence = sanitized;
-                    cfg.Leader = null;
+                    cfg.GlyphSequence = sanitized;
+                    cfg.Glyph = null;
                 }
             }
 
@@ -114,8 +114,8 @@ public partial class SettingsWindow : Window
 
             AppConfig.Save(cfg);
 
-            var leaderSeq = NormalizeLeaderSequence(cfg);
-            CurrentLeaderText.Text = DescribeLeaderSequence(leaderSeq);
+            var leaderSeq = NormalizeGlyphSequence(cfg);
+            CurrentGlyphText.Text = DescribeGlyphSequence(leaderSeq);
             if (userInitiated)
             {
                 Logger.Info("Settings saved");
@@ -145,16 +145,16 @@ public partial class SettingsWindow : Window
     }
 
     private bool _isRecording = false;
-    private readonly List<LeaderKeyConfig> _recordedLeaderSequence = new();
+    private readonly List<GlyphKeyConfig> _recordedGlyphSequence = new();
 
     private void ToggleRecording()
     {
         _isRecording = !_isRecording;
-        if (_isRecording)
+            if (_isRecording)
         {
             RecordButton.Content = "Stop Recording";
-            _recordedLeaderSequence.Clear();
-            RecordedLeaderText.Text = "Recording: 0";
+            _recordedGlyphSequence.Clear();
+            RecordedGlyphText.Text = "Recording: 0";
             this.PreviewKeyDown += SettingsWindow_PreviewKeyDown;
             this.Focus();
         }
@@ -162,13 +162,13 @@ public partial class SettingsWindow : Window
         {
             RecordButton.Content = "Record";
             this.PreviewKeyDown -= SettingsWindow_PreviewKeyDown;
-            if (_recordedLeaderSequence.Count > 0)
+            if (_recordedGlyphSequence.Count > 0)
             {
-                RecordedLeaderText.Text = DescribeLeaderSequence(_recordedLeaderSequence);
+                RecordedGlyphText.Text = DescribeGlyphSequence(_recordedGlyphSequence);
             }
             else
             {
-                RecordedLeaderText.Text = "(not recording)";
+                RecordedGlyphText.Text = "(not recording)";
             }
         }
     }
@@ -181,7 +181,7 @@ public partial class SettingsWindow : Window
             var key = e.Key == Key.System ? e.SystemKey : e.Key;
             var vk = KeyInterop.VirtualKeyFromKey(key);
 
-            var step = new LeaderKeyConfig
+            var step = new GlyphKeyConfig
             {
                 VkCode = vk,
                 Ctrl = Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl),
@@ -192,9 +192,9 @@ public partial class SettingsWindow : Window
 
             if (step.VkCode != 0)
             {
-                _recordedLeaderSequence.Add(step);
-                RecordedLeaderText.Text = $"Recording: {_recordedLeaderSequence.Count}";
-                CurrentLeaderText.Text = DescribeLeaderSequence(_recordedLeaderSequence);
+                _recordedGlyphSequence.Add(step);
+                RecordedGlyphText.Text = $"Recording: {_recordedGlyphSequence.Count}";
+                CurrentGlyphText.Text = DescribeGlyphSequence(_recordedGlyphSequence);
             }
         }
         catch
@@ -204,33 +204,33 @@ public partial class SettingsWindow : Window
 
     // Autosave removed; Apply persists settings.
 
-    private static List<LeaderKeyConfig> NormalizeLeaderSequence(AppConfig cfg)
+    private static List<GlyphKeyConfig> NormalizeGlyphSequence(AppConfig cfg)
     {
-        if (cfg.LeaderSequence is { Count: > 0 })
+        if (cfg.GlyphSequence is { Count: > 0 })
         {
-            var cleaned = cfg.LeaderSequence.Where(s => s.VkCode != 0).ToList();
+            var cleaned = cfg.GlyphSequence.Where(s => s.VkCode != 0).ToList();
             if (cleaned.Count > 0) return cleaned;
         }
 
-        if (cfg.Leader is not null && cfg.Leader.VkCode != 0)
+        if (cfg.Glyph is not null && cfg.Glyph.VkCode != 0)
         {
-            return new List<LeaderKeyConfig> { cfg.Leader };
+            return new List<GlyphKeyConfig> { cfg.Glyph };
         }
 
-        return new List<LeaderKeyConfig>
+        return new List<GlyphKeyConfig>
         {
-            new LeaderKeyConfig { Ctrl = false, Shift = false, Alt = false, Win = false, VkCode = 0x7B }
+            new GlyphKeyConfig { Ctrl = false, Shift = false, Alt = false, Win = false, VkCode = 0x7B }
         };
     }
 
-    private static string DescribeLeaderSequence(IReadOnlyList<LeaderKeyConfig> seq)
+    private static string DescribeGlyphSequence(IReadOnlyList<GlyphKeyConfig> seq)
     {
         if (seq.Count == 0)
         {
-            return "Leader: Default (Ctrl+Shift+NumPad *)";
+            return "Glyph: Default (Ctrl+Shift+NumPad *)";
         }
 
-        static string StepToString(LeaderKeyConfig s)
+        static string StepToString(GlyphKeyConfig s)
         {
             var parts = new List<string>();
             if (s.Ctrl) parts.Add("Ctrl");
@@ -264,6 +264,6 @@ public partial class SettingsWindow : Window
         }
 
         var rendered = string.Join(", ", seq.Select(StepToString));
-        return $"Leader: {rendered}";
+        return $"Glyph: {rendered}";
     }
 }

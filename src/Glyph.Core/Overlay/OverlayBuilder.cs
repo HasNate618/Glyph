@@ -72,7 +72,7 @@ public static class OverlayBuilder
 
         if (options.Count == 0)
         {
-            var seq = $"Leader {buffer}".TrimEnd();
+            var seq = $"Glyph {buffer}".TrimEnd();
             string msg;
             if (!string.IsNullOrWhiteSpace(activeProcessName) && buffer.StartsWith("p", StringComparison.Ordinal))
             {
@@ -86,6 +86,6 @@ public static class OverlayBuilder
             return new OverlayModel(seq, new List<OverlayOption> { new("—", msg, false, false) });
         }
 
-        return new OverlayModel($"Leader {buffer}".TrimEnd(), options);
+        return new OverlayModel($"Glyph {buffer}".TrimEnd(), options);
     }
 }

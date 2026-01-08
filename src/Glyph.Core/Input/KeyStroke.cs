@@ -46,7 +46,7 @@ public readonly record struct KeyStroke(
         if (vkCode == 0xDC) key = '\\';
         if (vkCode == 0xC0) key = '`';
 
-        // Space is used as part of the leader gesture (Ctrl+Shift+Space) in the engine.
+        // Space is used as part of the glyph gesture (Ctrl+Shift+Space) in the engine.
         if (vkCode == 0x20)
         {
             key = ' ';

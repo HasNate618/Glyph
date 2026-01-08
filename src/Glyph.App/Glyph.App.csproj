@@ -19,4 +19,16 @@
     <UseWindowsForms>true</UseWindowsForms>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <!-- Use the repository root assets/Logo.ico as the application icon -->
+    <ApplicationIcon>..\..\assets\Logo.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Ensure the .ico is copied to the output so runtime code can load it for the tray icon -->
+    <None Include="..\..\assets\Logo.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

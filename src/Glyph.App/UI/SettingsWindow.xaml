@@ -17,17 +17,17 @@
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
             <TextBlock Grid.Column="0" FontSize="18" FontWeight="SemiBold" Text="Glyph Settings" />
-            <TextBlock Grid.Column="1" x:Name="CurrentLeaderText" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="Gray" Text="Leader: (loading...)" />
+            <TextBlock Grid.Column="1" x:Name="CurrentGlyphText" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="Gray" Text="Glyph: (loading...)" />
         </Grid>
 
         <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,8,0,8">
-            <GroupBox Header="Leader Key" Width="340">
+            <GroupBox Header="Glyph Key" Width="340">
                 <StackPanel Margin="8">
                     <TextBlock TextWrapping="Wrap" Foreground="Gray" Margin="0,0,0,8"
-                               Text="Click Record, then press the leader keys. For sequences, press multiple keys in order. Click Record again to stop." />
+                               Text="Click Record, then press the glyph keys. For sequences, press multiple keys in order. Click Record again to stop." />
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                         <Button x:Name="RecordButton" Width="120" Content="Record" />
-                        <TextBlock x:Name="RecordedLeaderText" Margin="12,0,0,0" VerticalAlignment="Center" Text="(not recording)" />
+                        <TextBlock x:Name="RecordedGlyphText" Margin="12,0,0,0" VerticalAlignment="Center" Text="(not recording)" />
                     </StackPanel>
                 </StackPanel>
             </GroupBox>

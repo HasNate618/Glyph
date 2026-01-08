@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Drawing;
+using System.IO;
 using System.Reflection;
 using System.Windows;
 
@@ -20,7 +21,7 @@ public sealed class TrayIconService : IDisposable
         {
             Text = "Glyph",
             Visible = false,
-            Icon = SystemIcons.Application,
+            Icon = LoadAppIcon() ?? SystemIcons.Application,
             ContextMenuStrip = BuildMenu()
         };
 
@@ -78,6 +79,27 @@ public sealed class TrayIconService : IDisposable
         menu.Items.Add(exit);
 
         return menu;
+    }
+
+    private static Icon? LoadAppIcon()
+    {
+        try
+        {
+            // The build copies Logo.ico to the output directory (see project file).
+            var exeDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? AppDomain.CurrentDomain.BaseDirectory;
+            var iconPath = Path.Combine(exeDir, "Logo.ico");
+
+            if (File.Exists(iconPath))
+            {
+                return new Icon(iconPath);
+            }
+        }
+        catch
+        {
+            // Ignore and fall back to SystemIcons.Application
+        }
+
+        return null;
     }
 
     private static void OpenGui()

@@ -4,7 +4,7 @@ using System.Text.Json;
 
 namespace Glyph.App.Config;
 
-public sealed class LeaderKeyConfig
+public sealed class GlyphKeyConfig
 {
     public bool Ctrl { get; set; }
     public bool Shift { get; set; }
@@ -15,8 +15,8 @@ public sealed class LeaderKeyConfig
 
 public sealed class AppConfig
 {
-    public LeaderKeyConfig? Leader { get; set; }
-    public List<LeaderKeyConfig>? LeaderSequence { get; set; }
+    public GlyphKeyConfig? Glyph { get; set; }
+    public List<GlyphKeyConfig>? GlyphSequence { get; set; }
     public string? BaseTheme { get; set; }
     public bool StartWithWindows { get; set; }
 
@@ -37,7 +37,7 @@ public sealed class AppConfig
             {
                 var cfg = new AppConfig
                 {
-                    Leader = null,
+                    Glyph = null,
                     BaseTheme = null,
                     StartWithWindows = false
                 };

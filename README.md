@@ -1,4 +1,8 @@
-# Glyph
+<p align="center">
+	<img src="assets/LogoText.svg" alt="Glyph logo" />
+</p>
+
+---
 
 Glyph is a keyboard-first, leader-key driven command system for Windows. It provides a layered, discoverable, and highly-customizable command language that runs on top of the OS and let users define sequences that map to actions, macros, and workflows.
 
@@ -8,6 +12,8 @@ License: MIT (see `LICENSE`).
 - Leader-key activation opens a discoverable overlay showing the current sequence and available next keys.
 - Supports global and per-application layers, groupings, and hierarchical bindings.
 - Actions include typing text, sending key chords, launching programs, and running predefined action IDs.
+
+Note: "Glyph" refers to the leader key used to activate the overlay. The default glyph (leader) key is F12 and can be customized in the Glyph GUI.
 
 Why Glyph exists
 - Replaces flat, inconsistent shortcuts with a scalable, learnable command language.
@@ -31,7 +37,7 @@ Behavior notes
 - Typing no longer auto-sends Enter. If you want Enter after typed text, include an explicit step such as `- send: Enter` in a `steps:` array.
 - `steps:` is the recommended way to chain actions; `then:` remains supported as a legacy two-step helper but may be removed in the future.
 - The loader resets built-in bindings before applying the YAML; removing entries from your YAML will remove them from runtime discovery after reload.
-- Runtime reload: an action `reloadKeymaps` is provided and bound in the glyph layer to `,r` (leader + `,` then `r`). Trigger it to reapply `%APPDATA%\\Glyph\\keymaps.yaml` without restarting the app.
+- Runtime reload: an action `reloadKeymaps` is provided and bound in the glyph layer to `,r` (glyph + `,` then `r`). Trigger it to reapply `%APPDATA%\\Glyph\\keymaps.yaml` without restarting the app.
 
 Examples
 
@@ -95,7 +101,7 @@ apps:
 ```
 
 Runtime tips
-- Edit `%APPDATA%\\Glyph\\keymaps.yaml` and then press leader → `,` → `r` to pick up changes. Deletions in the YAML will be removed from discovery on reload.
+- Edit `%APPDATA%\\Glyph\\keymaps.yaml` and then press glyph → `,` → `r` to pick up changes. Deletions in the YAML will be removed from discovery on reload.
 - To use or update the repo default while developing, keep `src/Glyph.App/Config/default_keymaps.yaml` in the repository.
 
 Files of interest
@@ -130,13 +136,21 @@ Who it's for:
 Key use-cases:
 
 - Quick launcher: fuzzy-launch projects, files, or applications.
-- App-specific helpers: per-app layers (e.g., VS Code shortcuts under `p`) so the same leader can do different things per app.
-- Clipboard & snippets: paste common text templates, addresses, or code snippets with a leader binding.
+- App-specific helpers: per-app layers (e.g., VS Code shortcuts under `p`) so the same glyph can do different things per app.
+- Clipboard & snippets: paste common text templates, addresses, or code snippets with a glyph binding.
 - Window/layout control: tile, move, and restore window layouts across monitors.
 
 ## Quick start
 - Build: `dotnet build Glyph.sln`
 - Run: `dotnet run --project src/Glyph.App/Glyph.App.csproj` (or use `run.bat` for a detached run)
+
+## GUI & Tray
+
+- **Tray icon:** When Glyph is running a taskbar/tray icon is shown. Right-clicking the tray icon exposes quick actions such as **Open GUI**, **Reload Keymaps**, and **Quit**.
+- **Settings GUI:** Use the GUI to change the application theme and to redefine the glyph key (the default glyph key is F12). Changes made in the GUI are persisted to `%APPDATA%\\Glyph\\config.json`.
+- **Themes:** Switch themes from the Settings window or customize theme files under `%APPDATA%\\Glyph\\theme.base` and `%APPDATA%\\Glyph\\theme.xaml` for overrides.
+- **Reloading keymaps:** The tray menu and GUI both expose a reload action that triggers the `reloadKeymaps` runtime action so you can apply edits to `%APPDATA%\\Glyph\\keymaps.yaml` without restarting the app.
+
 
 ## Config locations
 - Settings: `%APPDATA%\Glyph\config.json`

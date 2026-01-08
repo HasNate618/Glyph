@@ -43,28 +43,28 @@ public sealed class GlyphHost : IDisposable
             TaskScheduler.Default);
     }
 
-    private List<Glyph.App.Config.LeaderKeyConfig> _leaderSequence;
-    private int _leaderProgress;
+    private List<Glyph.App.Config.GlyphKeyConfig> _glyphSequence;
+    private int _glyphProgress;
     private readonly HashSet<int> _currentlyDown = new();
     private readonly Dictionary<int, bool> _modifierCandidates = new();
 
     public GlyphHost()
     {
-        // Load persisted config (leader key + theme) and create engine accordingly.
+        // Load persisted config (glyph key + theme) and create engine accordingly.
         var cfg = Glyph.App.Config.AppConfig.Load();
-        _leaderSequence = NormalizeLeader(cfg);
-        _leaderProgress = 0;
+        _glyphSequence = NormalizeGlyph(cfg);
+        _glyphProgress = 0;
 
-        if (_leaderSequence.Count == 1)
+        if (_glyphSequence.Count == 1)
         {
-            var single = _leaderSequence[0];
-            Func<KeyStroke, bool> leaderFunc = stroke => StrokeMatchesLeader(stroke, single);
-            _engine = SequenceEngine.CreatePrototype(leaderFunc);
+            var single = _glyphSequence[0];
+            Func<KeyStroke, bool> glyphFunc = stroke => StrokeMatchesGlyph(stroke, single);
+            _engine = SequenceEngine.CreatePrototype(glyphFunc);
         }
         else
         {
-            // Multi-stroke leader: leader detection is handled in GlyphHost so we can
-            // suppress every keystroke that participates in the leader sequence.
+            // Multi-stroke glyph: glyph detection is handled in GlyphHost so we can
+            // suppress every keystroke that participates in the glyph sequence.
             _engine = SequenceEngine.CreatePrototype(_ => false);
         }
 
@@ -83,7 +83,7 @@ public sealed class GlyphHost : IDisposable
     {
         Logger.Info("GlyphHost starting...");
         _keyboardHook.Start();
-        Logger.Info("Keyboard hook started (background). Default leader is F12 (configurable in Settings).");
+        Logger.Info("Keyboard hook started (background). Default glyph is F12 (configurable in Settings).");
     }
 
     public void Dispose()
@@ -110,9 +110,9 @@ public sealed class GlyphHost : IDisposable
 
         var activeProcess = ForegroundApp.TryGetProcessName();
 
-        // Single-stroke modifier leader: begin session immediately on key-down.
+        // Single-stroke modifier glyph: begin session immediately on key-down.
         // We suppress the modifier key DOWN so Windows never sees it held.
-        if (_leaderSequence.Count == 1 && IsModifierVk(_leaderSequence[0].VkCode) && ModifierMatchesVk(e.VkCode, _leaderSequence[0].VkCode))
+        if (_glyphSequence.Count == 1 && IsModifierVk(_glyphSequence[0].VkCode) && ModifierMatchesVk(e.VkCode, _glyphSequence[0].VkCode))
         {
             if (!_engine.IsSessionActive)
             {
@@ -145,14 +145,14 @@ public sealed class GlyphHost : IDisposable
             }
         }
 
-        // Multi-stroke leader detection (when engine session is inactive).
+        // Multi-stroke glyph detection (when engine session is inactive).
         // Consume modifier steps on key-down as well to avoid an artificial "wait for key-up" delay.
-        if (_leaderSequence.Count > 1 && !_engine.IsSessionActive)
+        if (_glyphSequence.Count > 1 && !_engine.IsSessionActive)
         {
-            var expected = _leaderSequence[_leaderProgress];
+            var expected = _glyphSequence[_glyphProgress];
             if (IsModifierVk(expected.VkCode))
             {
-                if (TryConsumeLeaderStroke(stroke, activeProcess, out var beganSession))
+                if (TryConsumeGlyphStroke(stroke, activeProcess, out var beganSession))
                 {
                     e.Suppress = true;
                     if (beganSession is not null)
@@ -164,7 +164,7 @@ public sealed class GlyphHost : IDisposable
             }
             else
             {
-                if (TryConsumeLeaderStroke(stroke, activeProcess, out var beganSession))
+                if (TryConsumeGlyphStroke(stroke, activeProcess, out var beganSession))
                 {
                     e.Suppress = true;
                     if (beganSession is not null)
@@ -322,9 +322,9 @@ public sealed class GlyphHost : IDisposable
 
         var activeProcess = ForegroundApp.TryGetProcessName();
 
-        // Single-stroke modifier leader: begin session on key-up, suppressing the key-up.
+        // Single-stroke modifier glyph: begin session on key-up, suppressing the key-up.
         // Because we also suppress the modifier key-down, Windows never sees the modifier held.
-        if (_leaderSequence.Count == 1 && IsModifierVk(_leaderSequence[0].VkCode) && ModifierMatchesVk(e.VkCode, _leaderSequence[0].VkCode))
+        if (_glyphSequence.Count == 1 && IsModifierVk(_glyphSequence[0].VkCode) && ModifierMatchesVk(e.VkCode, _glyphSequence[0].VkCode))
         {
             if (_modifierCandidates.TryGetValue(e.VkCode, out var abortedSingle))
             {
@@ -344,20 +344,20 @@ public sealed class GlyphHost : IDisposable
             return;
         }
 
-        // If a modifier candidate exists for this vk (single-stroke modifier leader), match it on key-up.
+        // If a modifier candidate exists for this vk (single-stroke modifier glyph), match it on key-up.
         if (_modifierCandidates.TryGetValue(e.VkCode, out var aborted))
         {
             _modifierCandidates.Remove(e.VkCode);
             if (!aborted)
             {
-                // Multi-stroke leader: consume modifier steps on key-up.
-                if (_leaderSequence.Count > 1 && !_engine.IsSessionActive)
+                // Multi-stroke glyph: consume modifier steps on key-up.
+                if (_glyphSequence.Count > 1 && !_engine.IsSessionActive)
                 {
-                    var expected = _leaderSequence[_leaderProgress];
+                    var expected = _glyphSequence[_glyphProgress];
                     if (IsModifierVk(expected.VkCode) && e.VkCode == expected.VkCode)
                     {
-                        Logger.Info($"Modifier candidate key-up (multi-stroke): 0x{e.VkCode:X}, attempting leader consume");
-                        if (TryConsumeLeaderStroke(stroke, activeProcess, out var beganSession))
+                        Logger.Info($"Modifier candidate key-up (multi-stroke): 0x{e.VkCode:X}, attempting glyph consume");
+                        if (TryConsumeGlyphStroke(stroke, activeProcess, out var beganSession))
                         {
                             // Important: do NOT suppress modifier events; suppressing can lead to a stuck modifier state.
                             if (beganSession is not null)
@@ -369,7 +369,7 @@ public sealed class GlyphHost : IDisposable
                     }
                 }
 
-                // (Single-stroke modifier leaders are handled above.)
+                // (Single-stroke modifier glyphs are handled above.)
             }
             else
             {
@@ -418,7 +418,7 @@ public sealed class GlyphHost : IDisposable
         if (_modifierCandidates.Count == 0) return;
 
         // If we missed a key-up event, don't leave a stale candidate hanging around.
-        // This is especially important for modifier leaders.
+        // This is especially important for modifier glyphs.
         foreach (var vk in _modifierCandidates.Keys.ToList())
         {
             if (!NativeMethods.IsKeyDown(vk))
@@ -428,19 +428,19 @@ public sealed class GlyphHost : IDisposable
         }
     }
 
-    public void UpdateLeaderSequence(IReadOnlyList<Glyph.App.Config.LeaderKeyConfig>? sequence)
+    public void UpdateGlyphSequence(IReadOnlyList<Glyph.App.Config.GlyphKeyConfig>? sequence)
     {
-        _leaderSequence = NormalizeLeader(sequence);
-        _leaderProgress = 0;
+        _glyphSequence = NormalizeGlyph(sequence);
+        _glyphProgress = 0;
 
         CancelPendingAction();
 
-        if (_leaderSequence.Count == 1)
+        if (_glyphSequence.Count == 1)
         {
-            var single = _leaderSequence[0];
+            var single = _glyphSequence[0];
             lock (_engineSync)
             {
-                _engine = SequenceEngine.CreatePrototype(stroke => StrokeMatchesLeader(stroke, single));
+                _engine = SequenceEngine.CreatePrototype(stroke => StrokeMatchesGlyph(stroke, single));
             }
         }
         else
@@ -456,53 +456,53 @@ public sealed class GlyphHost : IDisposable
             _keymapProvider.ApplyToEngine(_engine);
         }
 
-        Logger.Info($"Leader updated from settings (len={_leaderSequence.Count})");
+        Logger.Info($"Glyph updated from settings (len={_glyphSequence.Count})");
     }
 
-    private static List<Glyph.App.Config.LeaderKeyConfig> NormalizeLeader(Glyph.App.Config.AppConfig cfg)
+    private static List<Glyph.App.Config.GlyphKeyConfig> NormalizeGlyph(Glyph.App.Config.AppConfig cfg)
     {
-        if (cfg.LeaderSequence is { Count: > 0 })
+        if (cfg.GlyphSequence is { Count: > 0 })
         {
-            return cfg.LeaderSequence.Where(IsValidLeaderStep).ToList();
+            return cfg.GlyphSequence.Where(IsValidGlyphStep).ToList();
         }
 
-        if (cfg.Leader is not null && IsValidLeaderStep(cfg.Leader))
+        if (cfg.Glyph is not null && IsValidGlyphStep(cfg.Glyph))
         {
-            return new List<Glyph.App.Config.LeaderKeyConfig> { cfg.Leader };
+            return new List<Glyph.App.Config.GlyphKeyConfig> { cfg.Glyph };
         }
 
-        // Default leader: Ctrl+Shift+NumPad *
-        return new List<Glyph.App.Config.LeaderKeyConfig>
+        // Default glyph: Ctrl+Shift+NumPad *
+        return new List<Glyph.App.Config.GlyphKeyConfig>
         {
-            new Glyph.App.Config.LeaderKeyConfig { Ctrl = false, Shift = false, Alt = false, Win = false, VkCode = 0x7B }
+            new Glyph.App.Config.GlyphKeyConfig { Ctrl = false, Shift = false, Alt = false, Win = false, VkCode = 0x7B }
         };
     }
 
-    private static List<Glyph.App.Config.LeaderKeyConfig> NormalizeLeader(IReadOnlyList<Glyph.App.Config.LeaderKeyConfig>? sequence)
+    private static List<Glyph.App.Config.GlyphKeyConfig> NormalizeGlyph(IReadOnlyList<Glyph.App.Config.GlyphKeyConfig>? sequence)
     {
         if (sequence is { Count: > 0 })
         {
-            var cleaned = sequence.Where(IsValidLeaderStep).ToList();
+            var cleaned = sequence.Where(IsValidGlyphStep).ToList();
             if (cleaned.Count > 0) return cleaned;
         }
 
-        return new List<Glyph.App.Config.LeaderKeyConfig>
+        return new List<Glyph.App.Config.GlyphKeyConfig>
         {
-            new Glyph.App.Config.LeaderKeyConfig { Ctrl = false, Shift = false, Alt = false, Win = false, VkCode = 0x7B }
+            new Glyph.App.Config.GlyphKeyConfig { Ctrl = false, Shift = false, Alt = false, Win = false, VkCode = 0x7B }
         };
     }
 
-    private static bool IsValidLeaderStep(Glyph.App.Config.LeaderKeyConfig step)
+    private static bool IsValidGlyphStep(Glyph.App.Config.GlyphKeyConfig step)
     {
         // Must specify a concrete key. (Prevents the “matches everything” bug.)
-        // Also reject Space (0x20) as a valid leader step to avoid accidental triggers.
+        // Also reject Space (0x20) as a valid glyph step to avoid accidental triggers.
         return step.VkCode != 0 && step.VkCode != 0x20;
     }
 
-    private static bool StrokeMatchesLeader(KeyStroke stroke, Glyph.App.Config.LeaderKeyConfig l)
+    private static bool StrokeMatchesGlyph(KeyStroke stroke, Glyph.App.Config.GlyphKeyConfig l)
     {
         if (l.VkCode == 0) return false;
-        // For modifier leader steps, ignore modifier flags and match by VK (generic ↔ sided).
+        // For modifier glyph steps, ignore modifier flags and match by VK (generic ↔ sided).
         if (IsModifierVk(l.VkCode))
         {
             return ModifierMatchesVk(stroke.VkCode, l.VkCode);
@@ -510,7 +510,7 @@ public sealed class GlyphHost : IDisposable
 
         if (stroke.VkCode != l.VkCode) return false;
 
-        // If the recorded leader step is a direction-specific modifier (Left/Right Ctrl/Shift/Alt),
+        // If the recorded glyph step is a direction-specific modifier (Left/Right Ctrl/Shift/Alt),
         // match only by virtual-key code. Modifier flags (generic Ctrl/Shift/Alt) may not reliably
         // reflect the sided key in the low-level hook, so requiring them breaks detection.
         // VK codes: VK_LSHIFT=0xA0, VK_RSHIFT=0xA1, VK_LCONTROL=0xA2, VK_RCONTROL=0xA3,
@@ -528,37 +528,37 @@ public sealed class GlyphHost : IDisposable
         return true;
     }
 
-    private bool TryConsumeLeaderStroke(KeyStroke stroke, string? activeProcessName, out EngineResult? beganSession)
+    private bool TryConsumeGlyphStroke(KeyStroke stroke, string? activeProcessName, out EngineResult? beganSession)
     {
         beganSession = null;
 
         // Only match concrete steps.
-        if (_leaderProgress < 0 || _leaderProgress >= _leaderSequence.Count)
+        if (_glyphProgress < 0 || _glyphProgress >= _glyphSequence.Count)
         {
-            _leaderProgress = 0;
+            _glyphProgress = 0;
         }
 
-        var expected = _leaderSequence[_leaderProgress];
+        var expected = _glyphSequence[_glyphProgress];
 
-        if (StrokeMatchesLeader(stroke, expected))
+        if (StrokeMatchesGlyph(stroke, expected))
         {
-            _leaderProgress++;
-            Logger.Info($"Leader matched step {_leaderProgress}/{_leaderSequence.Count}");
-            if (_leaderProgress >= _leaderSequence.Count)
+            _glyphProgress++;
+            Logger.Info($"Glyph matched step {_glyphProgress}/{_glyphSequence.Count}");
+            if (_glyphProgress >= _glyphSequence.Count)
             {
-                _leaderProgress = 0;
+                _glyphProgress = 0;
                 lock (_engineSync)
                 {
                     beganSession = _engine.BeginSession(DateTimeOffset.UtcNow, activeProcessName);
                 }
-                Logger.Info("Leader sequence complete — session begun");
+                Logger.Info("Glyph sequence complete — session begun");
             }
 
-            return true; // consume every leader stroke
+            return true; // consume every glyph stroke
         }
 
         // Mismatch: reset progress.
-        _leaderProgress = 0;
+        _glyphProgress = 0;
         return false;
     }
 }

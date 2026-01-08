@@ -19,11 +19,11 @@ public partial class App : System.Windows.Application
 
             if (_host is not null)
             {
-                var seq = (cfg.LeaderSequence is { Count: > 0 })
-                    ? cfg.LeaderSequence
-                    : (cfg.Leader is null ? null : new List<Glyph.App.Config.LeaderKeyConfig> { cfg.Leader });
+                var seq = (cfg.GlyphSequence is { Count: > 0 })
+                    ? cfg.GlyphSequence
+                    : (cfg.Glyph is null ? null : new List<Glyph.App.Config.GlyphKeyConfig> { cfg.Glyph });
 
-                _host.UpdateLeaderSequence(seq);
+                _host.UpdateGlyphSequence(seq);
             }
 
             if (!string.IsNullOrWhiteSpace(cfg.BaseTheme))
