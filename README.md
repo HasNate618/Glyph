@@ -1,271 +1,110 @@
 <p align="center">
-	<img src="assets/LogoText.svg" alt="Glyph logo" />
+  <img src="assets/LogoText.svg" alt="Glyph" />
+</p>
+
+---
+<p align="center">
+  A Windows-first, highly configurable leader-key driven command overlay
 </p>
 
 ---
 
-Glyph is a keyboard-first, leader-key driven command system for Windows. It provides a layered, discoverable, and highly-customizable command language that runs on top of the OS and let users define sequences that map to actions, macros, and workflows.
+## What it is
 
-License: MIT (see `LICENSE`).
+Glyph is a small productivity layer for Windows: press the <strong>glyph key</strong> to open an overlay, then type short sequences to trigger actions.
 
-**Quick summary**
-- Leader-key activation opens a discoverable overlay showing the current sequence and available next keys.
-- Supports global and per-application layers, groupings, and hierarchical bindings.
-- Actions include typing text, sending key chords, launching programs, and running predefined action IDs.
+- Discoverable: the overlay shows available next keys.
+- Context-aware: supports global bindings and per-application layers.
+- Customizable: bindings are defined and easily configured in YAML.
 
-Note: "Glyph" refers to the leader key used to activate the overlay. The default glyph (leader) key is F12 and can be customized in the Glyph GUI.
+## Quick start (from source)
 
-Why Glyph exists
-- Replaces flat, inconsistent shortcuts with a scalable, learnable command language.
-- Makes macros discoverable and safe to explore via an overlay.
-- Lets users map intentful sequences to workflows across apps.
-
-Getting started — config & defaults
-
-- Config file location (Windows): `%APPDATA%\\Glyph\\keymaps.yaml`
-- Repository default (dev): `src/Glyph.App/Config/default_keymaps.yaml` — when present and running from source, the loader will copy this into `%APPDATA%\\Glyph\\keymaps.yaml` on first run so maintainers can edit defaults easily. If the repo default is absent, the loader logs and does not create a default.
-
-Key YAML features
-- `bindings` — global key bindings
-- `apps` / `groups` — per-application and grouped bindings
-- `type:` — text to type
-- `send:` — send a chord or key sequence (send-spec syntax)
-- `steps:` — preferred ordered list of steps to execute sequentially. Each step may contain `action`, `type`, `send`, or `exec`.
-- `then:` — deprecated shorthand for simple two-step chains; use `steps:` for clarity and arbitrary chains.
-
-Behavior notes
-- Typing no longer auto-sends Enter. If you want Enter after typed text, include an explicit step such as `- send: Enter` in a `steps:` array.
-- `steps:` is the recommended way to chain actions; `then:` remains supported as a legacy two-step helper but may be removed in the future.
-- The loader resets built-in bindings before applying the YAML; removing entries from your YAML will remove them from runtime discovery after reload.
-- Runtime reload: an action `reloadKeymaps` is provided and bound in the glyph layer to `,r` (glyph + `,` then `r`). Trigger it to reapply `%APPDATA%\\Glyph\\keymaps.yaml` without restarting the app.
-
-Examples
-
-Global chaining example (preferred `steps:` form):
-
-```yaml
-bindings:
-	- key: ",g"
-		label: "Git commit"
-		steps:
-			- type: git commit ""
-			- send: Left
+```powershell
+dotnet build Glyph.sln -c Debug
+dotnet run --project src/Glyph.App/Glyph.App.csproj -c Debug
 ```
-
-Vim-like text tools (examples)
-
-You can create simple "vim-like" text tools that work across editors using `steps:` sequences of key sends. These are editor-agnostic examples; tweak for your preferred editor.
-
-Delete current line (vim `dd`):
-
-```yaml
-bindings:
-	- key: t
-		label: Text
-		bindings:
-			- key: dd
-				label: Delete Line
-				steps:
-					- send: Home
-					- send: Shift+End
-					- send: Delete
-```
-
-Duplicate current line (editor-agnostic):
-
-```yaml
-bindings:
-	- key: t
-		label: Text
-		bindings:
-			- key: du
-				label: Duplicate Line
-				steps:
-					- send: Home
-					- send: Shift+End
-					- send: Ctrl+C
-					- send: End
-					- send: Enter
-					- send: Ctrl+V
-```
-
-Per-app example (placed under `apps`):
-
-```yaml
-apps:
-	- process: code
-		bindings:
-			- key: "f"
-				label: "Format file"
-				action: formatDocument
-```
-
-Runtime tips
-- Edit `%APPDATA%\\Glyph\\keymaps.yaml` and then press glyph → `,` → `r` to pick up changes. Deletions in the YAML will be removed from discovery on reload.
-- To use or update the repo default while developing, keep `src/Glyph.App/Config/default_keymaps.yaml` in the repository.
-
-Files of interest
-- Loader: [src/Glyph.App/Config/KeymapYamlLoader.cs](src/Glyph.App/Config/KeymapYamlLoader.cs)
-- Plan & motivation: [plan.md](plan.md)
-
-
-Glyph is a Windows leader-key, discoverable multi-stroke keymap overlay.
-
-This repo contains the app and a YAML-configurable keymap loader. Keymaps are not hard-coded: the default bindings live in YAML so everything is transparent and customizable.
-
-## What is Glyph — and why use it?
-
-Glyph is a tiny, focused productivity layer for power users who want to work faster without leaving the keyboard.
-
-- What: Glyph is a discoverable, leader-key driven overlay that lets you trigger actions, launch apps, send complex key chords, and type snippets using short, memorable sequences.
-- Why: It reduces context switching and menu hunting — trigger commonly used workflows (open project terminals, control media, navigate the browser, trigger IDE shortcuts) with a two‑keystroke flow.
-
-Benefits at a glance:
-
-- Speed: perform repetitive tasks with minimal keystrokes.
-- Discoverability: overlay shows possible next keys so sequences are learnable and self-documenting.
-- Customizable: YAML keymaps let you tailor bindings per-app or share groups across browsers and editors.
-- Safe automation: `exec`/`send`/`type` provide flexible actions while staying local and auditable in YAML.
-
-Who it's for:
-
-- Developers who want fast editor/terminal navigation and project commands.
-- Power users who prefer keyboard-driven workflows.
-- Anyone who wants a lightweight, extensible hotkey layer without heavyweight global macro tools.
-
-Key use-cases:
-
-- Quick launcher: fuzzy-launch projects, files, or applications.
-- App-specific helpers: per-app layers (e.g., VS Code shortcuts under `p`) so the same glyph can do different things per app.
-- Clipboard & snippets: paste common text templates, addresses, or code snippets with a glyph binding.
-- Window/layout control: tile, move, and restore window layouts across monitors.
-
-## Quick start
-- Build: `dotnet build Glyph.sln`
-- Run: `dotnet run --project src/Glyph.App/Glyph.App.csproj` (or use `run.bat` for a detached run)
 
 ## GUI & Tray
 
-- **Tray icon:** When Glyph is running a taskbar/tray icon is shown. Right-clicking the tray icon exposes quick actions such as **Open GUI**, **Reload Keymaps**, and **Quit**.
-- **Settings GUI:** Use the GUI to change the application theme and to redefine the glyph key (the default glyph key is F12). Changes made in the GUI are persisted to `%APPDATA%\\Glyph\\config.json`.
-- **Themes:** Switch themes from the Settings window or customize theme files under `%APPDATA%\\Glyph\\theme.base` and `%APPDATA%\\Glyph\\theme.xaml` for overrides.
-- **Reloading keymaps:** The tray menu and GUI both expose a reload action that triggers the `reloadKeymaps` runtime action so you can apply edits to `%APPDATA%\\Glyph\\keymaps.yaml` without restarting the app.
+- Glyph runs with a tray icon. Double-click opens the GUI; right-click shows actions (Open GUI, open config/log folders, reload theme, About, Exit).
+- The Settings GUI lets you change the theme and redefine the glyph key (default: F12). Settings are stored in `%APPDATA%\Glyph\config.json`.
 
+## Config files
 
-## Config locations
 - Settings: `%APPDATA%\Glyph\config.json`
-- Keymaps (YAML): `%APPDATA%\Glyph\keymaps.yaml` (created automatically on first run)
-- Themes: base theme in `%APPDATA%\Glyph\theme.base`, overrides in `%APPDATA%\Glyph\theme.xaml`
+- Keymaps (YAML): `%APPDATA%\Glyph\keymaps.yaml`
+- Themes: `%APPDATA%\Glyph\theme.base` (base), `%APPDATA%\Glyph\theme.xaml` (overrides)
 
-## Keymaps (YAML) — overview
-Glyph reads a simple YAML tree of `bindings`. Each node maps a short `key` to an action, typed text, a chord to send, or an executable to launch. Bindings can be global (`bindings`), per-application (`apps`), or applied to groups of processes (`groups`).
+On first run, a default `%APPDATA%\Glyph\keymaps.yaml` is created. While developing from source, the template comes from `src/Glyph.App/Config/default_keymaps.yaml`.
 
-Top-level schema:
+## Keymaps (YAML)
 
-- `bindings`: list of global binding nodes
-- `apps`: list of `{ process, bindings }` for per-process bindings (applied when that process is foreground)
-- `groups`: list of named `{ name, processes, bindings }` to share the same bindings across multiple process names
+Keymaps are a tree of bindings. Each node has a `key` and `label`, and then either:
 
-Node fields (for each binding):
+- `action`: built-in action id
+- `type`: text to type
+- `send`: key chord to send (e.g. `Ctrl+Shift+T`)
+- `exec` (+ optional `execArgs`, `execCwd`): launch a program
+- `steps`: chain multiple `action`/`type`/`send`/`exec` steps
+- `children`: nested bindings (multi-stroke sequences)
 
-- `key` (required): short string (single or multi-char, e.g., `v` or `rs`)
-- `label` (required): user-visible label shown in the overlay
-- `action` (optional): a built-in action id
-- `type` (optional): literal text to type (does not auto-send Enter)
-- `send` (optional): chord spec to send, e.g. `Ctrl+T` or `Ctrl+Shift+T`
-- `steps` (optional): ordered list of steps (each step may contain `action`, `type`, `send`, or `exec`) for arbitrary chaining
-- `exec` (optional): executable/command to run (path or program name)
-- `execArgs` (optional): arguments to pass to the `exec`
-- `execCwd` (optional): working directory for `exec`
-- `children` (optional): list of child nodes for multi-stroke sequences
+Reloading keymaps at runtime: the default keymap binds `reloadKeymaps` to glyph → `,` → `r`.
 
-Notes:
+### Examples
 
-- If you need action chaining, use `steps:` (recommended).
-- Keys must not contain whitespace.
-- For `exec`, prefer the GUI exe (e.g., `Code.exe`) instead of a CLI shim (e.g., `code`) to avoid console flashes.
-
-## Built-in action ids
-
-Use `action: <id>` with one of these known ids:
-
-- App & launch: `launchChrome`, `openTerminal`, `openExplorer`, `openTaskManager`, `openBrowser`
-- Media: `mediaPlayPause`, `mediaNext`, `mediaPrev`, `volumeMute`, `openSpotify`, `muteMic`, `mediaShuffle`
-- Window: `windowMinimize`, `windowMaximize`, `windowRestore`, `windowClose`, `windowTopmost`
-- Misc: `typeNvimDot`, `quitGlyph`
-
-## Examples
-
-Global binding (uses built-in action):
+Chain steps (preferred):
 
 ```yaml
 bindings:
-	- key: o
-		label: Open
-		children:
-			- key: t
-				label: Terminal
-				action: openTerminal
+  - key: ",g"
+    label: "Git commit"
+    steps:
+      - type: git commit ""
+      - send: Left
 ```
 
-Type text and press Enter:
-
-```yaml
-	- key: g
-		label: Git status
-		type: git status
-```
-
-Browser group (send chord):
-
-```yaml
-groups:
-	- name: Browser
-		processes: [ chrome, msedge, firefox ]
-		bindings:
-			- key: t
-				label: New Tab
-				send: Ctrl+T
-```
-
-Launch an application (exec):
+Vim-like `dd` (delete line):
 
 ```yaml
 bindings:
-	- key: v
-		label: VSCode
-		exec: "C:\\Program Files\\Microsoft VS Code\\Code.exe"
-
-	- key: rs
-		label: Steam
-		exec: 'C:\\Program Files (x86)\\Steam\\steam.exe'
+  - key: t
+    label: Text
+    children:
+      - key: dd
+        label: Delete Line
+        steps:
+          - send: Home
+          - send: Shift+End
+          - send: Delete
 ```
 
-The loader supports `execArgs` and `execCwd` for more complex launches. Glyph launches using `UseShellExecute = true` and hides the launcher window to avoid short console flashes.
+Per-app binding:
+
+```yaml
+apps:
+  - process: code
+    bindings:
+      - key: f
+        label: Format file
+        action: formatDocument
+```
+
+## Built-in actions
+
+The built-in action ids live in [src/Glyph.Actions/ActionRuntime.cs](src/Glyph.Actions/ActionRuntime.cs).
 
 ## Troubleshooting
 
-- Unknown `action` ids are ignored (the prefix label remains). Check `src/Glyph.Actions/ActionRuntime.cs` for known ids.
-- For `exec` failures, try the full GUI exe path and check permissions.
-- If `type`/`send` don't appear in the target app, ensure the overlay has hidden and the target window is focused.
+- If `send`/`type` land in the wrong window: ensure the overlay has fully hidden and the target window is focused.
+- If an `exec` doesn’t launch: try the full GUI `.exe` path (not a CLI shim).
+- If an `action` does nothing: it may be unknown; check the built-in list in [src/Glyph.Actions/ActionRuntime.cs](src/Glyph.Actions/ActionRuntime.cs).
 
-## Where defaults live
+## Contributing
 
-- Default keymap template: `src/Glyph.App/Config/KeymapYamlLoader.cs`
+- Start here: [docs/README.md](docs/README.md)
+- Contribution guidelines: [CONTRIBUTING.md](CONTRIBUTING.md)
+- Original vision/notes: [plan.md](plan.md)
 
+## License
 
-## Selling points / Elevator pitch
-
-Glyph gives teams and individuals an instant productivity boost: a tiny, discoverable keyboard layer that replaces mouse-driven menus with short, memorable sequences. It's simple to configure (YAML), respects application context, and is designed for low-latency, reliable global input on Windows.
-
-Install it, add a few app-specific bindings, and you’ll find repeated tasks drop from 6+ keystrokes and mouse moves to 1–2 quick taps.
-
-## Contributing / Roadmap
-
-Contributions and feature ideas are welcome. See `docs/possibilities.md` for a long list of ideas and potential next steps (command palette, clipboard history, snippets, macros, plugin API).
-
-If you want to add a feature or help polish UX, open an issue or create a PR against this repo.
-
----
-
-Updated README: `README.md`
+MIT. See `LICENSE`.
