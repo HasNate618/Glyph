@@ -99,15 +99,17 @@ bindings:
     children:
       - key: s
         label: Status
-        type: git status
-        then: Enter
+        steps:
+          - type: git status
+          - send: Enter
       - key: a
         label: Add All
         type: git add .
       - key: c
         label: Commit
-        type: 'git commit ""'
-        then: Left
+        steps:
+          - type: 'git commit ""'
+          - send: Left
       - key: p
         label: Push
         type: git push

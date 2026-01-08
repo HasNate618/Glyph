@@ -204,7 +204,24 @@ public static class KeymapYamlLoader
         var execArgs = (node.ExecArgs ?? string.Empty).Trim();
         var execCwd = (node.ExecCwd ?? string.Empty).Trim();
 
-        if (actionId.Length > 0)
+        // Prefer explicit ordered `steps:` for chaining. Falls back to legacy single-field bindings
+        // and the deprecated `then:` helper for simple two-step chains.
+        if (node.Steps is { Count: > 0 })
+        {
+            var steps = node.Steps.Select(s => new ActionRequest
+            {
+                ActionId = string.IsNullOrWhiteSpace(s.Action) ? null : s.Action,
+                TypeText = string.IsNullOrWhiteSpace(s.Type) ? null : s.Type,
+                SendSpec = string.IsNullOrWhiteSpace(s.Send) ? null : s.Send,
+                ExecPath = string.IsNullOrWhiteSpace(s.Exec) ? null : s.Exec,
+                ExecArgs = string.IsNullOrWhiteSpace(s.ExecArgs) ? null : s.ExecArgs,
+                ExecCwd = string.IsNullOrWhiteSpace(s.ExecCwd) ? null : s.ExecCwd,
+            }).ToList();
+
+            engine.AddGlobalBinding(seq, new ActionRequest { Steps = steps }, label);
+            applied++;
+        }
+        else if (actionId.Length > 0)
         {
             if (!ActionRuntime.KnownActionIds.Contains(actionId))
             {
@@ -219,8 +236,8 @@ public static class KeymapYamlLoader
         }
         else if (typeText.Length > 0 && thenSpec.Length > 0)
         {
-            // Chain TypeText + SendSpec: type text, then send key
-            engine.AddGlobalBinding(seq, new ActionRequest { TypeText = typeText, SendSpec = thenSpec }, label);
+            // Legacy: Chain TypeText + SendSpec: type text, then send key
+            engine.AddGlobalBinding(seq, new ActionRequest { Steps = new List<ActionRequest> { new ActionRequest { TypeText = typeText }, new ActionRequest { SendSpec = thenSpec } } }, label);
             applied++;
         }
         else if (typeText.Length > 0)
@@ -296,7 +313,24 @@ public static class KeymapYamlLoader
         var execArgs = (node.ExecArgs ?? string.Empty).Trim();
         var execCwd = (node.ExecCwd ?? string.Empty).Trim();
 
-        if (actionId.Length > 0)
+        // Prefer explicit ordered `steps:` for chaining. Falls back to legacy single-field bindings
+        // and the deprecated `then:` helper for simple two-step chains.
+        if (node.Steps is { Count: > 0 })
+        {
+            var steps = node.Steps.Select(s => new ActionRequest
+            {
+                ActionId = string.IsNullOrWhiteSpace(s.Action) ? null : s.Action,
+                TypeText = string.IsNullOrWhiteSpace(s.Type) ? null : s.Type,
+                SendSpec = string.IsNullOrWhiteSpace(s.Send) ? null : s.Send,
+                ExecPath = string.IsNullOrWhiteSpace(s.Exec) ? null : s.Exec,
+                ExecArgs = string.IsNullOrWhiteSpace(s.ExecArgs) ? null : s.ExecArgs,
+                ExecCwd = string.IsNullOrWhiteSpace(s.ExecCwd) ? null : s.ExecCwd,
+            }).ToList();
+
+            engine.AddPerAppBinding(processName, seq, new ActionRequest { Steps = steps }, label);
+            applied++;
+        }
+        else if (actionId.Length > 0)
         {
             if (!ActionRuntime.KnownActionIds.Contains(actionId))
             {
@@ -311,8 +345,8 @@ public static class KeymapYamlLoader
         }
         else if (typeText.Length > 0 && thenSpec.Length > 0)
         {
-            // Chain TypeText + SendSpec: type text, then send key
-            engine.AddPerAppBinding(processName, seq, new ActionRequest { TypeText = typeText, SendSpec = thenSpec }, label);
+            // Legacy: Chain TypeText + SendSpec: type text, then send key
+            engine.AddPerAppBinding(processName, seq, new ActionRequest { Steps = new List<ActionRequest> { new ActionRequest { TypeText = typeText }, new ActionRequest { SendSpec = thenSpec } } }, label);
             applied++;
         }
         else if (typeText.Length > 0)
@@ -371,7 +405,11 @@ public sealed class KeymapYamlNode
     public string? Action { get; set; }
     public string? Type { get; set; }
     public string? Send { get; set; }
+    // Deprecated: use `steps:` for arbitrary chaining. Kept for backwards-compatibility.
     public string? Then { get; set; }
+    // New: an ordered list of steps that will be executed sequentially. Each step
+    // may contain an `action`, `type`, `send`, or `exec` entry.
+    public List<KeymapYamlStep>? Steps { get; set; }
     // exec: program path to run
     public string? Exec { get; set; }
     // execArgs: arguments to pass to the program
@@ -379,4 +417,14 @@ public sealed class KeymapYamlNode
     // execCwd: working directory for the launched program
     public string? ExecCwd { get; set; }
     public List<KeymapYamlNode>? Children { get; set; }
+}
+
+public sealed class KeymapYamlStep
+{
+    public string? Action { get; set; }
+    public string? Type { get; set; }
+    public string? Send { get; set; }
+    public string? Exec { get; set; }
+    public string? ExecArgs { get; set; }
+    public string? ExecCwd { get; set; }
 }

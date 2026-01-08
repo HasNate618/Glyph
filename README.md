@@ -1,55 +1,68 @@
-# Glyph — Configuration Notes
+# Glyph
 
-This project loads keymaps from a YAML file and supports a few runtime features useful for development and customization.
+Glyph is a keyboard-first, leader-key driven command system for Windows. It provides a layered, discoverable, and highly-customizable command language that runs on top of the OS and let users define sequences that map to actions, macros, and workflows.
 
-**Config file location:**
-- Windows: `%APPDATA%\\Glyph\\keymaps.yaml`
+**Quick summary**
+- Leader-key activation opens a discoverable overlay showing the current sequence and available next keys.
+- Supports global and per-application layers, groupings, and hierarchical bindings.
+- Actions include typing text, sending key chords, launching programs, and running predefined action IDs.
 
-**Repository default:**
-- When running from source, the loader will look for a repository default at `src/Glyph.App/Config/default_keymaps.yaml`. If present, it will be copied to `%APPDATA%\\Glyph\\keymaps.yaml` on first run so maintainers can edit defaults easily. If the repo default is absent, the loader will log and will not create a default file.
+Why Glyph exists
+- Replaces flat, inconsistent shortcuts with a scalable, learnable command language.
+- Makes macros discoverable and safe to explore via an overlay.
+- Lets users map intentful sequences to workflows across apps.
 
-**Key YAML features (summary):**
-- `bindings` — global key bindings.
-- `apps` / `groups` — per-application and grouped bindings.
-- `type:` — text to type.
-- `send:` — a chord or key sequence to send (using the existing send-spec syntax).
-- `then:` — chaining helper: when used with `type:`, `then:` sends a `send:`-style key after the typed text. This enables patterns like typing `git commit ""` and then sending `Left` to place the cursor between the quotes.
+Getting started — config & defaults
 
-Important behavior changes introduced recently:
-- Typing no longer automatically sends Enter — if you want Enter after typed text, explicitly include it (for example with `then: Enter`).
-- The loader now resets built-in bindings before applying YAML so removing entries from your YAML will remove them from the runtime discovery overlay after reload.
-- A runtime reload action `reloadKeymaps` is provided and bound to the glyph layer mapping `,r` (leader + `,` then `r`). Triggering this will reapply `%APPDATA%\\Glyph\\keymaps.yaml` without restarting the app.
+- Config file location (Windows): `%APPDATA%\\Glyph\\keymaps.yaml`
+- Repository default (dev): `src/Glyph.App/Config/default_keymaps.yaml` — when present and running from source, the loader will copy this into `%APPDATA%\\Glyph\\keymaps.yaml` on first run so maintainers can edit defaults easily. If the repo default is absent, the loader logs and does not create a default.
 
-Example binding snippets:
+Key YAML features
+- `bindings` — global key bindings
+- `apps` / `groups` — per-application and grouped bindings
+- `type:` — text to type
+- `send:` — send a chord or key sequence (send-spec syntax)
+- `steps:` — preferred ordered list of steps to execute sequentially. Each step may contain `action`, `type`, `send`, or `exec`.
+- `then:` — deprecated shorthand for simple two-step chains; use `steps:` for clarity and arbitrary chains.
 
-Global chaining example (type then send Left):
+Behavior notes
+- Typing no longer auto-sends Enter. If you want Enter after typed text, include an explicit step such as `- send: Enter` in a `steps:` array.
+- `steps:` is the recommended way to chain actions; `then:` remains supported as a legacy two-step helper but may be removed in the future.
+- The loader resets built-in bindings before applying the YAML; removing entries from your YAML will remove them from runtime discovery after reload.
+- Runtime reload: an action `reloadKeymaps` is provided and bound in the glyph layer to `,r` (leader + `,` then `r`). Trigger it to reapply `%APPDATA%\\Glyph\\keymaps.yaml` without restarting the app.
+
+Examples
+
+Global chaining example (preferred `steps:` form):
 
 ```yaml
 bindings:
-  - key: ",g"
-    label: "Git commit"
-    type: git commit ""
-    then: Left
+	- key: ",g"
+		label: "Git commit"
+		steps:
+			- type: git commit ""
+			- send: Left
 ```
 
 Per-app example (placed under `apps`):
 
 ```yaml
 apps:
-  - process: code
-    bindings:
-      - key: "f"
-        label: "Format file"
-        action: formatDocument
+	- process: code
+		bindings:
+			- key: "f"
+				label: "Format file"
+				action: formatDocument
 ```
 
-Runtime tips:
-- Edit `%APPDATA%\\Glyph\\keymaps.yaml` and then press the leader sequence for reload (leader → `,` → `r`) to pick up changes. Deletions in the YAML will be removed from discovery on reload.
-- If you want to use the repository's default keymaps for development, ensure `src/Glyph.App/Config/default_keymaps.yaml` is present; it will be copied into `%APPDATA%` on first run.
+Runtime tips
+- Edit `%APPDATA%\\Glyph\\keymaps.yaml` and then press leader → `,` → `r` to pick up changes. Deletions in the YAML will be removed from discovery on reload.
+- To use or update the repo default while developing, keep `src/Glyph.App/Config/default_keymaps.yaml` in the repository.
 
-File references:
+Files of interest
 - Loader: [src/Glyph.App/Config/KeymapYamlLoader.cs](src/Glyph.App/Config/KeymapYamlLoader.cs)
-# Glyph
+- Plan & motivation: [plan.md](plan.md)
+
 
 Glyph is a Windows leader-key, discoverable multi-stroke keymap overlay.
 

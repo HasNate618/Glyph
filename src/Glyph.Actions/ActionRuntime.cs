@@ -53,6 +53,17 @@ public sealed class ActionRuntime
         // Support both built-in action ids and inline key/type requests carried by ActionRequest.
         if (request is null) return;
 
+        // If this request is a chained sequence, execute each step in order.
+        if (request.Steps is { Count: > 0 })
+        {
+            foreach (var step in request.Steps)
+            {
+                await ExecuteAsync(step, cancellationToken);
+            }
+
+            return;
+        }
+
         if (!string.IsNullOrWhiteSpace(request.ActionId))
         {
             await ExecuteActionIdAsync(request.ActionId, cancellationToken);

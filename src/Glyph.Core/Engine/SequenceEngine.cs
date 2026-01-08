@@ -277,9 +277,12 @@ public sealed class SequenceEngine
             {
                 var desc = k.Description;
 
-                // If this is the program prefix and there's no per-app description,
-                // prefer the active process name instead of the generic "Program" label.
-                if (k.Key == 'p' && !string.IsNullOrWhiteSpace(activeProcessName))
+                // If this is the top-level program prefix ('p') and there's no per-app
+                // description, prefer the active process name instead of the generic
+                // "Program" label. Only substitute when the current buffer is empty
+                // (i.e. the option represents the program layer itself) to avoid
+                // overwriting unrelated 'p' keys in deeper sublayers.
+                if (k.Key == 'p' && string.IsNullOrEmpty(_buffer) && !string.IsNullOrWhiteSpace(activeProcessName))
                 {
                     var per = GetPerAppPrefixDescription(activeProcessName, "p");
                     if (!string.IsNullOrWhiteSpace(per))
@@ -389,6 +392,9 @@ public sealed class ActionRequest
     public string? ActionId { get; init; }
     public string? TypeText { get; init; }
     public string? SendSpec { get; init; }
+
+    // Support chaining of multiple ActionRequests (executed in order)
+    public List<ActionRequest>? Steps { get; init; }
 
     // Exec support
     public string? ExecPath { get; init; }
