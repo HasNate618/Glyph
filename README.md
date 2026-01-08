@@ -2,6 +2,8 @@
 
 Glyph is a keyboard-first, leader-key driven command system for Windows. It provides a layered, discoverable, and highly-customizable command language that runs on top of the OS and let users define sequences that map to actions, macros, and workflows.
 
+License: MIT (see `LICENSE`).
+
 **Quick summary**
 - Leader-key activation opens a discoverable overlay showing the current sequence and available next keys.
 - Supports global and per-application layers, groupings, and hierarchical bindings.

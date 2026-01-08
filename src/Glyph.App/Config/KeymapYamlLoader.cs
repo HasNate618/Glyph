@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 
 using Glyph.Actions;
+using Glyph.Core.Actions;
 using Glyph.Core.Engine;
 using Glyph.Core.Logging;
 
@@ -12,19 +13,33 @@ using YamlDotNet.Serialization.NamingConventions;
 
 namespace Glyph.App.Config;
 
-public static class KeymapYamlLoader
+public interface IKeymapProvider
 {
-    public static string KeymapsPath => Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        "Glyph",
-        "keymaps.yaml");
+    string KeymapsPath { get; }
+    void ApplyToEngine(SequenceEngine engine);
+}
 
-    public static void ApplyToEngine(SequenceEngine engine)
+public sealed class YamlKeymapProvider : IKeymapProvider
+{
+    public string KeymapsPath { get; }
+
+    private readonly string _repoDefaultPath;
+
+    public YamlKeymapProvider(string? keymapsPath = null, string? repoDefaultPath = null)
+    {
+        KeymapsPath = string.IsNullOrWhiteSpace(keymapsPath)
+            ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Glyph", "keymaps.yaml")
+            : keymapsPath;
+
+        _repoDefaultPath = string.IsNullOrWhiteSpace(repoDefaultPath)
+            ? Path.Combine(Directory.GetCurrentDirectory(), "src", "Glyph.App", "Config", "default_keymaps.yaml")
+            : repoDefaultPath;
+    }
+
+    public void ApplyToEngine(SequenceEngine engine)
     {
         try
         {
-            // Clear engine before applying YAML so removed bindings are cleared and
-            // all keymaps remain fully defined by YAML (no built-in keymaps).
             engine.ClearAllBindings();
 
             EnsureDefaultFileExists();
@@ -65,20 +80,15 @@ public static class KeymapYamlLoader
                         continue;
                     }
 
-                    // Label the program layer for this process with the process name
-                    // so the overlay shows the program name instead of a generic label.
                     engine.SetPerAppPrefixDescription(process, "p", process);
 
                     if (app?.Bindings is not { Count: > 0 })
                     {
-                        // No bindings for this app; still set the label so the overlay
-                        // displays the process name rather than a generic "Program".
                         continue;
                     }
 
                     foreach (var node in app.Bindings)
                     {
-                        // Place program-specific bindings under the program layer 'p'.
                         ApplyAppNode(engine, process, prefix: "p", node, ref applied, ref skippedUnknown, ref skippedInvalid);
                     }
                 }
@@ -99,7 +109,6 @@ public static class KeymapYamlLoader
                         var proc = (process ?? string.Empty).Trim();
                         if (proc.Length == 0) continue;
 
-                        // Use group.Name as the label if present, otherwise the process name.
                         var label = string.IsNullOrWhiteSpace(group.Name) ? proc : group.Name;
                         engine.SetPerAppPrefixDescription(proc, "p", label);
 
@@ -119,7 +128,7 @@ public static class KeymapYamlLoader
         }
     }
 
-    private static void EnsureDefaultFileExists()
+    private void EnsureDefaultFileExists()
     {
         var dir = Path.GetDirectoryName(KeymapsPath);
         if (!string.IsNullOrWhiteSpace(dir)) Directory.CreateDirectory(dir);
@@ -128,19 +137,17 @@ public static class KeymapYamlLoader
         {
             return;
         }
-        // Require a repository default file when running from source so maintainers
-        // can edit and verify defaults easily. Do NOT fall back to an embedded template.
+
         try
         {
-            var repoDefault = Path.Combine(Directory.GetCurrentDirectory(), "src", "Glyph.App", "Config", "default_keymaps.yaml");
-            if (File.Exists(repoDefault))
+            if (File.Exists(_repoDefaultPath))
             {
-                File.Copy(repoDefault, KeymapsPath);
+                File.Copy(_repoDefaultPath, KeymapsPath);
                 Logger.Info($"Copied repository default keymaps to: {KeymapsPath}");
                 return;
             }
 
-            Logger.Info($"Repository default keymaps not found at {repoDefault}; not creating {KeymapsPath}");
+            Logger.Info($"Repository default keymaps not found at {_repoDefaultPath}; not creating {KeymapsPath}");
         }
         catch (Exception ex)
         {
@@ -171,7 +178,6 @@ public static class KeymapYamlLoader
             return;
         }
 
-        // Allow multi-character keys like "mx" or "wmx".
         if (key.Any(char.IsWhiteSpace))
         {
             skippedInvalid++;
@@ -180,9 +186,6 @@ public static class KeymapYamlLoader
 
         var seq = prefix + key;
 
-        // Ensure the prefix exists and is discoverable. Do not overwrite an
-        // existing description created by built-ins unless the config
-        // explicitly changes it (preserve user-friendly defaults).
         var existing = engine.GetPrefixDescription(seq);
         if (string.IsNullOrWhiteSpace(existing))
         {
@@ -190,7 +193,6 @@ public static class KeymapYamlLoader
         }
         else
         {
-            // If the YAML label differs from the existing one, log but do not override.
             if (!string.Equals(existing, label, StringComparison.Ordinal))
             {
                 Logger.Info($"Keymaps: retained built-in label '{existing}' for '{seq}' (yaml: '{label}')");
@@ -205,8 +207,6 @@ public static class KeymapYamlLoader
         var execArgs = (node.ExecArgs ?? string.Empty).Trim();
         var execCwd = (node.ExecCwd ?? string.Empty).Trim();
 
-        // Prefer explicit ordered `steps:` for chaining. Falls back to legacy single-field bindings
-        // and the deprecated `then:` helper for simple two-step chains.
         if (node.Steps is { Count: > 0 })
         {
             var steps = node.Steps.Select(s => new ActionRequest
@@ -237,8 +237,7 @@ public static class KeymapYamlLoader
         }
         else if (typeText.Length > 0 && thenSpec.Length > 0)
         {
-            // Legacy: Chain TypeText + SendSpec: type text, then send key
-            engine.AddGlobalBinding(seq, new ActionRequest { Steps = new List<ActionRequest> { new ActionRequest { TypeText = typeText }, new ActionRequest { SendSpec = thenSpec } } }, label);
+            engine.AddGlobalBinding(seq, new ActionRequest { Steps = new List<ActionRequest> { new() { TypeText = typeText }, new() { SendSpec = thenSpec } } }, label);
             applied++;
         }
         else if (typeText.Length > 0)
@@ -290,7 +289,6 @@ public static class KeymapYamlLoader
             return;
         }
 
-        // Allow multi-character keys like "mx".
         if (key.Any(char.IsWhiteSpace))
         {
             skippedInvalid++;
@@ -299,7 +297,6 @@ public static class KeymapYamlLoader
 
         var seq = prefix + key;
 
-        // App-specific prefixes are discoverable only when that process is active.
         var existing = engine.GetPerAppPrefixDescription(processName, seq);
         if (string.IsNullOrWhiteSpace(existing))
         {
@@ -314,8 +311,6 @@ public static class KeymapYamlLoader
         var execArgs = (node.ExecArgs ?? string.Empty).Trim();
         var execCwd = (node.ExecCwd ?? string.Empty).Trim();
 
-        // Prefer explicit ordered `steps:` for chaining. Falls back to legacy single-field bindings
-        // and the deprecated `then:` helper for simple two-step chains.
         if (node.Steps is { Count: > 0 })
         {
             var steps = node.Steps.Select(s => new ActionRequest
@@ -346,8 +341,7 @@ public static class KeymapYamlLoader
         }
         else if (typeText.Length > 0 && thenSpec.Length > 0)
         {
-            // Legacy: Chain TypeText + SendSpec: type text, then send key
-            engine.AddPerAppBinding(processName, seq, new ActionRequest { Steps = new List<ActionRequest> { new ActionRequest { TypeText = typeText }, new ActionRequest { SendSpec = thenSpec } } }, label);
+            engine.AddPerAppBinding(processName, seq, new ActionRequest { Steps = new List<ActionRequest> { new() { TypeText = typeText }, new() { SendSpec = thenSpec } } }, label);
             applied++;
         }
         else if (typeText.Length > 0)
@@ -374,9 +368,19 @@ public static class KeymapYamlLoader
             }
         }
     }
+}
 
-    // Embedded defaults removed; KeymapYamlLoader now requires a repository
-    // default_keymaps.yaml to be present when initializing defaults.
+public static class KeymapYamlLoader
+{
+    public static string KeymapsPath => Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+        "Glyph",
+        "keymaps.yaml");
+
+    public static void ApplyToEngine(SequenceEngine engine)
+    {
+        new YamlKeymapProvider(keymapsPath: KeymapsPath).ApplyToEngine(engine);
+    }
 }
 
 public sealed class KeymapYamlRoot
@@ -406,16 +410,10 @@ public sealed class KeymapYamlNode
     public string? Action { get; set; }
     public string? Type { get; set; }
     public string? Send { get; set; }
-    // Deprecated: use `steps:` for arbitrary chaining. Kept for backwards-compatibility.
     public string? Then { get; set; }
-    // New: an ordered list of steps that will be executed sequentially. Each step
-    // may contain an `action`, `type`, `send`, or `exec` entry.
     public List<KeymapYamlStep>? Steps { get; set; }
-    // exec: program path to run
     public string? Exec { get; set; }
-    // execArgs: arguments to pass to the program
     public string? ExecArgs { get; set; }
-    // execCwd: working directory for the launched program
     public string? ExecCwd { get; set; }
     public List<KeymapYamlNode>? Children { get; set; }
 }

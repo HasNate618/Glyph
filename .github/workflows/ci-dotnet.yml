@@ -27,4 +27,4 @@ jobs:
 
       - name: Test
         run: |
-          dotnet test "${{ github.workspace }}" -c Debug --no-build --verbosity normal || exit 0
+          dotnet test "${{ github.workspace }}" -c Debug --no-build --verbosity normal

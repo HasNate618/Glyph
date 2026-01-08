@@ -1,5 +1,7 @@
+using Glyph.Core.Actions;
 using Glyph.Core.Input;
 using Glyph.Core.Logging;
+using Glyph.Core.Overlay;
 
 namespace Glyph.Core.Engine;
 
@@ -15,6 +17,8 @@ public sealed class SequenceEngine
     private string _buffer = string.Empty;
     private DateTimeOffset _lastInput;
 
+    private readonly OverlayPolicy _overlayPolicy;
+
     private SequenceEngine(
         Trie<ActionRequest> global,
         Dictionary<string, Trie<ActionRequest>> perApp,
@@ -26,6 +30,7 @@ public sealed class SequenceEngine
         _timeout = timeout;
         _disambiguationTimeout = TimeSpan.FromMilliseconds(250);
         _isLeaderKey = isLeaderKey;
+        _overlayPolicy = OverlayPolicy.Default;
     }
 
     public static SequenceEngine CreatePrototype()
@@ -229,96 +234,19 @@ public sealed class SequenceEngine
 
     private OverlayModel BuildOverlay(string? activeProcessName, IReadOnlyList<TrieNextKey>? next = null)
     {
-        var nextKeys = (next ?? LookupMerged(_buffer, activeProcessName).NextKeys);
+        var nextKeys = next ?? LookupMerged(_buffer, activeProcessName).NextKeys;
 
-        // Expand multi-character completions (one-step lookahead) so keys like "mx" render as
-        // a single option at the current layer instead of showing an empty "m" intermediate.
-        var basePrefix = _buffer;
-        var byKey = new Dictionary<string, OverlayOption>(StringComparer.Ordinal);
-
-        foreach (var k in nextKeys)
-        {
-            var desc = k.Description;
-
-            // If this is the top-level program prefix ('p') and there's no per-app
-            // description, prefer the active process name instead of the generic
-            // "Program" label. Only substitute when the current buffer is empty.
-            if (k.Key == 'p' && string.IsNullOrEmpty(_buffer) && !string.IsNullOrWhiteSpace(activeProcessName))
+        return OverlayBuilder.Build(
+            buffer: _buffer,
+            activeProcessName: activeProcessName,
+            nextKeys: nextKeys,
+            lookup: p => LookupMerged(p, activeProcessName),
+            getPerAppPrefixDescription: prefix =>
             {
-                var per = GetPerAppPrefixDescription(activeProcessName, "p");
-                desc = !string.IsNullOrWhiteSpace(per) ? per : activeProcessName!;
-            }
-
-            // Only include the single-key option if it has a label or completes an action.
-            // Otherwise, it tends to show up as a blank entry (e.g. the "m" in "mx").
-            var includeSingle = k.Completes || !string.IsNullOrWhiteSpace(desc);
-            if (includeSingle)
-            {
-                var keyString = k.Key.ToString();
-                byKey[keyString] = new OverlayOption(
-                    Key: keyString,
-                    Description: desc,
-                    IsLayer: k.Continues,
-                    IsAction: k.Completes);
-            }
-
-            // One-step lookahead: if this key continues, add any immediate 2-char completions.
-            // Only include these when the single-key would be omitted (e.g. empty intermediate)
-            // or when the completion is a repeated-key disambiguation (e.g. `d` + `d` -> `dd`).
-            // This avoids rendering nested keys (grandchildren) in overlays.
-            if (k.Continues)
-            {
-                var childLookup = LookupMerged(basePrefix + k.Key, activeProcessName);
-                foreach (var child in childLookup.NextKeys)
-                {
-                    if (!child.Completes) continue;
-
-                    var keyString = string.Concat(k.Key, child.Key);
-                    var childDesc = child.Description;
-                    if (string.IsNullOrWhiteSpace(childDesc))
-                    {
-                        // If the completion has no label, it isn't useful in discovery.
-                        continue;
-                    }
-
-                    // Only include lookahead completions when helpful:
-                    // - the single-key would not be shown (includeSingle == false), or
-                    // - the completion is a repeated-key (e.g., 'd'->'dd').
-                    if (!includeSingle || (child.Key == k.Key && k.Completes))
-                    {
-                        byKey[keyString] = new OverlayOption(
-                            Key: keyString,
-                            Description: childDesc,
-                            IsLayer: child.Continues,
-                            IsAction: true);
-                    }
-                }
-            }
-        }
-
-        var options = byKey.Values
-            .OrderBy(o => o.Key, StringComparer.Ordinal)
-            .ToList();
-
-        // If the user has entered a layer that contains no bindings, show a helpful message.
-        if (options.Count == 0)
-        {
-            var seq = $"Leader {_buffer}".TrimEnd();
-            string msg;
-            // If this is the program layer (p) and we have an active process, mention it.
-            if (!string.IsNullOrWhiteSpace(activeProcessName) && _buffer.StartsWith("p", StringComparison.Ordinal))
-            {
-                msg = $"No keys defined for {activeProcessName}";
-            }
-            else
-            {
-                msg = "No keys defined for this layer";
-            }
-
-            return new OverlayModel(seq, new List<OverlayOption> { new OverlayOption("—", msg, false, false) });
-        }
-
-        return new OverlayModel($"Leader {_buffer}".TrimEnd(), options);
+                if (string.IsNullOrWhiteSpace(activeProcessName)) return null;
+                return GetPerAppPrefixDescription(activeProcessName, prefix);
+            },
+            policy: _overlayPolicy);
     }
 
     private TrieLookupResult<ActionRequest> LookupMerged(string prefix, string? activeProcessName)
@@ -342,6 +270,12 @@ public sealed class SequenceEngine
             return global;
         }
 
+        // If global is invalid but app is valid, take app as-is.
+        if (!global.IsValidPrefix)
+        {
+            return app.Value;
+        }
+
         // Completion precedence: app overrides global.
         if (app.Value.IsComplete && app.Value.Value is not null)
         {
@@ -349,7 +283,7 @@ public sealed class SequenceEngine
         }
 
         // Merge next keys (union), but prefer app descriptions when overlapping.
-        var merged = new Dictionary<char, TrieNextKey>();
+        var merged = new Dictionary<char, TrieNextKey>(Math.Max(8, global.NextKeys.Count + app.Value.NextKeys.Count));
         foreach (var nk in global.NextKeys)
         {
             merged[nk.Key] = nk;
@@ -359,7 +293,6 @@ public sealed class SequenceEngine
         {
             if (merged.TryGetValue(nk.Key, out var existing))
             {
-                // Merge flags, but prefer app description when present.
                 merged[nk.Key] = new TrieNextKey(
                     Key: nk.Key,
                     Description: string.IsNullOrWhiteSpace(nk.Description) ? existing.Description : nk.Description,
@@ -377,40 +310,15 @@ public sealed class SequenceEngine
             .Select(kvp => kvp.Value)
             .ToList();
 
+        // If app doesn't complete, fall back to global completion (if any), but still allow
+        // app to contribute next keys/descriptions.
+        var resolvedValue = global.Value;
+        var resolvedIsComplete = global.IsComplete;
+
         return new TrieLookupResult<ActionRequest>(
             IsValidPrefix: true,
-            IsComplete: global.IsComplete,
-            Value: global.Value,
+            IsComplete: resolvedIsComplete,
+            Value: resolvedValue,
             NextKeys: nextKeys);
     }
-}
-public sealed class ActionRequest
-{
-    public string? ActionId { get; init; }
-    public string? TypeText { get; init; }
-    public string? SendSpec { get; init; }
-
-    // Support chaining of multiple ActionRequests (executed in order)
-    public List<ActionRequest>? Steps { get; init; }
-
-    // Exec support
-    public string? ExecPath { get; init; }
-    public string? ExecArgs { get; init; }
-    public string? ExecCwd { get; init; }
-
-    public ActionRequest() { }
-    public ActionRequest(string actionId) => ActionId = actionId;
-}
-
-public sealed record OverlayModel(string Sequence, IReadOnlyList<OverlayOption> Options);
-
-public sealed record OverlayOption(string Key, string Description, bool IsLayer, bool IsAction)
-{
-    public IReadOnlyList<string> KeyCaps { get; } = Key.Select(c => c.ToString()).ToArray();
-}
-
-public readonly record struct EngineResult(bool Consumed, OverlayModel? Overlay, ActionRequest? Action, TimeSpan? ExecuteAfter)
-{
-    public static EngineResult None => new(false, null, null, null);
-    public static EngineResult ConsumedNoOverlay => new(true, null, null, null);
 }

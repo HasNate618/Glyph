@@ -40,3 +40,6 @@ Thumbs.db
 
 # Ignore docs directory maintained locally
 docs/
+
+# Local scratch folder (do not commit)
+TODO/

@@ -1,6 +1,9 @@
 using System.Windows;
 
 using Glyph.Actions;
+using Glyph.App.Config;
+using Glyph.App.Services;
+using Glyph.Core.Actions;
 using Glyph.Core.Engine;
 using Glyph.Core.Input;
 using Glyph.Core.Logging;
@@ -14,8 +17,9 @@ public sealed class GlyphHost : IDisposable
 {
     private readonly KeyboardHook _keyboardHook;
     private SequenceEngine _engine;
-    private readonly ActionRuntime _actionRuntime;
-    private readonly OverlayWindow _overlay;
+    private readonly IActionExecutor _actionExecutor;
+    private readonly IOverlayPresenter _overlayPresenter;
+    private readonly IKeymapProvider _keymapProvider;
 
     private readonly object _engineSync = new();
     private CancellationTokenSource? _pendingActionCts;
@@ -64,9 +68,11 @@ public sealed class GlyphHost : IDisposable
             _engine = SequenceEngine.CreatePrototype(_ => false);
         }
 
-        Glyph.App.Config.KeymapYamlLoader.ApplyToEngine(_engine);
-        _actionRuntime = new ActionRuntime();
-        _overlay = new OverlayWindow();
+        _keymapProvider = new YamlKeymapProvider();
+        _keymapProvider.ApplyToEngine(_engine);
+
+        _actionExecutor = new ActionRuntimeExecutor(new ActionRuntime());
+        _overlayPresenter = new OverlayWindowPresenter(new OverlayWindow());
 
         _keyboardHook = new KeyboardHook();
         _keyboardHook.KeyDown += OnGlobalKeyDown;
@@ -85,13 +91,7 @@ public sealed class GlyphHost : IDisposable
         _keyboardHook.KeyDown -= OnGlobalKeyDown;
         _keyboardHook.KeyUp -= OnGlobalKeyUp;
         _keyboardHook.Dispose();
-        _overlay.Dispatcher.Invoke(() =>
-        {
-            if (_overlay.IsVisible)
-            {
-                _overlay.Hide();
-            }
-        });
+        _overlayPresenter.Dispose();
     }
 
     private void OnGlobalKeyDown(object? sender, KeyboardHookEventArgs e)
@@ -123,14 +123,7 @@ public sealed class GlyphHost : IDisposable
                 }
                 if (began.Overlay is not null)
                 {
-                    System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
-                    {
-                        _overlay.Update(began.Overlay);
-                        if (!_overlay.IsVisible)
-                        {
-                            _overlay.Show();
-                        }
-                    });
+                    _overlayPresenter.Render(began.Overlay);
                 }
             }
 
@@ -164,14 +157,7 @@ public sealed class GlyphHost : IDisposable
                     e.Suppress = true;
                     if (beganSession is not null)
                     {
-                        System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
-                        {
-                            _overlay.Update(beganSession.Value.Overlay!);
-                            if (!_overlay.IsVisible)
-                            {
-                                _overlay.Show();
-                            }
-                        });
+                        _overlayPresenter.Render(beganSession.Value.Overlay!);
                     }
                     return;
                 }
@@ -183,15 +169,7 @@ public sealed class GlyphHost : IDisposable
                     e.Suppress = true;
                     if (beganSession is not null)
                     {
-                        // Show overlay immediately.
-                        System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
-                        {
-                            _overlay.Update(beganSession.Value.Overlay!);
-                            if (!_overlay.IsVisible)
-                            {
-                                _overlay.Show();
-                            }
-                        });
+                        _overlayPresenter.Render(beganSession.Value.Overlay!);
                     }
                     return;
                 }
@@ -209,27 +187,7 @@ public sealed class GlyphHost : IDisposable
             e.Suppress = true;
         }
 
-        if (result.Overlay is not null)
-        {
-            System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
-            {
-                _overlay.Update(result.Overlay);
-                if (!_overlay.IsVisible)
-                {
-                    _overlay.Show();
-                }
-            });
-        }
-        else
-        {
-            FireAndForget(System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
-            {
-                if (_overlay.IsVisible)
-                {
-                    _overlay.Hide();
-                }
-            }).Task);
-        }
+        _overlayPresenter.Render(result.Overlay);
 
         if (result.Action is not null)
         {
@@ -274,12 +232,12 @@ public sealed class GlyphHost : IDisposable
             if (string.Equals(result.Action.ActionId, "reloadKeymaps", StringComparison.OrdinalIgnoreCase))
             {
                 // Re-apply keymaps from YAML into the current engine instance so user edits take effect immediately.
-                Glyph.App.Config.KeymapYamlLoader.ApplyToEngine(_engine);
+                _keymapProvider.ApplyToEngine(_engine);
                 Logger.Info("Keymaps reloaded from YAML");
                 return;
             }
 
-                FireAndForget(_actionRuntime.ExecuteAsync(result.Action, CancellationToken.None));
+                FireAndForget(_actionExecutor.ExecuteAsync(result.Action, CancellationToken.None));
         }
     }
 
@@ -332,13 +290,7 @@ public sealed class GlyphHost : IDisposable
                 _engine.EndSession();
             }
 
-            FireAndForget(System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
-            {
-                if (_overlay.IsVisible)
-                {
-                    _overlay.Hide();
-                }
-            }).Task);
+            _overlayPresenter.Render(null);
 
             Logger.Info($"Delayed action triggered: {action.ActionId} (app={activeProcess ?? "?"})");
 
@@ -346,13 +298,13 @@ public sealed class GlyphHost : IDisposable
             {
                 lock (_engineSync)
                 {
-                    Glyph.App.Config.KeymapYamlLoader.ApplyToEngine(_engine);
+                    _keymapProvider.ApplyToEngine(_engine);
                 }
                 Logger.Info("Keymaps reloaded from YAML");
                 return;
             }
 
-            FireAndForget(_actionRuntime.ExecuteAsync(action, CancellationToken.None));
+            FireAndForget(_actionExecutor.ExecuteAsync(action, CancellationToken.None));
         }));
     }
 
@@ -384,14 +336,7 @@ public sealed class GlyphHost : IDisposable
 
                     if (began.Overlay is not null)
                     {
-                        System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
-                        {
-                            _overlay.Update(began.Overlay);
-                            if (!_overlay.IsVisible)
-                            {
-                                _overlay.Show();
-                            }
-                        });
+                        _overlayPresenter.Render(began.Overlay);
                     }
                 }
             }
@@ -417,14 +362,7 @@ public sealed class GlyphHost : IDisposable
                             // Important: do NOT suppress modifier events; suppressing can lead to a stuck modifier state.
                             if (beganSession is not null)
                             {
-                                System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
-                                {
-                                    _overlay.Update(beganSession.Value.Overlay!);
-                                    if (!_overlay.IsVisible)
-                                    {
-                                        _overlay.Show();
-                                    }
-                                });
+                                _overlayPresenter.Render(beganSession.Value.Overlay!);
                             }
                         }
                         return;
@@ -515,7 +453,7 @@ public sealed class GlyphHost : IDisposable
 
         lock (_engineSync)
         {
-            Glyph.App.Config.KeymapYamlLoader.ApplyToEngine(_engine);
+            _keymapProvider.ApplyToEngine(_engine);
         }
 
         Logger.Info($"Leader updated from settings (len={_leaderSequence.Count})");
