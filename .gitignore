@@ -37,3 +37,6 @@ packages/
 # OS
 .DS_Store
 Thumbs.db
+
+# Ignore docs directory maintained locally
+docs/
