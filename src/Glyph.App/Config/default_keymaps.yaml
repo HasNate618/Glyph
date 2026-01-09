@@ -8,6 +8,10 @@
 #
 # Notes:
 # - key can be multi-character (ex: "mx"), which is useful for sequences like wmx.
+# - To use a named multi-letter key as a *single* step (e.g., Win, Left, Enter, F1), use either:
+#     - keyTokens: ["Win"]
+#     - or embed tokens inside key with angle brackets: key: "w<Win>" (Win after 'w')
+#   This avoids ambiguity between a named key ("Win") and typing a sequence of letters ('w''i''n').
 # - action must be a known action id; unknown actions are skipped (but the prefix label stays).
 
 bindings:
@@ -191,7 +195,7 @@ bindings:
         action: openGlyphGui
       - key: c
         label: Open Config
-        action: openConfig
+        action: openGlyphGui
       - key: l
         label: Open Logs
         action: openLogs

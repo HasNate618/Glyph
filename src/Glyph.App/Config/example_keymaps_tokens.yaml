@@ -1,0 +1,44 @@
+# Example keymaps to test token support (keyTokens and <Token> syntax)
+
+bindings:
+  # Unambiguous single-token mapping using keyTokens
+  - keyTokens: ["Win"]
+    label: Win (single token)
+    action: openGlyphGui
+
+  # Inline token usage inside a key string: P then Win then G
+  - key: "p<Win>g"
+    label: P + Win + g
+    action: logForeground
+
+  # Explicit single-token for function key
+  - keyTokens: ["F5"]
+    label: F5 (single token)
+    send: F5
+
+  # Legacy multi-letter sequence: treated as three chars 'w','i','n'
+  - key: win
+    label: w-i-n sequence (legacy per-char)
+    action: openGlyphGui
+
+  # Convenience bare "Win" key (loader maps bare Win to token)
+  - key: Win
+    label: bare Win convenience (single token)
+    action: openLogs
+
+  # Mixed example using angle-bracket tokens and literal chars
+  - key: "<Win>g"
+    label: Win then g
+    action: openGlyphGui
+
+apps:
+  - process: Code
+    bindings:
+      # Per-app single-token mapping
+      - keyTokens: ["Win"]
+        label: App: Win token
+        send: Win+S
+
+# Notes:
+# - Use the repository default keymap loader to copy this into %APPDATA% or load it manually for testing.
+# - Try both the bare "Win" key and the explicit keyTokens/<Token> forms to compare behavior.

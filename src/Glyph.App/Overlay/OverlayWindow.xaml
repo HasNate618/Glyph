@@ -39,7 +39,7 @@
                                 </ItemsControl.ItemsPanel>
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <Border Width="28" Height="28" CornerRadius="{DynamicResource Glyph.Overlay.KeycapCornerRadius}" Background="{DynamicResource Glyph.Overlay.KeycapBackground}" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,4,0">
+                                        <Border MinWidth="28" Height="28" Padding="6,0" CornerRadius="{DynamicResource Glyph.Overlay.KeycapCornerRadius}" Background="{DynamicResource Glyph.Overlay.KeycapBackground}" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,4,0">
                                             <Border.Style>
                                                 <Style TargetType="Border">
                                                     <Setter Property="Background" Value="{DynamicResource Glyph.Overlay.KeycapBackgroundAction}" />
@@ -57,25 +57,27 @@
                                                     </Style.Triggers>
                                                 </Style>
                                             </Border.Style>
-                                            <TextBlock
-                                                VerticalAlignment="Center"
-                                                HorizontalAlignment="Center"
-                                                FontWeight="Bold"
-                                                FontSize="13"
-                                                Foreground="{DynamicResource Glyph.Overlay.KeycapForegroundAction}"
-                                                FontFamily="{DynamicResource Glyph.Overlay.FontFamily}"
-                                                Text="{Binding}">
-                                                <TextBlock.Style>
-                                                    <Style TargetType="TextBlock">
-                                                        <Setter Property="Foreground" Value="{DynamicResource Glyph.Overlay.KeycapForegroundAction}" />
-                                                        <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding DataContext.IsLayer, RelativeSource={RelativeSource AncestorType=ItemsControl}}" Value="True">
-                                                                <Setter Property="Foreground" Value="{DynamicResource Glyph.Overlay.KeycapForegroundLayer}" />
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </TextBlock.Style>
-                                            </TextBlock>
+                                            <Viewbox Stretch="Uniform" StretchDirection="DownOnly">
+                                                <TextBlock
+                                                    VerticalAlignment="Center"
+                                                    HorizontalAlignment="Center"
+                                                    FontWeight="Bold"
+                                                    FontSize="13"
+                                                    Foreground="{DynamicResource Glyph.Overlay.KeycapForegroundAction}"
+                                                    FontFamily="{DynamicResource Glyph.Overlay.FontFamily}"
+                                                    Text="{Binding}">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="Foreground" Value="{DynamicResource Glyph.Overlay.KeycapForegroundAction}" />
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding DataContext.IsLayer, RelativeSource={RelativeSource AncestorType=ItemsControl}}" Value="True">
+                                                                    <Setter Property="Foreground" Value="{DynamicResource Glyph.Overlay.KeycapForegroundLayer}" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                            </Viewbox>
                                         </Border>
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>

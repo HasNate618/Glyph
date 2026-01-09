@@ -91,6 +91,37 @@ apps:
         action: formatDocument
 ```
 
+### Named key tokens
+
+Multi-letter named keys (for example `Win`, `Enter`, `Left`, or `F5`) can be represented as single logical key steps rather than sequences of characters.
+
+Two ways to declare a named token in a keymap:
+
+- `keyTokens`: an explicit list of token names for a binding (unambiguous).
+- Angle-bracket inline tokens inside `key:`: use `<Token>` to embed a named token inside a sequence (for example `p<Win>g`).
+
+Examples:
+
+```yaml
+bindings:
+  - keyTokens: ["Win"]
+    label: Win (single token)
+    action: openGlyphGui
+
+  - key: "p<Win>g"
+    label: P + Win + g
+    action: logForeground
+
+  - key: Win
+    label: bare Win convenience (single token)
+    action: openLogs
+```
+
+Display behavior:
+
+- Named tokens render as single keycaps in the overlay and are shown inline in the sequence text using angle brackets (for example: `<Win>`).
+- For a practical test map, see: [src/Glyph.App/Config/example_keymaps_tokens.yaml](src/Glyph.App/Config/example_keymaps_tokens.yaml)
+
 Program-prefix (`p`) and overlay behaviour:
 
 - `p` is a reserved top-level prefix used for program-specific bindings. Program bindings should live under `apps:` (or `groups:`) and are applied when the foreground process matches the `process` name.

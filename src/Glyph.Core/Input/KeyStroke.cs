@@ -12,6 +12,45 @@ public readonly record struct KeyStroke(
     {
         // Prototype: only map A–Z keys to lowercase chars. Everything else is treated as non-text.
         char? key = null;
+
+        // Named/special keys (single-step tokens)
+        // NOTE: we keep these as private-use chars so the existing char-based engine remains unchanged.
+        if (vkCode == 0x5B || vkCode == 0x5C) // VK_LWIN / VK_RWIN
+        {
+            if (KeyTokens.TryEncode("Win", out var k))
+            {
+                key = k;
+            }
+        }
+
+        // Arrow/navigation keys
+        if (vkCode == 0x25 && KeyTokens.TryEncode("Left", out var left)) key = left;
+        if (vkCode == 0x26 && KeyTokens.TryEncode("Up", out var up)) key = up;
+        if (vkCode == 0x27 && KeyTokens.TryEncode("Right", out var right)) key = right;
+        if (vkCode == 0x28 && KeyTokens.TryEncode("Down", out var down)) key = down;
+        if (vkCode == 0x24 && KeyTokens.TryEncode("Home", out var home)) key = home;
+        if (vkCode == 0x23 && KeyTokens.TryEncode("End", out var end)) key = end;
+        if (vkCode == 0x21 && KeyTokens.TryEncode("PageUp", out var pgUp)) key = pgUp;
+        if (vkCode == 0x22 && KeyTokens.TryEncode("PageDown", out var pgDn)) key = pgDn;
+        if (vkCode == 0x2D && KeyTokens.TryEncode("Insert", out var ins)) key = ins;
+        if (vkCode == 0x2E && KeyTokens.TryEncode("Delete", out var del)) key = del;
+
+        // Editing/system
+        if (vkCode == 0x0D && KeyTokens.TryEncode("Enter", out var enter)) key = enter;
+        if (vkCode == 0x09 && KeyTokens.TryEncode("Tab", out var tab)) key = tab;
+        if (vkCode == 0x08 && KeyTokens.TryEncode("Backspace", out var bs)) key = bs;
+        if (vkCode == 0x14 && KeyTokens.TryEncode("CapsLock", out var caps)) key = caps;
+
+        // Function keys F1-F12 (0x70-0x7B)
+        if (vkCode is >= 0x70 and <= 0x7B)
+        {
+            var fn = vkCode - 0x70 + 1;
+            if (KeyTokens.TryEncode($"F{fn}", out var fk))
+            {
+                key = fk;
+            }
+        }
+
         if (vkCode is >= 0x41 and <= 0x5A)
         {
             key = (char)('a' + (vkCode - 0x41));

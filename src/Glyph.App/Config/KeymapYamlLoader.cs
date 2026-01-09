@@ -6,6 +6,7 @@ using System.Linq;
 using Glyph.Actions;
 using Glyph.Core.Actions;
 using Glyph.Core.Engine;
+using Glyph.Core.Input;
 using Glyph.Core.Logging;
 
 using YamlDotNet.Serialization;
@@ -203,9 +204,10 @@ public sealed class YamlKeymapProvider : IKeymapProvider
         }
 
         var key = (node.Key ?? string.Empty).Trim();
+        var keyTokens = node.KeyTokens;
         var label = (node.Label ?? string.Empty).Trim();
 
-        if (key.Length == 0 || label.Length == 0)
+        if ((key.Length == 0 && (keyTokens is null || keyTokens.Count == 0)) || label.Length == 0)
         {
             skippedInvalid++;
             return;
@@ -217,7 +219,14 @@ public sealed class YamlKeymapProvider : IKeymapProvider
             return;
         }
 
-        var seq = prefix + key;
+        var keySeq = ParseKeySequence(key, keyTokens, ref skippedInvalid);
+        if (string.IsNullOrWhiteSpace(keySeq))
+        {
+            skippedInvalid++;
+            return;
+        }
+
+        var seq = prefix + keySeq;
 
         var existing = engine.GetPrefixDescription(seq);
         if (string.IsNullOrWhiteSpace(existing))
@@ -314,9 +323,10 @@ public sealed class YamlKeymapProvider : IKeymapProvider
         }
 
         var key = (node.Key ?? string.Empty).Trim();
+        var keyTokens = node.KeyTokens;
         var label = (node.Label ?? string.Empty).Trim();
 
-        if (key.Length == 0 || label.Length == 0)
+        if ((key.Length == 0 && (keyTokens is null || keyTokens.Count == 0)) || label.Length == 0)
         {
             skippedInvalid++;
             return;
@@ -328,7 +338,14 @@ public sealed class YamlKeymapProvider : IKeymapProvider
             return;
         }
 
-        var seq = prefix + key;
+        var keySeq = ParseKeySequence(key, keyTokens, ref skippedInvalid);
+        if (string.IsNullOrWhiteSpace(keySeq))
+        {
+            skippedInvalid++;
+            return;
+        }
+
+        var seq = prefix + keySeq;
 
         var existing = engine.GetPerAppPrefixDescription(processName, seq);
         if (string.IsNullOrWhiteSpace(existing))
@@ -401,6 +418,72 @@ public sealed class YamlKeymapProvider : IKeymapProvider
             }
         }
     }
+
+    private static string ParseKeySequence(string key, List<string>? keyTokens, ref int skippedInvalid)
+    {
+        // Preferred: an explicit token list avoids ambiguity between multi-letter tokens vs letter sequences.
+        if (keyTokens is { Count: > 0 })
+        {
+            var buf = new List<char>(keyTokens.Count);
+            foreach (var raw in keyTokens)
+            {
+                var t = (raw ?? string.Empty).Trim();
+                if (t.Length == 0)
+                {
+                    skippedInvalid++;
+                    return string.Empty;
+                }
+
+                if (!KeyTokens.TryEncode(t, out var ch))
+                {
+                    skippedInvalid++;
+                    Logger.Info($"Keymaps: unknown key token '{t}' (use single characters or supported tokens like Win/Enter/Left/F1)");
+                    return string.Empty;
+                }
+
+                buf.Add(ch);
+            }
+
+            return new string(buf.ToArray());
+        }
+
+        // Convenience: allow a bare "Win" key for the most common case.
+        // For everything else, users can use keyTokens (recommended) or <Token> segments inside key.
+        if (string.Equals(key, "Win", StringComparison.OrdinalIgnoreCase) && KeyTokens.TryEncode("Win", out var win))
+        {
+            return new string(win, 1);
+        }
+
+        // Parse <Token> segments inside the key string. Anything else is treated as literal single-character steps.
+        // Example: "p<Win>g" => ['p', WinToken, 'g']
+        var chars = new List<char>(key.Length);
+        for (var i = 0; i < key.Length; i++)
+        {
+            var c = key[i];
+            if (c == '<')
+            {
+                var end = key.IndexOf('>', i + 1);
+                if (end > i + 1)
+                {
+                    var token = key.Substring(i + 1, end - i - 1);
+                    if (!KeyTokens.TryEncode(token, out var encoded))
+                    {
+                        skippedInvalid++;
+                        Logger.Info($"Keymaps: unknown key token '<{token}>'");
+                        return string.Empty;
+                    }
+
+                    chars.Add(encoded);
+                    i = end;
+                    continue;
+                }
+            }
+
+            chars.Add(c);
+        }
+
+        return new string(chars.ToArray());
+    }
 }
 
 public static class KeymapYamlLoader
@@ -439,6 +522,7 @@ public sealed class KeymapYamlGroup
 public sealed class KeymapYamlNode
 {
     public string? Key { get; set; }
+    public List<string>? KeyTokens { get; set; }
     public string? Label { get; set; }
     public string? Action { get; set; }
     public string? Type { get; set; }

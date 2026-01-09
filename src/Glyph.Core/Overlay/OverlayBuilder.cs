@@ -1,5 +1,6 @@
 using Glyph.Core.Actions;
 using Glyph.Core.Engine;
+using Glyph.Core.Input;
 
 namespace Glyph.Core.Overlay;
 
@@ -83,7 +84,7 @@ public static class OverlayBuilder
 
         if (options.Count == 0)
         {
-            var seq = $"Glyph {buffer}".TrimEnd();
+            var seq = $"Glyph {KeyTokens.FormatInlineSequence(buffer)}".TrimEnd();
             string msg;
             if (buffer.StartsWith("p", StringComparison.Ordinal))
             {
@@ -104,6 +105,6 @@ public static class OverlayBuilder
             return new OverlayModel(seq, new List<OverlayOption> { new("—", msg, false, false) });
         }
 
-        return new OverlayModel($"Glyph {buffer}".TrimEnd(), options);
+        return new OverlayModel($"Glyph {KeyTokens.FormatInlineSequence(buffer)}".TrimEnd(), options);
     }
 }
