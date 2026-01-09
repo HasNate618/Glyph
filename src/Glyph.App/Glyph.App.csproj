@@ -31,4 +31,9 @@
     </None>
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Embed the default keymaps so the app can write a default on first-run for published builds -->
+    <EmbeddedResource Include="Config\default_keymaps.yaml" />
+  </ItemGroup>
+
 </Project>

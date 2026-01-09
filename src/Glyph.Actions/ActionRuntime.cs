@@ -25,6 +25,8 @@ public sealed class ActionRuntime
         "mediaShuffle",
 
         "logForeground",
+        "openLogs",
+        "openConfig",
 
         "windowMinimize",
         
@@ -109,6 +111,8 @@ public sealed class ActionRuntime
             // Window management (keep minimize only)
             "windowMinimize" => WindowManagerActionAsync(WindowAction.Minimize, cancellationToken),
             "logForeground" => LogForegroundAsync(cancellationToken),
+            "openLogs" => OpenLogsFolderAsync(cancellationToken),
+            "openConfig" => OpenConfigFolderAsync(cancellationToken),
 
             // Theme setters: write the base selector file so ThemeManager watcher applies it.
             "setThemeFluent" => SetBaseThemeAsync("Fluent", cancellationToken),
@@ -296,6 +300,48 @@ public sealed class ActionRuntime
         catch (Exception ex)
         {
             Logger.Error("Error logging foreground process", ex);
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private static Task OpenLogsFolderAsync(CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        try
+        {
+            var dir = Glyph.Core.Logging.Logger.LogDirectory;
+            Directory.CreateDirectory(dir);
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = dir,
+                UseShellExecute = true,
+            });
+        }
+        catch (Exception ex)
+        {
+            Logger.Error("Error opening logs folder", ex);
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private static Task OpenConfigFolderAsync(CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        try
+        {
+            var dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Glyph");
+            Directory.CreateDirectory(dir);
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = dir,
+                UseShellExecute = true,
+            });
+        }
+        catch (Exception ex)
+        {
+            Logger.Error("Error opening config folder", ex);
         }
 
         return Task.CompletedTask;

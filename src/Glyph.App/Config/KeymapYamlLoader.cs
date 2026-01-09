@@ -158,6 +158,28 @@ public sealed class YamlKeymapProvider : IKeymapProvider
                 return;
             }
 
+            // If the repository path is not available (published app), try extracting an embedded resource.
+            var asm = typeof(YamlKeymapProvider).Assembly;
+            var resourceName = asm.GetManifestResourceNames().FirstOrDefault(n => n.EndsWith("default_keymaps.yaml", StringComparison.OrdinalIgnoreCase));
+            if (!string.IsNullOrWhiteSpace(resourceName))
+            {
+                try
+                {
+                    using var stream = asm.GetManifestResourceStream(resourceName);
+                    if (stream is not null)
+                    {
+                        using var fs = File.Create(KeymapsPath);
+                        stream.CopyTo(fs);
+                        Logger.Info($"Wrote embedded default keymaps to: {KeymapsPath} (resource: {resourceName})");
+                        return;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logger.Info($"Failed to write embedded default keymaps: {ex.Message}");
+                }
+            }
+
             Logger.Info($"Repository default keymaps not found at {_repoDefaultPath}; not creating {KeymapsPath}");
         }
         catch (Exception ex)

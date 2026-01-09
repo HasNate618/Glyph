@@ -189,6 +189,12 @@ bindings:
       - key: o
         label: Open Glyph GUI
         action: openGlyphGui
+      - key: c
+        label: Open Config
+        action: openConfig
+      - key: l
+        label: Open Logs
+        action: openLogs
       - key: r
         label: Reload keymaps
         action: reloadKeymaps
