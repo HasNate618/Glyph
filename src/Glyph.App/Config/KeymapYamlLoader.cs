@@ -40,8 +40,6 @@ public sealed class YamlKeymapProvider : IKeymapProvider
     {
         try
         {
-            engine.ClearAllBindings();
-
             EnsureDefaultFileExists();
 
             var yaml = File.ReadAllText(KeymapsPath);
@@ -50,12 +48,25 @@ public sealed class YamlKeymapProvider : IKeymapProvider
                 .IgnoreUnmatchedProperties()
                 .Build();
 
-            var root = deserializer.Deserialize<KeymapYamlRoot>(yaml);
+            KeymapYamlRoot? root;
+            try
+            {
+                root = deserializer.Deserialize<KeymapYamlRoot>(yaml);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Failed to parse keymaps YAML: {KeymapsPath}", ex);
+                return;
+            }
+
             if ((root?.Bindings is null || root.Bindings.Count == 0) && (root?.Apps is null || root.Apps.Count == 0))
             {
                 Logger.Info($"Keymaps: no bindings found in {KeymapsPath}");
                 return;
             }
+
+            // Only clear existing bindings after we've successfully parsed and validated the YAML
+            engine.ClearAllBindings();
 
             var applied = 0;
             var skippedUnknown = 0;

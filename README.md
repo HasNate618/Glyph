@@ -34,6 +34,8 @@ dotnet run --project src/Glyph.App/Glyph.App.csproj -c Debug
 
 On first run, a default `%APPDATA%\Glyph\keymaps.yaml` is created. While developing from source, the template comes from `src/Glyph.App/Config/default_keymaps.yaml`.
 
+Important: the YAML loader parses the file before applying changes. If the YAML is malformed the loader will log a parse error and will not overwrite your live bindings — this prevents accidental loss of keymaps when editing.
+
 ## Keymaps (YAML)
 
 Keymaps are a tree of bindings. Each node has a `key` and `label`, and then either:
@@ -44,6 +46,9 @@ Keymaps are a tree of bindings. Each node has a `key` and `label`, and then eith
 - `exec` (+ optional `execArgs`, `execCwd`): launch a program
 - `steps`: chain multiple `action`/`type`/`send`/`exec` steps
 - `children`: nested bindings (multi-stroke sequences)
+
+- `apps:`: program-specific bindings keyed by process name (applied when the foreground process matches)
+- `groups:`: named groups of processes that share the same bindings (useful for browsers, terminals, etc.)
 
 Reloading keymaps at runtime: the default keymap binds `reloadKeymaps` to glyph → `,` → `r`.
 
@@ -86,9 +91,41 @@ apps:
         action: formatDocument
 ```
 
+Program-prefix (`p`) and overlay behaviour:
+
+- `p` is a reserved top-level prefix used for program-specific bindings. Program bindings should live under `apps:` (or `groups:`) and are applied when the foreground process matches the `process` name.
+- When you open the `p` prefix in the overlay, the UI shows one of three messages depending on context:
+  - `No Program Focused` — nothing has focus (desktop/overlay/other)
+  - `<ProcessName> Not Configured` — a program is focused but there are no `apps:`/`groups:` bindings for it
+  - the configured label (from `apps:`/`groups:`) — when the focused process has program-specific bindings
+
+Example `apps:` and `groups:` usage:
+
+```yaml
+bindings:
+  - key: p
+    label: Program
+
+apps:
+  - process: Spotify
+    bindings:
+      - key: p
+        label: Play / Pause
+        action: mediaPlayPause
+
+groups:
+  - name: Browser
+    processes: [ chrome, msedge, firefox ]
+    bindings:
+      - key: t
+        label: New Tab
+        send: Ctrl+T
+```
+
 ## Built-in actions
 
 The built-in action ids live in [src/Glyph.Actions/ActionRuntime.cs](src/Glyph.Actions/ActionRuntime.cs).
+Tip: there is a helper action `logForeground` you can bind (for example to a key in your `bindings:`) to log the currently focused process name. Use it to discover the exact `process` string to put in `apps:`.
 
 ## Troubleshooting
 

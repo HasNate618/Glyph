@@ -15,9 +15,6 @@ public sealed class ActionRuntime
     public static readonly IReadOnlySet<string> KnownActionIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     {
         "launchChrome",
-        "openTerminal",
-        "openExplorer",
-        "openTaskManager",
         "openBrowser",
 
         "mediaPlayPause",
@@ -25,14 +22,13 @@ public sealed class ActionRuntime
         "mediaPrev",
         "volumeMute",
         "openSpotify",
-        "muteMic",
         "mediaShuffle",
 
+        "logForeground",
+
         "windowMinimize",
-        "windowMaximize",
-        "windowRestore",
-        "windowClose",
-        "windowTopmost",
+        
+        
 
         "typeNvimDot",
         "openGlyphGui",
@@ -99,9 +95,7 @@ public sealed class ActionRuntime
         await (actionId switch
         {
             "launchChrome" => LaunchAsync(FindChrome(), null, cancellationToken),
-            "openTerminal" => OpenDefaultTerminalAsync(cancellationToken),
-            "openExplorer" => LaunchAsync("explorer.exe", null, cancellationToken),
-            "openTaskManager" => LaunchAsync("taskmgr.exe", null, cancellationToken),
+            
             "openBrowser" => OpenDefaultBrowser(cancellationToken),
 
             // Media actions
@@ -110,15 +104,11 @@ public sealed class ActionRuntime
             "mediaPrev" => MediaKeyAsync(NativeMediaKey.MEDIA_PREV_TRACK, cancellationToken),
             "volumeMute" => MediaKeyAsync(NativeMediaKey.VOLUME_MUTE, cancellationToken),
             "openSpotify" => LaunchAsync("spotify:", null, cancellationToken),
-            "muteMic" => ToggleMicAsync(cancellationToken),
             "mediaShuffle" => OpenSpotifyAndAttemptShuffle(cancellationToken),
 
-            // Window management
+            // Window management (keep minimize only)
             "windowMinimize" => WindowManagerActionAsync(WindowAction.Minimize, cancellationToken),
-            "windowMaximize" => WindowManagerActionAsync(WindowAction.Maximize, cancellationToken),
-            "windowRestore" => WindowManagerActionAsync(WindowAction.Restore, cancellationToken),
-            "windowClose" => WindowManagerActionAsync(WindowAction.Close, cancellationToken),
-            "windowTopmost" => WindowManagerActionAsync(WindowAction.ToggleTopmost, cancellationToken),
+            "logForeground" => LogForegroundAsync(cancellationToken),
 
             // Theme setters: write the base selector file so ThemeManager watcher applies it.
             "setThemeFluent" => SetBaseThemeAsync("Fluent", cancellationToken),
@@ -146,20 +136,6 @@ public sealed class ActionRuntime
         return Task.CompletedTask;
     }
 
-    private static Task ToggleMicAsync(CancellationToken cancellationToken)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-        try
-        {
-            MicrophoneToggle.ToggleDefaultCaptureMute();
-        }
-        catch (Exception ex)
-        {
-            Logger.Error("Error toggling microphone mute", ex);
-        }
-
-        return Task.CompletedTask;
-    }
 
     private static Task OpenDefaultBrowser(CancellationToken cancellationToken)
     {
@@ -237,32 +213,7 @@ public sealed class ActionRuntime
         }
     }
 
-    private static Task OpenDefaultTerminalAsync(CancellationToken cancellationToken)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-
-        // Explicit user preference: cmd.exe.
-        try
-        {
-            var exe = Environment.GetEnvironmentVariable("COMSPEC");
-            if (string.IsNullOrWhiteSpace(exe))
-            {
-                exe = "cmd.exe";
-            }
-
-            Process.Start(new ProcessStartInfo
-            {
-                FileName = exe,
-                UseShellExecute = true,
-            });
-        }
-        catch (Exception ex)
-        {
-            Logger.Error("Error opening terminal", ex);
-        }
-
-        return Task.CompletedTask;
-    }
+    
 
     // Support for ActionRequest.TypeText and ActionRequest.SendSpec is handled below in ExecuteAsync.
 
@@ -329,6 +280,22 @@ public sealed class ActionRuntime
         catch (Exception ex)
         {
             Logger.Error("Error performing window manager action", ex);
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private static Task LogForegroundAsync(CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        try
+        {
+            var proc = Glyph.Win32.Windowing.ForegroundApp.TryGetProcessName();
+            Logger.Info($"Foreground process: {proc ?? "?"}");
+        }
+        catch (Exception ex)
+        {
+            Logger.Error("Error logging foreground process", ex);
         }
 
         return Task.CompletedTask;

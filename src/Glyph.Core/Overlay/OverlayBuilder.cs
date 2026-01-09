@@ -21,11 +21,22 @@ public static class OverlayBuilder
 
             if (policy.SubstituteProgramLayerLabelWithActiveProcess
                 && k.Key == 'p'
-                && buffer.Length == 0
-                && !string.IsNullOrWhiteSpace(activeProcessName))
+                && buffer.Length == 0)
             {
-                var per = getPerAppPrefixDescription("p");
-                desc = !string.IsNullOrWhiteSpace(per) ? per : activeProcessName!;
+                if (string.IsNullOrWhiteSpace(activeProcessName))
+                {
+                    desc = "No Program Focused";
+                }
+                else
+                {
+                    var per = getPerAppPrefixDescription("p");
+                    var pLookup = lookup("p");
+                    var isConfigured = pLookup.IsValidPrefix && (pLookup.IsComplete || pLookup.NextKeys.Count > 0);
+
+                    desc = isConfigured
+                        ? (!string.IsNullOrWhiteSpace(per) ? per : activeProcessName!)
+                        : $"{activeProcessName} Not Configured";
+                }
             }
 
             var includeSingle = k.Completes || !string.IsNullOrWhiteSpace(desc);
@@ -74,9 +85,16 @@ public static class OverlayBuilder
         {
             var seq = $"Glyph {buffer}".TrimEnd();
             string msg;
-            if (!string.IsNullOrWhiteSpace(activeProcessName) && buffer.StartsWith("p", StringComparison.Ordinal))
+            if (buffer.StartsWith("p", StringComparison.Ordinal))
             {
-                msg = $"No keys defined for {activeProcessName}";
+                if (string.IsNullOrWhiteSpace(activeProcessName))
+                {
+                    msg = "No Program Focused";
+                }
+                else
+                {
+                    msg = $"{activeProcessName} Not Configured";
+                }
             }
             else
             {

@@ -19,13 +19,28 @@ bindings:
         action: openBrowser
       - key: t
         label: Terminal
-        action: openTerminal
+        exec: wt
+      - key: m
+        label: Task Manager
       - key: v
         label: VSCode
         exec: code
       - key: s
+        label: Spotify
+        exec: '%appdata%\Spotify\Spotify.exe'
+      - key: st
         label: Steam
         exec: 'C:\Program Files (x86)\Steam\steam.exe'
+      - key: n
+        label: Notepad
+        exec: notepad
+      - key: d
+        label: Discord
+        exec: '%localappdata%\Discord\Update.exe'
+        execArgs: --processStart Discord.exe
+      - key: f
+        label: File Explorer
+        exec: explorer
   - key: m
     label: Media
     children:
@@ -41,27 +56,70 @@ bindings:
       - key: v
         label: Toggle Volume Mute
         action: volumeMute
-      - key: m
-        label: Toggle Microphone Mute
-        action: muteMic
   - key: w
-    label: Window
+    label: Windows
+    children:
+      - key: l
+        label: Lock
+        send: Win+L
+      - key: s
+        label: Sleep
+        exec: rundll32.exe
+        execArgs: 'powrprof.dll,SetSuspendState 0,1,0'
+      - key: ss
+        label: Shutdown
+        exec: shutdown
+        execArgs: '/s /t 0'
+      - key: rr
+        label: Restart
+        exec: shutdown
+        execArgs: '/r /t 0'
+      - key: d
+        label: Show Desktop
+        send: Win+D
+
+  - key: q
+    label: Manage Windows
     children:
       - key: n
         label: Minimize
         action: windowMinimize
-      - key: mx
+      - key: m
         label: Maximize
-        action: windowMaximize
-      - key: r
-        label: Restore
-        action: windowRestore
-      - key: c
-        label: Close
-        action: windowClose
+        send: Win+Shift+Up
       - key: t
-        label: Toggle Topmost
-        action: windowTopmost
+        label: Alt+Tab
+        send: Alt+Tab
+      - key: w
+        label: Close (Alt+F4)
+        send: Alt+F4
+      - key: v
+        label: Task View
+        send: Win+Tab
+      - key: s
+        label: Snap
+        children:
+          - key: left
+            label: Snap Left
+            send: Win+Left
+          - key: right
+            label: Snap Right
+            send: Win+Right
+          - key: up
+            label: Snap Maximize
+            send: Win+Up
+          - key: down
+            label: Snap Minimize
+            send: Win+Down
+      - key: m
+        label: Move Between Monitors
+        children:
+          - key: left
+            label: Move Left Monitor
+            send: Win+Shift+Left
+          - key: right
+            label: Move Right Monitor
+            send: Win+Shift+Right
 
   - key: t
     label: Text
@@ -109,7 +167,7 @@ bindings:
         steps:
           - send: Home
           - send: Shift+End
-          - send: Back
+          - send: Delete
       - key: d
         label: Duplicate Line
         steps:
@@ -170,6 +228,11 @@ bindings:
       - key: a
         label: Add All
         type: git add .
+      - key: aa
+        label: Add All (Enter)
+        steps:
+          - type: git add .
+          - send: Enter
       - key: c
         label: Commit
         steps:
@@ -178,19 +241,59 @@ bindings:
       - key: p
         label: Push
         type: git push
+      - key: pp
+        label: Push (Enter)
+        steps: 
+          - type: git push
+          - send: Enter
       - key: l
         label: Pull
         type: git pull
+      - key: ll
+        label: Pull (Enter)
+        steps:
+          - type: git pull
+          - send: Enter
       - key: b
         label: Branches
-        type: git branch
-        
+        steps:
+          - type: git branch
+          - send: Enter
+
+  - key: ss
+    label: Screenshot
+    send: Win+Shift+S
+  
+  - key: p
+    label: Program
+
 apps:
+  - process: Spotify
+    bindings:
+      - key: p
+        label: Play / Pause
+        action: mediaPlayPause
+      - key: n
+        label: Next Track
+        action: mediaNext
+      - key: b
+        label: Previous Track
+        action: mediaPrev
+
+  - process: Discord
+    bindings:
+      - key: m
+        label: Toggle Mute (Discord)
+        send: Ctrl+Shift+M
+
   - process: WindowsTerminal
     bindings:
       - key: n
-        label: nvim .
-        type: nvim .
+        label: neofetch
+        steps:
+          - type: neofetch
+          - send: Enter
+
   - process: Code
     bindings:
       - key: s

@@ -23,7 +23,8 @@ public sealed class SequenceEngine
         Trie<ActionRequest> global,
         Dictionary<string, Trie<ActionRequest>> perApp,
         TimeSpan timeout,
-        Func<KeyStroke, bool> isGlyphKey)
+        Func<KeyStroke, bool> isGlyphKey,
+        bool glyphDoublePressTogglesCaps)
     {
         _global = global;
         _perApp = perApp;
@@ -44,7 +45,8 @@ public sealed class SequenceEngine
         Func<KeyStroke, bool> isGlyph = stroke =>
             stroke.VkCode == 0x14 && !stroke.Ctrl && !stroke.Shift && !stroke.Alt && !stroke.Win;
 
-        return new SequenceEngine(global, perApp, TimeSpan.FromMilliseconds(2000), isGlyph);
+        // Preserve legacy behavior: no-arg factory treats CapsLock glyph as toggling CapsLock on double-press.
+        return new SequenceEngine(global, perApp, TimeSpan.FromMilliseconds(2000), isGlyph, true);
     }
 
     public bool IsSessionActive => _active;
@@ -74,7 +76,8 @@ public sealed class SequenceEngine
         // App-specific bindings (populated via YAML at runtime)
         var perApp = new Dictionary<string, Trie<ActionRequest>>(StringComparer.OrdinalIgnoreCase);
 
-        return new SequenceEngine(global, perApp, TimeSpan.FromMilliseconds(2000), isGlyphKey);
+        // By default do not toggle CapsLock on double-press for custom glyphs.
+        return new SequenceEngine(global, perApp, TimeSpan.FromMilliseconds(2000), isGlyphKey, false);
     }
 
     public void SetPrefixDescription(string prefix, string description)
@@ -141,7 +144,7 @@ public sealed class SequenceEngine
     public static SequenceEngine CreateWithGlyphKey(Func<KeyStroke, bool> isGlyphKey)
     {
         var global = new Trie<ActionRequest>();
-        return new SequenceEngine(global, new Dictionary<string, Trie<ActionRequest>>(StringComparer.OrdinalIgnoreCase), TimeSpan.FromMilliseconds(2000), isGlyphKey);
+        return new SequenceEngine(global, new Dictionary<string, Trie<ActionRequest>>(StringComparer.OrdinalIgnoreCase), TimeSpan.FromMilliseconds(2000), isGlyphKey, false);
     }
 
     public EngineResult Handle(KeyStroke stroke, DateTimeOffset now, string? activeProcessName)
@@ -167,16 +170,13 @@ public sealed class SequenceEngine
             return EngineResult.None;
         }
 
-        // Double-press glyph key (CapsLock twice) triggers actual CapsLock
+        // Double-press glyph key (CapsLock twice) may trigger CapsLock if configured to do so.
         if (_isGlyphKey(stroke) && string.IsNullOrEmpty(_buffer))
         {
-            Logger.Info("Glyph double-press detected, toggling CapsLock");
+            Logger.Info("Glyph double-press detected");
             Reset();
-            return new EngineResult(
-                Consumed: true,
-                Overlay: null,
-                Action: new ActionRequest { SendSpec = "CapsLock" },
-                ExecuteAfter: null);
+
+            return new EngineResult(Consumed: true, Overlay: null, Action: null, ExecuteAfter: null);
         }
 
         // While active, Esc cancels.
