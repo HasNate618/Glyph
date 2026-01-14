@@ -17,6 +17,18 @@ public partial class SettingsWindow : Window
         InitializeComponent();
         ApplyButton.Click += (_, _) => ApplyConfig();
 
+        OpenThemesFolderButton.Click += (_, _) =>
+        {
+            try
+            {
+                OpenFolder(ThemeManager.DefaultThemesDirectory);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error("Failed to open themes folder", ex);
+            }
+        };
+
         RecordButton.Click += (_, _) => ToggleRecording();
 
         Loaded += (_, _) => LoadToUi();
@@ -58,26 +70,58 @@ public partial class SettingsWindow : Window
             CurrentGlyphText.Text = DescribeGlyphSequence(leaderSeq);
             RecordedGlyphText.Text = DescribeGlyphSequence(leaderSeq);
 
-            if (!string.IsNullOrWhiteSpace(cfg.BaseTheme))
-            {
-                foreach (var item in ThemeCombo.Items.OfType<System.Windows.Controls.ComboBoxItem>())
-                {
-                    if ((item.Tag?.ToString() ?? string.Empty).Equals(cfg.BaseTheme, StringComparison.OrdinalIgnoreCase))
-                    {
-                        ThemeCombo.SelectedItem = item;
-                        break;
-                    }
-                }
-            }
-            else
-            {
-                // default selection
-                ThemeCombo.SelectedIndex = 0;
-            }
+            LoadThemesIntoCombo(cfg.BaseTheme);
         }
         catch (Exception ex)
         {
             Logger.Error("Failed to load settings to UI", ex);
+        }
+    }
+
+    private void LoadThemesIntoCombo(string? selectedThemeId)
+    {
+        try
+        {
+            ThemeCombo.Items.Clear();
+
+            var themes = ThemeManager.ListAvailableThemes();
+            if (themes.Count == 0)
+            {
+                // Fallback list (shouldn't happen if extraction ran).
+                themes = new List<(string Id, string Name)>
+                {
+                    ("Fluent", "Fluent"),
+                    ("CatppuccinMocha", "Catppuccin Mocha"),
+                    ("Light", "Light"),
+                    ("Nord", "Nord"),
+                    ("Darcula", "Darcula"),
+                    ("RosePine", "Rose Pine"),
+                };
+            }
+
+            System.Windows.Controls.ComboBoxItem? toSelect = null;
+            foreach (var (id, name) in themes)
+            {
+                var item = new System.Windows.Controls.ComboBoxItem
+                {
+                    Tag = id,
+                    Content = name
+                };
+
+                ThemeCombo.Items.Add(item);
+
+                if (!string.IsNullOrWhiteSpace(selectedThemeId) &&
+                    id.Equals(selectedThemeId, StringComparison.OrdinalIgnoreCase))
+                {
+                    toSelect = item;
+                }
+            }
+
+            ThemeCombo.SelectedItem = toSelect ?? (ThemeCombo.Items.Count > 0 ? ThemeCombo.Items[0] : null);
+        }
+        catch (Exception ex)
+        {
+            Logger.Error("Failed to populate theme list", ex);
         }
     }
 
@@ -108,8 +152,13 @@ public partial class SettingsWindow : Window
             if (ThemeCombo.SelectedItem is System.Windows.Controls.ComboBoxItem themeItem)
             {
                 cfg.BaseTheme = themeItem.Tag?.ToString();
-                var path = ThemeManager.DefaultBaseThemeSelectorPath;
-                System.IO.File.WriteAllText(path, cfg.BaseTheme ?? string.Empty);
+
+                // New preferred selector.
+                var selectedPath = ThemeManager.DefaultThemeSelectedPath;
+                System.IO.File.WriteAllText(selectedPath, cfg.BaseTheme ?? string.Empty);
+                // Keep legacy selector in sync.
+                var legacyPath = ThemeManager.DefaultBaseThemeSelectorPath;
+                System.IO.File.WriteAllText(legacyPath, cfg.BaseTheme ?? string.Empty);
             }
 
             AppConfig.Save(cfg);

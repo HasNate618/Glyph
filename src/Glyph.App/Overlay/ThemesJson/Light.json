@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "id": "Light",
+  "name": "Light",
+  "description": "Light theme",
+  "inherits": null,
+  "brushes": {
+    "Glyph.Overlay.BackgroundBrush": "#E6FFFFFF",
+    "Glyph.Overlay.SequenceForeground": "#FF111827",
+    "Glyph.Overlay.OptionForeground": "#FF374151",
+
+    "Glyph.Overlay.KeycapBackground": "#FFF3F4F6",
+    "Glyph.Overlay.KeycapForeground": "#FF111827",
+
+    "Glyph.Overlay.KeycapBackgroundAction": "#FFF3F4F6",
+    "Glyph.Overlay.KeycapForegroundAction": "#FF111827",
+    "Glyph.Overlay.KeycapBorderAction": "#FF1E4ECF",
+
+    "Glyph.Overlay.KeycapBackgroundLayer": "#FFF0F4FB",
+    "Glyph.Overlay.KeycapForegroundLayer": "#FF142B6D"
+  },
+  "fonts": {
+    "Glyph.Overlay.FontFamily": "Segoe UI Variable, Segoe UI, Arial"
+  },
+  "cornerRadii": {
+    "Glyph.Overlay.PanelCornerRadius": 10,
+    "Glyph.Overlay.KeycapCornerRadius": 6
+  }
+}

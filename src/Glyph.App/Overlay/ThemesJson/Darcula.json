@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "id": "Darcula",
+  "name": "Darcula",
+  "description": "Darcula-like dark theme",
+  "inherits": null,
+  "brushes": {
+    "Glyph.Overlay.BackgroundBrush": "#BF0F1115",
+    "Glyph.Overlay.SequenceForeground": "#FFE6E1DC",
+    "Glyph.Overlay.OptionForeground": "#FFB3A7A3",
+
+    "Glyph.Overlay.KeycapBackground": "#FF2B2B2B",
+    "Glyph.Overlay.KeycapForeground": "#FFEEEEEE",
+
+    "Glyph.Overlay.KeycapBackgroundAction": "#FF2B2B2B",
+    "Glyph.Overlay.KeycapForegroundAction": "#FFEEEEEE",
+    "Glyph.Overlay.KeycapBorderAction": "#FF4B6CB0",
+
+    "Glyph.Overlay.KeycapBackgroundLayer": "#FF313335",
+    "Glyph.Overlay.KeycapForegroundLayer": "#FFF0F0F0"
+  },
+  "fonts": {
+    "Glyph.Overlay.FontFamily": "Segoe UI Variable, Segoe UI, Arial"
+  },
+  "cornerRadii": {
+    "Glyph.Overlay.PanelCornerRadius": 12,
+    "Glyph.Overlay.KeycapCornerRadius": 8
+  }
+}

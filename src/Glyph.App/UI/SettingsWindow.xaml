@@ -32,16 +32,10 @@
                 </StackPanel>
             </GroupBox>
 
-            <GroupBox Header="Theme" Width="160" Margin="12,0,0,0">
+            <GroupBox Header="Theme" Width="220" Margin="12,0,0,0">
                 <StackPanel Margin="8">
-                    <ComboBox x:Name="ThemeCombo" Width="120">
-                        <ComboBoxItem Tag="Fluent">Fluent</ComboBoxItem>
-                        <ComboBoxItem Tag="CatppuccinMocha">Catppuccin</ComboBoxItem>
-                        <ComboBoxItem Tag="Light">Light</ComboBoxItem>
-                        <ComboBoxItem Tag="Nord">Nord</ComboBoxItem>
-                        <ComboBoxItem Tag="Darcula">Darcula</ComboBoxItem>
-                        <ComboBoxItem Tag="RosePine">RosePine</ComboBoxItem>
-                    </ComboBox>
+                    <ComboBox x:Name="ThemeCombo" Width="200" />
+                    <Button x:Name="OpenThemesFolderButton" Margin="0,8,0,0" Content="Open Themes Folder" />
                 </StackPanel>
             </GroupBox>
         </StackPanel>

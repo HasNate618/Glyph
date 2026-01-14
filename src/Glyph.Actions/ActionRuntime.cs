@@ -42,6 +42,7 @@ public sealed class ActionRuntime
         "setThemeNord",
         "setThemeDarcula",
         "setThemeRosePine",
+        // Parameterized: setTheme:<ThemeId>
         "reloadKeymaps",
     };
 
@@ -94,6 +95,17 @@ public sealed class ActionRuntime
 
     private async Task ExecuteActionIdAsync(string actionId, CancellationToken cancellationToken)
     {
+        // Parameterized theme selector: setTheme:<ThemeId>
+        if (!string.IsNullOrWhiteSpace(actionId) && actionId.StartsWith("setTheme:", StringComparison.OrdinalIgnoreCase))
+        {
+            var themeId = actionId.Substring("setTheme:".Length).Trim();
+            if (!string.IsNullOrWhiteSpace(themeId))
+            {
+                await SetBaseThemeAsync(themeId, cancellationToken);
+            }
+            return;
+        }
+
         await (actionId switch
         {
             "launchChrome" => LaunchAsync(FindChrome(), null, cancellationToken),
@@ -422,16 +434,23 @@ public sealed class ActionRuntime
         cancellationToken.ThrowIfCancellationRequested();
         try
         {
-            var path = Path.Combine(
+            var selectedPath = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                "Glyph",
+                "theme.selected");
+
+            var legacyPath = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
                 "Glyph",
                 "theme.base");
 
-            var dir = Path.GetDirectoryName(path);
+            var dir = Path.GetDirectoryName(selectedPath);
             if (!string.IsNullOrWhiteSpace(dir)) Directory.CreateDirectory(dir);
 
-            File.WriteAllText(path, baseName);
-            Logger.Info($"Set base theme to: {baseName} (wrote {path})");
+            File.WriteAllText(selectedPath, baseName);
+            // Keep legacy selector in sync for older code paths.
+            File.WriteAllText(legacyPath, baseName);
+            Logger.Info($"Set theme to: {baseName} (wrote {selectedPath})");
         }
         catch (Exception ex)
         {

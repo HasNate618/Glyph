@@ -1,6 +1,9 @@
 using System.IO;
+using System.Reflection;
+using System.Text.Json;
 using System.Windows;
 using System.Windows.Markup;
+using System.Windows.Media;
 
 using Glyph.Core.Logging;
 
@@ -8,20 +11,28 @@ namespace Glyph.App.Overlay.Theming;
 
 public static class ThemeManager
 {
-    // Select a built-in base theme by writing one of:
-    //   Fluent
-    //   CatppuccinMocha
-    //   Light
-    //   Nord
-    //   Darcula
-    //   RosePine
-    // to: %APPDATA%\Glyph\theme.base
+    // Preferred theme selection file (contains a theme id, e.g. "Fluent").
+    // Path: %APPDATA%\Glyph\theme.selected
+    public static readonly string DefaultThemeSelectedPath = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+        "Glyph",
+        "theme.selected");
+
+    // Legacy base theme selector file (contains a built-in theme name).
+    // Path: %APPDATA%\Glyph\theme.base
     public static readonly string DefaultBaseThemeSelectorPath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
         "Glyph",
         "theme.base");
 
-    // Users can drop a XAML ResourceDictionary here to override any theme keys.
+    // Theme directory containing user + built-in themes (JSON).
+    // Path: %APPDATA%\Glyph\themes
+    public static readonly string DefaultThemesDirectory = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+        "Glyph",
+        "themes");
+
+    // Users can still drop a XAML ResourceDictionary here to override theme keys.
     // Example: %APPDATA%\Glyph\theme.xaml
     public static readonly string DefaultUserThemePath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
@@ -32,24 +43,40 @@ public static class ThemeManager
     private static ResourceDictionary? _userDictionary;
     private static ResourceDictionary? _baseDictionary;
 
+    private sealed class ThemeJson
+    {
+        public int SchemaVersion { get; set; } = 1;
+        public string? Id { get; set; }
+        public string? Name { get; set; }
+        public string? Description { get; set; }
+        public string? Inherits { get; set; }
+
+        public Dictionary<string, string>? Brushes { get; set; }
+        public Dictionary<string, string>? Fonts { get; set; }
+        public Dictionary<string, double>? CornerRadii { get; set; }
+    }
+
     public static void Initialize(string? userThemePath = null)
     {
         var path = userThemePath ?? DefaultUserThemePath;
 
-        ApplyBaseThemeFromSelector();
+        EnsureBuiltInThemesExtracted();
+        ApplyThemeFromSelector();
 
         TryLoadUserTheme(path);
+
         StartWatcher(path);
-        // Also watch the base theme selector so runtime changes (via actions) apply immediately.
+        StartWatcher(DefaultThemeSelectedPath);
         StartWatcher(DefaultBaseThemeSelectorPath);
+        StartThemesDirectoryWatcher(DefaultThemesDirectory);
     }
 
     public static void Reload()
     {
-        // Re-read base theme selector + reload user theme overrides.
+        // Re-read selected theme + reload overrides.
         try
         {
-            ApplyBaseThemeFromSelector();
+            ApplyThemeFromSelector();
             TryLoadUserTheme(DefaultUserThemePath);
         }
         catch (Exception ex)
@@ -58,51 +85,87 @@ public static class ThemeManager
         }
     }
 
-    private static void ApplyBaseThemeFromSelector()
+    public static IReadOnlyList<(string Id, string Name)> ListAvailableThemes()
     {
         try
         {
-            var selectorPath = DefaultBaseThemeSelectorPath;
-            var baseName = "Fluent";
+            Directory.CreateDirectory(DefaultThemesDirectory);
+            var files = Directory.EnumerateFiles(DefaultThemesDirectory, "*.json", SearchOption.TopDirectoryOnly);
+            var items = new List<(string Id, string Name)>();
 
-            var dir = Path.GetDirectoryName(selectorPath);
+            foreach (var file in files)
+            {
+                var id = Path.GetFileNameWithoutExtension(file);
+                if (string.IsNullOrWhiteSpace(id)) continue;
+
+                var name = id;
+                try
+                {
+                    var jsonText = File.ReadAllText(file);
+                    var theme = JsonSerializer.Deserialize<ThemeJson>(jsonText, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+
+                    if (!string.IsNullOrWhiteSpace(theme?.Name))
+                    {
+                        name = theme.Name.Trim();
+                    }
+                }
+                catch
+                {
+                }
+
+                items.Add((id, name));
+            }
+
+            return items
+                .OrderBy(t => t.Name, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+        }
+        catch
+        {
+            return Array.Empty<(string Id, string Name)>();
+        }
+    }
+
+    private static void ApplyThemeFromSelector()
+    {
+        try
+        {
+            var themeId = "Fluent";
+
+            var dir = Path.GetDirectoryName(DefaultThemeSelectedPath);
             if (!string.IsNullOrWhiteSpace(dir))
             {
                 Directory.CreateDirectory(dir);
             }
 
-            if (File.Exists(selectorPath))
+            if (File.Exists(DefaultThemeSelectedPath))
             {
-                baseName = (File.ReadAllText(selectorPath) ?? string.Empty).Trim();
+                themeId = (File.ReadAllText(DefaultThemeSelectedPath) ?? string.Empty).Trim();
+            }
+            else if (File.Exists(DefaultBaseThemeSelectorPath))
+            {
+                // Back-compat.
+                themeId = (File.ReadAllText(DefaultBaseThemeSelectorPath) ?? string.Empty).Trim();
             }
 
-            if (string.IsNullOrWhiteSpace(baseName))
+            if (string.IsNullOrWhiteSpace(themeId))
             {
-                baseName = "Fluent";
+                themeId = "Fluent";
             }
 
-            // Clamp to known built-ins.
-            if (!string.Equals(baseName, "Fluent", StringComparison.OrdinalIgnoreCase) &&
-                !string.Equals(baseName, "CatppuccinMocha", StringComparison.OrdinalIgnoreCase) &&
-                !string.Equals(baseName, "Light", StringComparison.OrdinalIgnoreCase) &&
-                !string.Equals(baseName, "Nord", StringComparison.OrdinalIgnoreCase) &&
-                !string.Equals(baseName, "Darcula", StringComparison.OrdinalIgnoreCase) &&
-                !string.Equals(baseName, "RosePine", StringComparison.OrdinalIgnoreCase))
-            {
-                Logger.Info($"Unknown base theme '{baseName}', falling back to Fluent");
-                baseName = "Fluent";
-            }
-
-            ApplyBaseTheme(baseName);
+            ApplyTheme(themeId);
         }
         catch (Exception ex)
         {
-            Logger.Error("Failed to apply base theme selector", ex);
-            ApplyBaseTheme("Fluent");
+            Logger.Error("Failed to apply theme selector", ex);
+            ApplyTheme("Fluent");
         }
     }
 
-    private static void ApplyBaseTheme(string baseName)
+    private static void ApplyTheme(string themeId)
     {
         if (System.Windows.Application.Current is null)
         {
@@ -116,12 +179,284 @@ public static class ThemeManager
             _baseDictionary = null;
         }
 
-        var uri = new Uri($"Overlay/Themes/{baseName}.xaml", UriKind.Relative);
-        var dict = new ResourceDictionary { Source = uri };
-        merged.Insert(0, dict);
-        _baseDictionary = dict;
+        // Prefer JSON themes in %APPDATA%\Glyph\themes
+        if (TryLoadThemeJson(themeId, out var jsonDict))
+        {
+            merged.Insert(0, jsonDict);
+            _baseDictionary = jsonDict;
+            Logger.Info($"Theme applied (JSON): {themeId}");
+            return;
+        }
 
-        Logger.Info($"Base theme applied: {baseName}");
+        // Fallback to legacy built-in XAML dictionaries.
+        try
+        {
+            var uri = new Uri($"Overlay/Themes/{themeId}.xaml", UriKind.Relative);
+            var dict = new ResourceDictionary { Source = uri };
+            merged.Insert(0, dict);
+            _baseDictionary = dict;
+            Logger.Info($"Theme applied (XAML fallback): {themeId}");
+        }
+        catch
+        {
+            var uri = new Uri("Overlay/Themes/Fluent.xaml", UriKind.Relative);
+            var dict = new ResourceDictionary { Source = uri };
+            merged.Insert(0, dict);
+            _baseDictionary = dict;
+            Logger.Info("Theme applied (XAML fallback): Fluent");
+        }
+    }
+
+    private static void EnsureBuiltInThemesExtracted()
+    {
+        try
+        {
+            Directory.CreateDirectory(DefaultThemesDirectory);
+
+            var asm = Assembly.GetExecutingAssembly();
+            var marker = ".Overlay.ThemesJson.";
+            foreach (var resourceName in asm.GetManifestResourceNames())
+            {
+                if (!resourceName.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                var idx = resourceName.IndexOf(marker, StringComparison.OrdinalIgnoreCase);
+                if (idx < 0)
+                {
+                    continue;
+                }
+
+                var fileName = resourceName.Substring(idx + marker.Length); // e.g. Fluent.json
+                if (string.IsNullOrWhiteSpace(fileName))
+                {
+                    continue;
+                }
+
+                var outPath = Path.Combine(DefaultThemesDirectory, fileName);
+                if (File.Exists(outPath))
+                {
+                    continue; // user-owned; never overwrite
+                }
+
+                using var stream = asm.GetManifestResourceStream(resourceName);
+                if (stream is null)
+                {
+                    continue;
+                }
+
+                using var reader = new StreamReader(stream);
+                File.WriteAllText(outPath, reader.ReadToEnd());
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.Error("Failed to extract built-in themes", ex);
+        }
+    }
+
+    private static bool TryLoadThemeJson(string themeId, out ResourceDictionary dictionary)
+    {
+        dictionary = new ResourceDictionary();
+
+        try
+        {
+            Directory.CreateDirectory(DefaultThemesDirectory);
+            var path = Path.Combine(DefaultThemesDirectory, themeId + ".json");
+            if (!File.Exists(path))
+            {
+                return false;
+            }
+
+            var visited = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var mergedTheme = LoadThemeJsonRecursive(path, visited);
+            if (mergedTheme is null)
+            {
+                return false;
+            }
+
+            dictionary = BuildResourceDictionary(mergedTheme);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Logger.Error($"Failed to load theme JSON: {themeId}", ex);
+            return false;
+        }
+    }
+
+    private static ThemeJson? LoadThemeJsonRecursive(string path, HashSet<string> visited)
+    {
+        var id = Path.GetFileNameWithoutExtension(path);
+        if (string.IsNullOrWhiteSpace(id))
+        {
+            return null;
+        }
+
+        if (!visited.Add(id))
+        {
+            Logger.Error($"Theme inheritance cycle detected at '{id}'");
+            return null;
+        }
+
+        var jsonText = File.ReadAllText(path);
+        var theme = JsonSerializer.Deserialize<ThemeJson>(jsonText, new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        });
+
+        if (theme is null)
+        {
+            return null;
+        }
+
+        theme.Id ??= id;
+
+        if (string.IsNullOrWhiteSpace(theme.Inherits))
+        {
+            return theme;
+        }
+
+        var parentPath = Path.Combine(Path.GetDirectoryName(path) ?? DefaultThemesDirectory, theme.Inherits + ".json");
+        if (!File.Exists(parentPath))
+        {
+            Logger.Info($"Theme '{id}' inherits from missing theme '{theme.Inherits}'");
+            return theme;
+        }
+
+        var parent = LoadThemeJsonRecursive(parentPath, visited);
+        if (parent is null)
+        {
+            return theme;
+        }
+
+        return MergeThemes(parent, theme);
+    }
+
+    private static ThemeJson MergeThemes(ThemeJson parent, ThemeJson child)
+    {
+        var merged = new ThemeJson
+        {
+            SchemaVersion = child.SchemaVersion,
+            Id = child.Id,
+            Name = string.IsNullOrWhiteSpace(child.Name) ? parent.Name : child.Name,
+            Description = string.IsNullOrWhiteSpace(child.Description) ? parent.Description : child.Description,
+            Inherits = child.Inherits,
+            Brushes = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase),
+            Fonts = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase),
+            CornerRadii = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase)
+        };
+
+        if (parent.Brushes is not null)
+        {
+            foreach (var kvp in parent.Brushes) merged.Brushes[kvp.Key] = kvp.Value;
+        }
+        if (child.Brushes is not null)
+        {
+            foreach (var kvp in child.Brushes) merged.Brushes[kvp.Key] = kvp.Value;
+        }
+
+        if (parent.Fonts is not null)
+        {
+            foreach (var kvp in parent.Fonts) merged.Fonts[kvp.Key] = kvp.Value;
+        }
+        if (child.Fonts is not null)
+        {
+            foreach (var kvp in child.Fonts) merged.Fonts[kvp.Key] = kvp.Value;
+        }
+
+        if (parent.CornerRadii is not null)
+        {
+            foreach (var kvp in parent.CornerRadii) merged.CornerRadii[kvp.Key] = kvp.Value;
+        }
+        if (child.CornerRadii is not null)
+        {
+            foreach (var kvp in child.CornerRadii) merged.CornerRadii[kvp.Key] = kvp.Value;
+        }
+
+        return merged;
+    }
+
+    private static ResourceDictionary BuildResourceDictionary(ThemeJson theme)
+    {
+        var dict = new ResourceDictionary();
+
+        if (theme.Brushes is not null)
+        {
+            foreach (var kvp in theme.Brushes)
+            {
+                try
+                {
+                    var obj = System.Windows.Media.ColorConverter.ConvertFromString(kvp.Value);
+                    if (obj is System.Windows.Media.Color color)
+                    {
+                        var brush = new SolidColorBrush(color);
+                        if (brush.CanFreeze) brush.Freeze();
+                        dict[kvp.Key] = brush;
+                    }
+                }
+                catch
+                {
+                }
+            }
+        }
+
+        if (theme.Fonts is not null)
+        {
+            foreach (var kvp in theme.Fonts)
+            {
+                try
+                {
+                    dict[kvp.Key] = new System.Windows.Media.FontFamily(kvp.Value);
+                }
+                catch
+                {
+                }
+            }
+        }
+
+        if (theme.CornerRadii is not null)
+        {
+            foreach (var kvp in theme.CornerRadii)
+            {
+                try
+                {
+                    dict[kvp.Key] = new CornerRadius(kvp.Value);
+                }
+                catch
+                {
+                }
+            }
+        }
+
+        return dict;
+    }
+
+    private static void StartThemesDirectoryWatcher(string themesDir)
+    {
+        try
+        {
+            Directory.CreateDirectory(themesDir);
+            var watcher = new FileSystemWatcher(themesDir, "*.json")
+            {
+                NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName | NotifyFilters.CreationTime,
+                EnableRaisingEvents = true,
+                IncludeSubdirectories = false
+            };
+
+            watcher.Changed += (_, _) => DebouncedApplySelectedTheme();
+            watcher.Created += (_, _) => DebouncedApplySelectedTheme();
+            watcher.Renamed += (_, _) => DebouncedApplySelectedTheme();
+            watcher.Deleted += (_, _) => DebouncedApplySelectedTheme();
+
+            _watchers.Add(watcher);
+            Logger.Info($"Theme directory watcher active: {themesDir}");
+        }
+        catch (Exception ex)
+        {
+            Logger.Error("Failed to start theme directory watcher", ex);
+        }
     }
 
     private static void StartWatcher(string path)
@@ -143,16 +478,19 @@ public static class ThemeManager
                 EnableRaisingEvents = true
             };
 
-            // If we're watching the base selector file, trigger base theme application;
-            // otherwise treat it as a user theme change.
-            var selectorPath = Path.GetFullPath(DefaultBaseThemeSelectorPath);
+            // If we're watching the selector files, trigger theme application;
+            // otherwise treat it as a user override theme change.
+            var legacySelector = Path.GetFullPath(DefaultBaseThemeSelectorPath);
+            var selectedSelector = Path.GetFullPath(DefaultThemeSelectedPath);
             var targetPath = Path.GetFullPath(path);
-            if (string.Equals(selectorPath, targetPath, StringComparison.OrdinalIgnoreCase))
+
+            if (string.Equals(legacySelector, targetPath, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(selectedSelector, targetPath, StringComparison.OrdinalIgnoreCase))
             {
-                watcher.Changed += (_, _) => DebouncedApplyBaseThemeSelector(path);
-                watcher.Created += (_, _) => DebouncedApplyBaseThemeSelector(path);
-                watcher.Renamed += (_, _) => DebouncedApplyBaseThemeSelector(path);
-                watcher.Deleted += (_, _) => DebouncedApplyBaseThemeSelector(path);
+                watcher.Changed += (_, _) => DebouncedApplySelectedTheme();
+                watcher.Created += (_, _) => DebouncedApplySelectedTheme();
+                watcher.Renamed += (_, _) => DebouncedApplySelectedTheme();
+                watcher.Deleted += (_, _) => DebouncedApplySelectedTheme();
             }
             else
             {
@@ -163,7 +501,6 @@ public static class ThemeManager
             }
 
             _watchers.Add(watcher);
-
             Logger.Info($"Theme watcher active: {path}");
         }
         catch (Exception ex)
@@ -191,7 +528,7 @@ public static class ThemeManager
         });
     }
 
-    private static void DebouncedApplyBaseThemeSelector(string path)
+    private static void DebouncedApplySelectedTheme()
     {
         var now = DateTime.UtcNow;
         if ((now - _lastReloadAttemptUtc).TotalMilliseconds < 150)
@@ -203,7 +540,7 @@ public static class ThemeManager
 
         System.Windows.Application.Current?.Dispatcher?.BeginInvoke(() =>
         {
-            ApplyBaseThemeFromSelector();
+            ApplyThemeFromSelector();
         });
     }
 

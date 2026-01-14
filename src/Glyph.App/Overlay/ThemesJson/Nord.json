@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "id": "Nord",
+  "name": "Nord",
+  "description": "Nord-inspired theme",
+  "inherits": null,
+  "brushes": {
+    "Glyph.Overlay.BackgroundBrush": "#BF2E3440",
+    "Glyph.Overlay.SequenceForeground": "#FFD8DEE9",
+    "Glyph.Overlay.OptionForeground": "#FFA3B1C6",
+
+    "Glyph.Overlay.KeycapBackground": "#FF3B4252",
+    "Glyph.Overlay.KeycapForeground": "#FFD8DEE9",
+
+    "Glyph.Overlay.KeycapBackgroundAction": "#FF3B4252",
+    "Glyph.Overlay.KeycapForegroundAction": "#FFD8DEE9",
+    "Glyph.Overlay.KeycapBorderAction": "#FF6C8591",
+
+    "Glyph.Overlay.KeycapBackgroundLayer": "#FF3F4756",
+    "Glyph.Overlay.KeycapForegroundLayer": "#FFCFD8E3"
+  },
+  "fonts": {
+    "Glyph.Overlay.FontFamily": "Segoe UI Variable, Segoe UI, Arial"
+  },
+  "cornerRadii": {
+    "Glyph.Overlay.PanelCornerRadius": 12,
+    "Glyph.Overlay.KeycapCornerRadius": 8
+  }
+}

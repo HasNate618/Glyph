@@ -30,11 +30,21 @@ dotnet run --project src/Glyph.App/Glyph.App.csproj -c Debug
 
 - Settings: `%APPDATA%\Glyph\config.json`
 - Keymaps (YAML): `%APPDATA%\Glyph\keymaps.yaml`
-- Themes: `%APPDATA%\Glyph\theme.base` (base), `%APPDATA%\Glyph\theme.xaml` (overrides)
+- Themes directory: `%APPDATA%\Glyph\themes\` (`*.json`)
+- Theme selection: `%APPDATA%\Glyph\theme.selected` (preferred)
+- Legacy theme selection: `%APPDATA%\Glyph\theme.base`
+- Optional XAML overrides: `%APPDATA%\Glyph\theme.xaml`
 
 On first run, a default `%APPDATA%\Glyph\keymaps.yaml` is created. While developing from source, the template comes from `src/Glyph.App/Config/default_keymaps.yaml`.
 
 Important: the YAML loader parses the file before applying changes. If the YAML is malformed the loader will log a parse error and will not overwrite your live bindings — this prevents accidental loss of keymaps when editing.
+
+### Themes
+
+- Built-in themes are embedded in the app and extracted to `%APPDATA%\Glyph\themes\` on first run.
+- To add your own theme: drop a `*.json` file into `%APPDATA%\Glyph\themes\` and select it in the Settings GUI (or write its `id` into `%APPDATA%\Glyph\theme.selected`).
+- For quick switching from keymaps, you can bind the action id `setTheme:<ThemeId>`.
+- If you need a one-off tweak, `%APPDATA%\Glyph\theme.xaml` can override any resource key from the selected theme.
 
 ## Keymaps (YAML)
 

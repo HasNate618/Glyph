@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "id": "Fluent",
+  "name": "Fluent",
+  "description": "Windows 11 look, true transparency",
+  "inherits": null,
+  "brushes": {
+    "Glyph.Overlay.BackgroundBrush": "#7F1B1B1B",
+    "Glyph.Overlay.SequenceForeground": "#FFF2F2F2",
+    "Glyph.Overlay.OptionForeground": "#FFD6D6D6",
+
+    "Glyph.Overlay.KeycapBackground": "#FF3A3A3A",
+    "Glyph.Overlay.KeycapForeground": "#FFFFFFFF",
+
+    "Glyph.Overlay.KeycapBackgroundAction": "#FF3A3A3A",
+    "Glyph.Overlay.KeycapForegroundAction": "#FFFFFFFF",
+    "Glyph.Overlay.KeycapBorderAction": "#FF4DA6C6",
+
+    "Glyph.Overlay.KeycapBackgroundLayer": "#FF424242",
+    "Glyph.Overlay.KeycapForegroundLayer": "#FFF5F5F5"
+  },
+  "fonts": {
+    "Glyph.Overlay.FontFamily": "Segoe UI Variable, Segoe UI, Arial"
+  },
+  "cornerRadii": {
+    "Glyph.Overlay.PanelCornerRadius": 12,
+    "Glyph.Overlay.KeycapCornerRadius": 8
+  }
+}

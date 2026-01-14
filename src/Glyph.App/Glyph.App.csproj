@@ -36,4 +36,9 @@
     <EmbeddedResource Include="Config\default_keymaps.yaml" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Embed built-in themes (JSON) so first-run can extract them into %APPDATA%\Glyph\themes -->
+    <EmbeddedResource Include="Overlay\ThemesJson\*.json" />
+  </ItemGroup>
+
 </Project>

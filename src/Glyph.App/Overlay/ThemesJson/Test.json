@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "id": "Test",
+  "name": "Test (Debug)",
+  "description": "High-contrast debug theme for quickly spotting resource usage",
+  "inherits": null,
+  "brushes": {
+    "Glyph.Overlay.BackgroundBrush": "#CC001B4D",
+    "Glyph.Overlay.SequenceForeground": "#FFFFFF00",
+    "Glyph.Overlay.OptionForeground": "#FF00FFEA",
+
+    "Glyph.Overlay.KeycapBackground": "#FF000000",
+    "Glyph.Overlay.KeycapForeground": "#FFFF00FF",
+
+    "Glyph.Overlay.KeycapBackgroundAction": "#FF1A0000",
+    "Glyph.Overlay.KeycapForegroundAction": "#FF00FF00",
+    "Glyph.Overlay.KeycapBorderAction": "#FFFF7A00",
+
+    "Glyph.Overlay.KeycapBackgroundLayer": "#FF002B00",
+    "Glyph.Overlay.KeycapForegroundLayer": "#FFFFFFFF"
+  },
+  "fonts": {
+    "Glyph.Overlay.FontFamily": "Consolas, Cascadia Mono, Segoe UI"
+  },
+  "cornerRadii": {
+    "Glyph.Overlay.PanelCornerRadius": 0,
+    "Glyph.Overlay.KeycapCornerRadius": 0
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "id": "RosePine",
+  "name": "Rose Pine",
+  "description": "RosePine-inspired theme",
+  "inherits": null,
+  "brushes": {
+    "Glyph.Overlay.BackgroundBrush": "#CFE9DCEB",
+    "Glyph.Overlay.SequenceForeground": "#FF2B2F3A",
+    "Glyph.Overlay.OptionForeground": "#FF6F6D7A",
+
+    "Glyph.Overlay.KeycapBackground": "#FFF4E9EF",
+    "Glyph.Overlay.KeycapForeground": "#FF2B2F3A",
+
+    "Glyph.Overlay.KeycapBackgroundAction": "#FFF4E9EF",
+    "Glyph.Overlay.KeycapForegroundAction": "#FF2B2F3A",
+    "Glyph.Overlay.KeycapBorderAction": "#FF7F5F8F",
+
+    "Glyph.Overlay.KeycapBackgroundLayer": "#FFF2E6EE",
+    "Glyph.Overlay.KeycapForegroundLayer": "#FF7F5F8F"
+  },
+  "fonts": {
+    "Glyph.Overlay.FontFamily": "Segoe UI Variable, Segoe UI, Arial"
+  },
+  "cornerRadii": {
+    "Glyph.Overlay.PanelCornerRadius": 12,
+    "Glyph.Overlay.KeycapCornerRadius": 8
+  }
+}

@@ -28,8 +28,10 @@ public partial class App : System.Windows.Application
 
             if (!string.IsNullOrWhiteSpace(cfg.BaseTheme))
             {
-                var path = Glyph.App.Overlay.Theming.ThemeManager.DefaultBaseThemeSelectorPath;
-                System.IO.File.WriteAllText(path, cfg.BaseTheme);
+                var selectedPath = Glyph.App.Overlay.Theming.ThemeManager.DefaultThemeSelectedPath;
+                var legacyPath = Glyph.App.Overlay.Theming.ThemeManager.DefaultBaseThemeSelectorPath;
+                System.IO.File.WriteAllText(selectedPath, cfg.BaseTheme);
+                System.IO.File.WriteAllText(legacyPath, cfg.BaseTheme);
                 Glyph.App.Overlay.Theming.ThemeManager.Reload();
             }
         }
