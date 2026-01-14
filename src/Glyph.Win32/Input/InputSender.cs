@@ -425,12 +425,30 @@ public static class InputSender
     {
         if (string.IsNullOrWhiteSpace(spec)) return false;
 
+        // Support multi-step send sequences using spaces, matching common chord notation:
+        //   "Ctrl+K S" -> send Ctrl+K, then S
+        // If there are no spaces, this is treated as a single chord.
+        var steps = spec.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (steps.Length > 1)
+        {
+            var ok = true;
+            foreach (var step in steps)
+            {
+                ok &= SendChordSpec(step);
+                // Small delay helps some apps reliably receive multi-step chords.
+                System.Threading.Thread.Sleep(10);
+            }
+
+            return ok;
+        }
+
         var parts = spec.Split('+', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         if (parts.Length == 0) return false;
 
         var keyToken = parts[^1];
         var mods = parts.Length > 1 ? parts.Take(parts.Length - 1).ToArray() : Array.Empty<string>();
-        ushort vk = GetVkForToken(keyToken);
+
+        var (vk, impliedShift) = GetVkForToken(keyToken);
         Glyph.Core.Logging.Logger.Info($"SendChordSpec: spec='{spec}' keyToken='{keyToken}' vk=0x{vk:X}");
         if (vk == 0) return false;
 
@@ -442,6 +460,11 @@ public static class InputSender
             else if (mm == "shift") modVks.Add((ushort)VirtualKey.VK_SHIFT);
             else if (mm == "alt" || mm == "menu") modVks.Add((ushort)VirtualKey.VK_MENU);
             else if (mm == "win" || mm == "lwin" || mm == "rwin") modVks.Add((ushort)VirtualKey.VK_LWIN);
+        }
+
+        if (impliedShift && !modVks.Contains((ushort)VirtualKey.VK_SHIFT))
+        {
+            modVks.Add((ushort)VirtualKey.VK_SHIFT);
         }
 
         var inputs = new List<NativeMethods.INPUT>();
@@ -524,45 +547,110 @@ public static class InputSender
         return SendInputs(inputs);
     }
 
-    private static ushort GetVkForToken(string token)
+    private static (ushort Vk, bool ImpliedShift) GetVkForToken(string token)
     {
-        if (string.IsNullOrWhiteSpace(token)) return 0;
+        if (string.IsNullOrWhiteSpace(token)) return (0, false);
         token = token.Trim();
+
+        // Single-character tokens
         if (token.Length == 1)
         {
-            var ch = char.ToUpperInvariant(token[0]);
-            if (ch >= 'A' && ch <= 'Z') return (ushort)ch;
-            if (ch >= '0' && ch <= '9') return (ushort)ch;
+            var ch = token[0];
+            var up = char.ToUpperInvariant(ch);
+            if (up >= 'A' && up <= 'Z') return ((ushort)up, false);
+            if (ch >= '0' && ch <= '9') return ((ushort)ch, false);
+
+            // OEM punctuation (US layout virtual keys)
+            // See: https://learn.microsoft.com/windows/win32/inputdev/virtual-key-codes
+            return ch switch
+            {
+                ',' => (0xBC, false), // VK_OEM_COMMA
+                '.' => (0xBE, false), // VK_OEM_PERIOD
+                '/' => (0xBF, false), // VK_OEM_2
+                ';' => (0xBA, false), // VK_OEM_1
+                '\'' => (0xDE, false), // VK_OEM_7
+                '[' => (0xDB, false), // VK_OEM_4
+                ']' => (0xDD, false), // VK_OEM_6
+                '-' => (0xBD, false), // VK_OEM_MINUS
+                '=' => (0xBB, false), // VK_OEM_PLUS
+                '\\' => (0xDC, false), // VK_OEM_5
+                '`' => (0xC0, false), // VK_OEM_3
+
+                // Common shifted punctuation: map to base VK + implied Shift
+                '!' => ((ushort)'1', true),
+                '@' => ((ushort)'2', true),
+                '#' => ((ushort)'3', true),
+                '$' => ((ushort)'4', true),
+                '%' => ((ushort)'5', true),
+                '^' => ((ushort)'6', true),
+                '&' => ((ushort)'7', true),
+                '*' => ((ushort)'8', true),
+                '(' => ((ushort)'9', true),
+                ')' => ((ushort)'0', true),
+                '_' => (0xBD, true),
+                '+' => (0xBB, true),
+                '{' => (0xDB, true),
+                '}' => (0xDD, true),
+                '|' => (0xDC, true),
+                ':' => (0xBA, true),
+                '"' => (0xDE, true),
+                '<' => (0xBC, true),
+                '>' => (0xBE, true),
+                '?' => (0xBF, true),
+                '~' => (0xC0, true),
+
+                _ => (0, false)
+            };
         }
 
         // Function keys F1-F12
         if (token.StartsWith("F", StringComparison.OrdinalIgnoreCase))
         {
-            if (int.TryParse(token.Substring(1), out var n) && n >= 1 && n <= 12)
+            if (int.TryParse(token.Substring(1), out var n) && n >= 1 && n <= 24)
             {
-                return (ushort)(0x70 + (n - 1));
+                return ((ushort)(0x70 + (n - 1)), false);
             }
         }
 
         // Common named keys
         var t = token.ToLowerInvariant();
-        if (t == "enter" || t == "return") return NativeMethods.VK_RETURN;
-        if (t == "tab") return 0x09;
-        if (t == "space" || t == " ") return 0x20;
-        if (t == "capslock" || t == "caps" || t == "capital") return 0x14;
-        if (t == "left" || t == "arrowleft" || t == "arrow-left" || t == "leftarrow" || t == "left-arrow" || t == "left_arrow") return 0x25;
-        if (t == "up" || t == "arrowup" || t == "arrow-up" || t == "uparrow" || t == "up-arrow" || t == "up_arrow") return 0x26;
-        if (t == "right" || t == "arrowright" || t == "arrow-right" || t == "rightarrow" || t == "right-arrow" || t == "right_arrow") return 0x27;
-        if (t == "down" || t == "arrowdown" || t == "arrow-down" || t == "downarrow" || t == "down-arrow" || t == "down_arrow") return 0x28;
-        if (t == "home") return 0x24;
-        if (t == "end") return 0x23;
-        if (t == "delete" || t == "del") return 0x2E;
-        if (t == "insert" || t == "ins") return 0x2D;
-        if (t == "pageup" || t == "page-up" || t == "pgup") return 0x21;
-        if (t == "pagedown" || t == "page-down" || t == "pgdn") return 0x22;
-        if (t == "backspace" || t == "bs" || t == "back") return 0x08;
-        if (t == "esc" || t == "escape") return 0x1B;
-        return 0;
+        if (t == "enter" || t == "return") return (NativeMethods.VK_RETURN, false);
+        if (t == "tab") return (0x09, false);
+        if (t == "space" || t == " ") return (0x20, false);
+        if (t == "capslock" || t == "caps" || t == "capital") return (0x14, false);
+
+        if (t == "left" || t == "arrowleft" || t == "arrow-left" || t == "leftarrow" || t == "left-arrow" || t == "left_arrow") return (0x25, false);
+        if (t == "up" || t == "arrowup" || t == "arrow-up" || t == "uparrow" || t == "up-arrow" || t == "up_arrow") return (0x26, false);
+        if (t == "right" || t == "arrowright" || t == "arrow-right" || t == "rightarrow" || t == "right-arrow" || t == "right_arrow") return (0x27, false);
+        if (t == "down" || t == "arrowdown" || t == "arrow-down" || t == "downarrow" || t == "down-arrow" || t == "down_arrow") return (0x28, false);
+
+        if (t == "home") return (0x24, false);
+        if (t == "end") return (0x23, false);
+        if (t == "delete" || t == "del") return (0x2E, false);
+        if (t == "insert" || t == "ins") return (0x2D, false);
+        if (t == "pageup" || t == "page-up" || t == "pgup") return (0x21, false);
+        if (t == "pagedown" || t == "page-down" || t == "pgdn") return (0x22, false);
+        if (t == "backspace" || t == "bs" || t == "back") return (0x08, false);
+        if (t == "esc" || t == "escape") return (0x1B, false);
+
+        // Win as a primary key
+        if (t == "win" || t == "lwin" || t == "rwin") return ((ushort)VirtualKey.VK_LWIN, false);
+
+        // OEM tokens / aliases
+        if (t == "comma" || t == "oemcomma" || t == "oem-comma") return (0xBC, false);
+        if (t == "period" || t == "dot" || t == "oemperiod" || t == "oem-period") return (0xBE, false);
+        if (t == "slash" || t == "forwardslash" || t == "oem2" || t == "oem/" || t == "oemslash") return (0xBF, false);
+        if (t == "semicolon" || t == "oem1" || t == "oem;") return (0xBA, false);
+        if (t == "quote" || t == "apostrophe" || t == "oem7" || t == "oem'") return (0xDE, false);
+        if (t == "lbracket" || t == "leftbracket" || t == "oem4" || t == "oem[") return (0xDB, false);
+        if (t == "rbracket" || t == "rightbracket" || t == "oem6" || t == "oem]") return (0xDD, false);
+        if (t == "minus" || t == "dash" || t == "oemminus" || t == "oem-") return (0xBD, false);
+        if (t == "equals" || t == "equal" || t == "oemplus" || t == "oem=") return (0xBB, false);
+        if (t == "backslash" || t == "oem5" || t == "oem\\") return (0xDC, false);
+        if (t == "backtick" || t == "grave" || t == "oem3" || t == "oem`") return (0xC0, false);
+        if (t == "plus") return (0xBB, true);
+
+        return (0, false);
     }
 
     public static bool SendMediaKey(ushort vk)
