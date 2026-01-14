@@ -11,6 +11,8 @@ namespace Glyph.App.Overlay.Theming;
 
 public static class ThemeManager
 {
+    private static readonly ResourceDictionary _defaultsDictionary = BuildOverlayDefaults();
+
     // Preferred theme selection file (contains a theme id, e.g. "Fluent").
     // Path: %APPDATA%\Glyph\theme.selected
     public static readonly string DefaultThemeSelectedPath = Path.Combine(
@@ -54,6 +56,14 @@ public static class ThemeManager
         public Dictionary<string, string>? Brushes { get; set; }
         public Dictionary<string, string>? Fonts { get; set; }
         public Dictionary<string, double>? CornerRadii { get; set; }
+
+        // Expanded theme variables:
+        // - numbers: doubles (sizes, font sizes, offsets)
+        // - thickness: WPF Thickness strings (e.g. "20,14,20,14")
+        // - strings: string values (anchors, backdrop modes, etc.)
+        public Dictionary<string, double>? Numbers { get; set; }
+        public Dictionary<string, string>? Thickness { get; set; }
+        public Dictionary<string, string>? Strings { get; set; }
     }
 
     public static void Initialize(string? userThemePath = null)
@@ -61,6 +71,8 @@ public static class ThemeManager
         var path = userThemePath ?? DefaultUserThemePath;
 
         EnsureBuiltInThemesExtracted();
+
+        EnsureDefaultsInserted();
         ApplyThemeFromSelector();
 
         TryLoadUserTheme(path);
@@ -76,6 +88,7 @@ public static class ThemeManager
         // Re-read selected theme + reload overrides.
         try
         {
+            EnsureDefaultsInserted();
             ApplyThemeFromSelector();
             TryLoadUserTheme(DefaultUserThemePath);
         }
@@ -83,6 +96,66 @@ public static class ThemeManager
         {
             Logger.Error("Failed to reload theme", ex);
         }
+    }
+
+    private static void EnsureDefaultsInserted()
+    {
+        try
+        {
+            if (System.Windows.Application.Current is null)
+            {
+                return;
+            }
+
+            var merged = System.Windows.Application.Current.Resources.MergedDictionaries;
+            if (!merged.Contains(_defaultsDictionary))
+            {
+                merged.Insert(0, _defaultsDictionary);
+            }
+        }
+        catch
+        {
+            // best-effort
+        }
+    }
+
+    private static ResourceDictionary BuildOverlayDefaults()
+    {
+        var d = new ResourceDictionary();
+
+        // Layout defaults (match current hard-coded overlay XAML values)
+        d["Glyph.Overlay.PanelPadding"] = new Thickness(20, 14, 20, 14);
+        d["Glyph.Overlay.PanelMinWidth"] = 300.0;
+        d["Glyph.Overlay.PanelMaxWidth"] = 420.0;
+
+        d["Glyph.Overlay.SequenceFontSize"] = 14.0;
+        d["Glyph.Overlay.SequenceMargin"] = new Thickness(0, 0, 0, 8);
+        d["Glyph.Overlay.OptionsMargin"] = new Thickness(0, 2, 0, 0);
+
+        d["Glyph.Overlay.OptionRowMargin"] = new Thickness(0, 6, 0, 6);
+        d["Glyph.Overlay.OptionKeycapsMargin"] = new Thickness(0, 0, 8, 0);
+        d["Glyph.Overlay.OptionDescriptionFontSize"] = 13.0;
+
+        d["Glyph.Overlay.KeycapMinWidth"] = 28.0;
+        d["Glyph.Overlay.KeycapHeight"] = 28.0;
+        d["Glyph.Overlay.KeycapPadding"] = new Thickness(6, 0, 6, 0);
+        d["Glyph.Overlay.KeycapMargin"] = new Thickness(0, 0, 4, 0);
+        d["Glyph.Overlay.KeycapFontSize"] = 13.0;
+        d["Glyph.Overlay.KeycapBorderThickness"] = new Thickness(2);
+
+        // Placement defaults (match current bottom-right logic)
+        d["Glyph.Overlay.ScreenAnchor"] = "BottomRight";
+        d["Glyph.Overlay.ScreenPadding"] = 8.0;
+        d["Glyph.Overlay.OffsetX"] = 0.0;
+        d["Glyph.Overlay.OffsetY"] = 0.0;
+
+        // Backdrop defaults
+        // Supported values: Auto, None, DwmMain, DwmTransient, DwmTabbed, Acrylic, Blur, HostBackdrop
+        d["Glyph.Overlay.WindowBackdrop"] = "Auto";
+        d["Glyph.Overlay.WindowAcrylicColor"] = "#991B1B1B";
+        d["Glyph.Overlay.WindowCorners"] = "Round";
+
+        return d;
     }
 
     public static IReadOnlyList<(string Id, string Name)> ListAvailableThemes()
@@ -172,6 +245,8 @@ public static class ThemeManager
             return;
         }
 
+        EnsureDefaultsInserted();
+
         var merged = System.Windows.Application.Current.Resources.MergedDictionaries;
         if (_baseDictionary is not null)
         {
@@ -179,10 +254,13 @@ public static class ThemeManager
             _baseDictionary = null;
         }
 
+        var insertIndex = merged.IndexOf(_defaultsDictionary);
+        insertIndex = insertIndex < 0 ? 0 : insertIndex + 1;
+
         // Prefer JSON themes in %APPDATA%\Glyph\themes
         if (TryLoadThemeJson(themeId, out var jsonDict))
         {
-            merged.Insert(0, jsonDict);
+            merged.Insert(insertIndex, jsonDict);
             _baseDictionary = jsonDict;
             Logger.Info($"Theme applied (JSON): {themeId}");
             return;
@@ -193,7 +271,7 @@ public static class ThemeManager
         {
             var uri = new Uri($"Overlay/Themes/{themeId}.xaml", UriKind.Relative);
             var dict = new ResourceDictionary { Source = uri };
-            merged.Insert(0, dict);
+            merged.Insert(insertIndex, dict);
             _baseDictionary = dict;
             Logger.Info($"Theme applied (XAML fallback): {themeId}");
         }
@@ -201,7 +279,7 @@ public static class ThemeManager
         {
             var uri = new Uri("Overlay/Themes/Fluent.xaml", UriKind.Relative);
             var dict = new ResourceDictionary { Source = uri };
-            merged.Insert(0, dict);
+            merged.Insert(insertIndex, dict);
             _baseDictionary = dict;
             Logger.Info("Theme applied (XAML fallback): Fluent");
         }
@@ -300,7 +378,7 @@ public static class ThemeManager
             return null;
         }
 
-        var jsonText = File.ReadAllText(path);
+        var jsonText = ReadAllTextShared(path);
         var theme = JsonSerializer.Deserialize<ThemeJson>(jsonText, new JsonSerializerOptions
         {
             PropertyNameCaseInsensitive = true
@@ -345,7 +423,10 @@ public static class ThemeManager
             Inherits = child.Inherits,
             Brushes = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase),
             Fonts = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase),
-            CornerRadii = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase)
+            CornerRadii = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase),
+            Numbers = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase),
+            Thickness = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase),
+            Strings = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         };
 
         if (parent.Brushes is not null)
@@ -375,7 +456,46 @@ public static class ThemeManager
             foreach (var kvp in child.CornerRadii) merged.CornerRadii[kvp.Key] = kvp.Value;
         }
 
+        if (parent.Numbers is not null)
+        {
+            foreach (var kvp in parent.Numbers) merged.Numbers[kvp.Key] = kvp.Value;
+        }
+        if (child.Numbers is not null)
+        {
+            foreach (var kvp in child.Numbers) merged.Numbers[kvp.Key] = kvp.Value;
+        }
+
+        if (parent.Thickness is not null)
+        {
+            foreach (var kvp in parent.Thickness) merged.Thickness[kvp.Key] = kvp.Value;
+        }
+        if (child.Thickness is not null)
+        {
+            foreach (var kvp in child.Thickness) merged.Thickness[kvp.Key] = kvp.Value;
+        }
+
+        if (parent.Strings is not null)
+        {
+            foreach (var kvp in parent.Strings) merged.Strings[kvp.Key] = kvp.Value;
+        }
+        if (child.Strings is not null)
+        {
+            foreach (var kvp in child.Strings) merged.Strings[kvp.Key] = kvp.Value;
+        }
+
         return merged;
+    }
+
+    private static string ReadAllTextShared(string path)
+    {
+        // Theme files are often edited live; allow read while another process is writing.
+        using var stream = new FileStream(
+            path,
+            FileMode.Open,
+            FileAccess.Read,
+            FileShare.ReadWrite | FileShare.Delete);
+        using var reader = new StreamReader(stream);
+        return reader.ReadToEnd();
     }
 
     private static ResourceDictionary BuildResourceDictionary(ThemeJson theme)
@@ -423,6 +543,53 @@ public static class ThemeManager
                 try
                 {
                     dict[kvp.Key] = new CornerRadius(kvp.Value);
+                }
+                catch
+                {
+                }
+            }
+        }
+
+        if (theme.Numbers is not null)
+        {
+            foreach (var kvp in theme.Numbers)
+            {
+                try
+                {
+                    dict[kvp.Key] = kvp.Value;
+                }
+                catch
+                {
+                }
+            }
+        }
+
+        if (theme.Strings is not null)
+        {
+            foreach (var kvp in theme.Strings)
+            {
+                try
+                {
+                    dict[kvp.Key] = kvp.Value;
+                }
+                catch
+                {
+                }
+            }
+        }
+
+        if (theme.Thickness is not null)
+        {
+            var converter = new ThicknessConverter();
+            foreach (var kvp in theme.Thickness)
+            {
+                try
+                {
+                    var obj = converter.ConvertFromString(kvp.Value);
+                    if (obj is Thickness thickness)
+                    {
+                        dict[kvp.Key] = thickness;
+                    }
                 }
                 catch
                 {

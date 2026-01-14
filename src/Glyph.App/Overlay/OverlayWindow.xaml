@@ -12,26 +12,26 @@
     Title="Glyph Overlay">
     <!-- Single-layer rounded panel only; window background stays transparent -->
     <Border
-        Padding="20,14,20,14"
+        Padding="{DynamicResource Glyph.Overlay.PanelPadding}"
         CornerRadius="{DynamicResource Glyph.Overlay.PanelCornerRadius}"
         Background="{DynamicResource Glyph.Overlay.BackgroundBrush}"
         SnapsToDevicePixels="True">
         <!-- Use system backdrop/shadow where available; avoid WPF DropShadowEffect which can force layered rendering -->
 
-        <StackPanel MinWidth="300" MaxWidth="420">
+        <StackPanel MinWidth="{DynamicResource Glyph.Overlay.PanelMinWidth}" MaxWidth="{DynamicResource Glyph.Overlay.PanelMaxWidth}">
             <TextBlock
                 x:Name="SequenceText"
                 Foreground="{DynamicResource Glyph.Overlay.SequenceForeground}"
-                FontSize="14"
+                FontSize="{DynamicResource Glyph.Overlay.SequenceFontSize}"
                 FontWeight="SemiBold"
                 FontFamily="{DynamicResource Glyph.Overlay.FontFamily}"
-                Margin="0,0,0,8"
+                Margin="{DynamicResource Glyph.Overlay.SequenceMargin}"
                 Text="Glyph" />
-            <ItemsControl x:Name="OptionsList" Margin="0,2,0,0">
+            <ItemsControl x:Name="OptionsList" Margin="{DynamicResource Glyph.Overlay.OptionsMargin}">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                        <DockPanel LastChildFill="True" Margin="0,6,0,6">
-                            <ItemsControl ItemsSource="{Binding KeyCaps}" DockPanel.Dock="Left" Margin="0,0,8,0">
+                        <DockPanel LastChildFill="True" Margin="{DynamicResource Glyph.Overlay.OptionRowMargin}">
+                            <ItemsControl ItemsSource="{Binding KeyCaps}" DockPanel.Dock="Left" Margin="{DynamicResource Glyph.Overlay.OptionKeycapsMargin}">
                                 <ItemsControl.ItemsPanel>
                                     <ItemsPanelTemplate>
                                         <StackPanel Orientation="Horizontal" />
@@ -39,7 +39,7 @@
                                 </ItemsControl.ItemsPanel>
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <Border MinWidth="28" Height="28" Padding="6,0" CornerRadius="{DynamicResource Glyph.Overlay.KeycapCornerRadius}" Background="{DynamicResource Glyph.Overlay.KeycapBackground}" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,4,0">
+                                        <Border MinWidth="{DynamicResource Glyph.Overlay.KeycapMinWidth}" Height="{DynamicResource Glyph.Overlay.KeycapHeight}" Padding="{DynamicResource Glyph.Overlay.KeycapPadding}" CornerRadius="{DynamicResource Glyph.Overlay.KeycapCornerRadius}" Background="{DynamicResource Glyph.Overlay.KeycapBackground}" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="{DynamicResource Glyph.Overlay.KeycapMargin}">
                                             <Border.Style>
                                                 <Style TargetType="Border">
                                                     <Setter Property="Background" Value="{DynamicResource Glyph.Overlay.KeycapBackgroundAction}" />
@@ -52,7 +52,7 @@
 
                                                         <DataTrigger Binding="{Binding DataContext.IsAction, RelativeSource={RelativeSource AncestorType=ItemsControl}}" Value="True">
                                                             <Setter Property="BorderBrush" Value="{DynamicResource Glyph.Overlay.KeycapBorderAction}" />
-                                                            <Setter Property="BorderThickness" Value="2" />
+                                                            <Setter Property="BorderThickness" Value="{DynamicResource Glyph.Overlay.KeycapBorderThickness}" />
                                                         </DataTrigger>
                                                     </Style.Triggers>
                                                 </Style>
@@ -62,7 +62,7 @@
                                                     VerticalAlignment="Center"
                                                     HorizontalAlignment="Center"
                                                     FontWeight="Bold"
-                                                    FontSize="13"
+                                                    FontSize="{DynamicResource Glyph.Overlay.KeycapFontSize}"
                                                     Foreground="{DynamicResource Glyph.Overlay.KeycapForegroundAction}"
                                                     FontFamily="{DynamicResource Glyph.Overlay.FontFamily}"
                                                     Text="{Binding}">
@@ -85,7 +85,7 @@
                             <TextBlock
                                 VerticalAlignment="Center"
                                 Foreground="{DynamicResource Glyph.Overlay.OptionForeground}"
-                                FontSize="13"
+                                FontSize="{DynamicResource Glyph.Overlay.OptionDescriptionFontSize}"
                                 FontFamily="{DynamicResource Glyph.Overlay.FontFamily}"
                                 Text="{Binding Description}" />
                         </DockPanel>

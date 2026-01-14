@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Interop;
+using System.Windows.Media;
 
 using Glyph.Core.Overlay;
 using Glyph.Win32.Windowing;
@@ -8,6 +9,8 @@ namespace Glyph.App;
 
 public partial class OverlayWindow : Window
 {
+    private IntPtr _hwnd;
+
     public OverlayWindow()
     {
         InitializeComponent();
@@ -21,20 +24,40 @@ public partial class OverlayWindow : Window
             Opacity = 0.5
         };
 
-        // Position bottom-right with 8px padding from taskbar and edge
+        // Position is theme-configurable via resources.
         WindowStartupLocation = WindowStartupLocation.Manual;
-        Loaded += (_, _) => PositionBottomRight();
-        SizeChanged += (_, _) => PositionBottomRight();
+        Loaded += (_, _) => PositionFromTheme();
+        SizeChanged += (_, _) => PositionFromTheme();
+        IsVisibleChanged += (_, _) =>
+        {
+            if (IsVisible)
+            {
+                ApplyVisualEffects();
+                PositionFromTheme();
+            }
+        };
 
         SourceInitialized += (_, _) =>
         {
             try
             {
-                var hwnd = new WindowInteropHelper(this).Handle;
-                if (hwnd != IntPtr.Zero)
+                _hwnd = new WindowInteropHelper(this).Handle;
+                if (_hwnd != IntPtr.Zero)
                 {
-                    WindowEffects.ApplyBestEffortBackdrop(hwnd);
-                    WindowEffects.TrySetRoundedCorners(hwnd);
+                    // Ensure the underlying HWND surface is transparent so DWM backdrops can show.
+                    try
+                    {
+                        var source = HwndSource.FromHwnd(_hwnd);
+                        if (source?.CompositionTarget is not null)
+                        {
+                            source.CompositionTarget.BackgroundColor = Colors.Transparent;
+                        }
+                    }
+                    catch
+                    {
+                    }
+
+                    ApplyVisualEffects();
                 }
             }
             catch
@@ -44,18 +67,124 @@ public partial class OverlayWindow : Window
         };
     }
 
-    private void PositionBottomRight()
+    private void ApplyVisualEffects()
+    {
+        if (_hwnd == IntPtr.Zero)
+        {
+            return;
+        }
+
+        var backdrop = GetStringResource("Glyph.Overlay.WindowBackdrop") ?? "Auto";
+        var acrylicColor = GetStringResource("Glyph.Overlay.WindowAcrylicColor") ?? "#991B1B1B";
+        var corners = GetStringResource("Glyph.Overlay.WindowCorners") ?? "Round";
+
+        WindowEffects.ApplyBackdrop(_hwnd, backdrop, acrylicColor);
+
+        if (!string.Equals(corners, "None", StringComparison.OrdinalIgnoreCase))
+        {
+            WindowEffects.TrySetRoundedCorners(_hwnd);
+        }
+    }
+
+    private void PositionFromTheme()
     {
         var workArea = SystemParameters.WorkArea;
-        // Ensure the overlay sits 8px from the taskbar and screen edge.
-        var padding = 8.0;
-        Left = Math.Max(workArea.Left + padding, workArea.Right - ActualWidth - padding);
-        Top = Math.Max(workArea.Top + padding, workArea.Bottom - ActualHeight - padding);
+
+        var anchor = GetStringResource("Glyph.Overlay.ScreenAnchor") ?? "BottomRight";
+        var padding = GetDoubleResource("Glyph.Overlay.ScreenPadding", 8.0);
+        var offsetX = GetDoubleResource("Glyph.Overlay.OffsetX", 0.0);
+        var offsetY = GetDoubleResource("Glyph.Overlay.OffsetY", 0.0);
+
+        var width = ActualWidth;
+        var height = ActualHeight;
+        if (width <= 0 || height <= 0)
+        {
+            return;
+        }
+
+        double left;
+        double top;
+
+        var a = anchor.Replace("_", string.Empty).Replace(" ", string.Empty);
+        if (string.Equals(a, "TopLeft", StringComparison.OrdinalIgnoreCase))
+        {
+            left = workArea.Left + padding;
+            top = workArea.Top + padding;
+        }
+        else if (string.Equals(a, "TopRight", StringComparison.OrdinalIgnoreCase))
+        {
+            left = workArea.Right - width - padding;
+            top = workArea.Top + padding;
+        }
+        else if (string.Equals(a, "BottomLeft", StringComparison.OrdinalIgnoreCase))
+        {
+            left = workArea.Left + padding;
+            top = workArea.Bottom - height - padding;
+        }
+        else if (string.Equals(a, "BottomCenter", StringComparison.OrdinalIgnoreCase))
+        {
+            left = workArea.Left + (workArea.Width - width) / 2.0;
+            top = workArea.Bottom - height - padding;
+        }
+        else if (string.Equals(a, "TopCenter", StringComparison.OrdinalIgnoreCase))
+        {
+            left = workArea.Left + (workArea.Width - width) / 2.0;
+            top = workArea.Top + padding;
+        }
+        else if (string.Equals(a, "Center", StringComparison.OrdinalIgnoreCase))
+        {
+            left = workArea.Left + (workArea.Width - width) / 2.0;
+            top = workArea.Top + (workArea.Height - height) / 2.0;
+        }
+        else
+        {
+            // BottomRight (default)
+            left = workArea.Right - width - padding;
+            top = workArea.Bottom - height - padding;
+        }
+
+        left += offsetX;
+        top += offsetY;
+
+        Left = Math.Max(workArea.Left + padding, Math.Min(left, workArea.Right - width - padding));
+        Top = Math.Max(workArea.Top + padding, Math.Min(top, workArea.Bottom - height - padding));
+    }
+
+    private string? GetStringResource(string key)
+    {
+        try
+        {
+            return (System.Windows.Application.Current?.Resources[key] as string)?.Trim();
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private double GetDoubleResource(string key, double fallback)
+    {
+        try
+        {
+            var val = System.Windows.Application.Current?.Resources[key];
+            if (val is double d) return d;
+            if (val is float f) return f;
+            if (val is int i) return i;
+            if (val is string s && double.TryParse(s, out var parsed)) return parsed;
+            return fallback;
+        }
+        catch
+        {
+            return fallback;
+        }
     }
 
     public void Update(OverlayModel model)
     {
         SequenceText.Text = model.Sequence;
         OptionsList.ItemsSource = model.Options;
+
+        // Ensure theme-driven placement stays correct as the overlay size changes.
+        PositionFromTheme();
     }
 }

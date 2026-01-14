@@ -5,7 +5,7 @@
   "description": "Windows 11 look, true transparency",
   "inherits": null,
   "brushes": {
-    "Glyph.Overlay.BackgroundBrush": "#7F1B1B1B",
+    "Glyph.Overlay.BackgroundBrush": "#14000000",
     "Glyph.Overlay.SequenceForeground": "#FFF2F2F2",
     "Glyph.Overlay.OptionForeground": "#FFD6D6D6",
 
@@ -25,5 +25,29 @@
   "cornerRadii": {
     "Glyph.Overlay.PanelCornerRadius": 12,
     "Glyph.Overlay.KeycapCornerRadius": 8
+  },
+  "numbers": {
+    "Glyph.Overlay.ScreenPadding": 10,
+    "Glyph.Overlay.SequenceFontSize": 14,
+    "Glyph.Overlay.OptionDescriptionFontSize": 13,
+    "Glyph.Overlay.KeycapMinWidth": 28,
+    "Glyph.Overlay.KeycapHeight": 28,
+    "Glyph.Overlay.KeycapFontSize": 13
+  },
+  "thickness": {
+    "Glyph.Overlay.PanelPadding": "20,14,20,14",
+    "Glyph.Overlay.SequenceMargin": "0,0,0,8",
+    "Glyph.Overlay.OptionsMargin": "0,2,0,0",
+    "Glyph.Overlay.OptionRowMargin": "0,6,0,6",
+    "Glyph.Overlay.OptionKeycapsMargin": "0,0,8,0",
+    "Glyph.Overlay.KeycapPadding": "6,0",
+    "Glyph.Overlay.KeycapMargin": "0,0,4,0",
+    "Glyph.Overlay.KeycapBorderThickness": "2"
+  },
+  "strings": {
+    "Glyph.Overlay.ScreenAnchor": "BottomRight",
+    "Glyph.Overlay.WindowBackdrop": "Acrylic",
+    "Glyph.Overlay.WindowAcrylicColor": "#101B1B1B",
+    "Glyph.Overlay.WindowCorners": "Round"
   }
 }

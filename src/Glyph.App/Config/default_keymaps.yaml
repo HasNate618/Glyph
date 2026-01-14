@@ -26,6 +26,7 @@ bindings:
         exec: wt
       - key: m
         label: Task Manager
+        exec: taskmgr
       - key: v
         label: VSCode
         exec: code
@@ -226,6 +227,9 @@ bindings:
           - key: r
             label: RosePine
             action: setThemeRosePine
+          - key: x
+            label: Test
+            setTheme: 'Test'
 
   - key: g
     label: Git
@@ -298,11 +302,41 @@ apps:
 
   - process: WindowsTerminal
     bindings:
-      - key: n
-        label: neofetch
+      - key: f
+        label: Fetch
         steps:
-          - type: neofetch
+          - type: fastfetch
           - send: Enter
+      - key: r
+        label: Rusty Rain
+        steps:
+          - type: "rusty-rain -C 71,237,129 -H 157,237,185 -g jap -S 0,1000"
+          - send: Enter
+      - key: c
+        label: Cava
+        steps:
+          - type: "C:\\users\\natee\\appdata\\local\\programs\\cava\\cava.exe"
+          - send: Enter
+      - key: n
+        label: Nvim
+        steps:
+          - type: 'nvim .'
+          - send: Enter
+      - key: ","
+        label: Settings
+        send: Ctrl+, # Ctrl+, opens Settings in Windows Terminal
+      # Profile switching: send the Windows Terminal profile hotkeys (Ctrl+Shift+N)
+      # Adjust numbers if your profiles map differently in Windows Terminal settings.
+      - key: 1
+        label: Switch to Profile 1 (PowerShell)
+        send: Ctrl+Shift+1
+      - key: 2
+        label: Switch to Profile 2 (Command Prompt)
+        send: Ctrl+Shift+2
+      # Alternative: open a new tab with a specific profile via exec
+      - key: p
+        label: "New tab: Command Prompt (via wt)"
+        exec: wt -p "Command Prompt"
 
   - process: Code
     bindings:
@@ -318,6 +352,11 @@ apps:
       - key: j
         label: Toggle Panel
         send: Ctrl+J
+      - key: np
+        label: npm run dev
+        steps:
+          - type: 'npm run dev'
+          - send: Enter
 groups:
   - name: Browser
     processes: [ chrome, msedge, firefox, brave, opera, zen ]
