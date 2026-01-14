@@ -226,18 +226,21 @@ public sealed class YamlKeymapProvider : IKeymapProvider
             return;
         }
 
-        var seq = prefix + keySeq;
-
-        var existing = engine.GetPrefixDescription(seq);
-        if (string.IsNullOrWhiteSpace(existing))
+        var seqBase = prefix + keySeq;
+        var seqVariants = ExpandGenericModifierVariants(seqBase);
+        foreach (var seq in seqVariants)
         {
-            engine.SetPrefixDescription(seq, label);
-        }
-        else
-        {
-            if (!string.Equals(existing, label, StringComparison.Ordinal))
+            var existing = engine.GetPrefixDescription(seq);
+            if (string.IsNullOrWhiteSpace(existing))
             {
-                Logger.Info($"Keymaps: retained built-in label '{existing}' for '{seq}' (yaml: '{label}')");
+                engine.SetPrefixDescription(seq, label);
+            }
+            else
+            {
+                if (!string.Equals(existing, label, StringComparison.Ordinal))
+                {
+                    Logger.Info($"Keymaps: retained built-in label '{existing}' for '{seq}' (yaml: '{label}')");
+                }
             }
         }
 
@@ -249,60 +252,67 @@ public sealed class YamlKeymapProvider : IKeymapProvider
         var execArgs = (node.ExecArgs ?? string.Empty).Trim();
         var execCwd = (node.ExecCwd ?? string.Empty).Trim();
 
-        if (node.Steps is { Count: > 0 })
-        {
-            var steps = node.Steps.Select(s => new ActionRequest
-            {
-                ActionId = string.IsNullOrWhiteSpace(s.Action) ? null : s.Action,
-                TypeText = string.IsNullOrWhiteSpace(s.Type) ? null : s.Type,
-                SendSpec = string.IsNullOrWhiteSpace(s.Send) ? null : s.Send,
-                ExecPath = string.IsNullOrWhiteSpace(s.Exec) ? null : s.Exec,
-                ExecArgs = string.IsNullOrWhiteSpace(s.ExecArgs) ? null : s.ExecArgs,
-                ExecCwd = string.IsNullOrWhiteSpace(s.ExecCwd) ? null : s.ExecCwd,
-            }).ToList();
 
-            engine.AddGlobalBinding(seq, new ActionRequest { Steps = steps }, label);
-            applied++;
-        }
-        else if (actionId.Length > 0)
+        foreach (var seq in seqVariants)
         {
-            if (!ActionRuntime.KnownActionIds.Contains(actionId))
+            if (node.Steps is { Count: > 0 })
             {
-                skippedUnknown++;
-                Logger.Info($"Keymaps: unknown action '{actionId}' for '{seq}' ({label})");
-            }
-            else
-            {
-                engine.AddGlobalBinding(seq, new ActionRequest(actionId), label);
+                var steps = node.Steps.Select(s => new ActionRequest
+                {
+                    ActionId = string.IsNullOrWhiteSpace(s.Action) ? null : s.Action,
+                    TypeText = string.IsNullOrWhiteSpace(s.Type) ? null : s.Type,
+                    SendSpec = string.IsNullOrWhiteSpace(s.Send) ? null : s.Send,
+                    ExecPath = string.IsNullOrWhiteSpace(s.Exec) ? null : s.Exec,
+                    ExecArgs = string.IsNullOrWhiteSpace(s.ExecArgs) ? null : s.ExecArgs,
+                    ExecCwd = string.IsNullOrWhiteSpace(s.ExecCwd) ? null : s.ExecCwd,
+                }).ToList();
+
+                engine.AddGlobalBinding(seq, new ActionRequest { Steps = steps }, label);
                 applied++;
             }
-        }
-        else if (typeText.Length > 0 && thenSpec.Length > 0)
-        {
-            engine.AddGlobalBinding(seq, new ActionRequest { Steps = new List<ActionRequest> { new() { TypeText = typeText }, new() { SendSpec = thenSpec } } }, label);
-            applied++;
-        }
-        else if (typeText.Length > 0)
-        {
-            engine.AddGlobalBinding(seq, new ActionRequest { TypeText = typeText }, label);
-            applied++;
-        }
-        else if (sendSpec.Length > 0)
-        {
-            engine.AddGlobalBinding(seq, new ActionRequest { SendSpec = sendSpec }, label);
-            applied++;
-        }
-        else if (execPath.Length > 0)
-        {
-            engine.AddGlobalBinding(seq, new ActionRequest { ExecPath = execPath, ExecArgs = string.IsNullOrWhiteSpace(execArgs) ? null : execArgs, ExecCwd = string.IsNullOrWhiteSpace(execCwd) ? null : execCwd }, label);
-            applied++;
+            else if (actionId.Length > 0)
+            {
+                if (!ActionRuntime.KnownActionIds.Contains(actionId))
+                {
+                    skippedUnknown++;
+                    Logger.Info($"Keymaps: unknown action '{actionId}' for '{seq}' ({label})");
+                }
+                else
+                {
+                    engine.AddGlobalBinding(seq, new ActionRequest(actionId), label);
+                    applied++;
+                }
+            }
+            else if (typeText.Length > 0 && thenSpec.Length > 0)
+            {
+                engine.AddGlobalBinding(seq, new ActionRequest { Steps = new List<ActionRequest> { new() { TypeText = typeText }, new() { SendSpec = thenSpec } } }, label);
+                applied++;
+            }
+            else if (typeText.Length > 0)
+            {
+                engine.AddGlobalBinding(seq, new ActionRequest { TypeText = typeText }, label);
+                applied++;
+            }
+            else if (sendSpec.Length > 0)
+            {
+                engine.AddGlobalBinding(seq, new ActionRequest { SendSpec = sendSpec }, label);
+                applied++;
+            }
+            else if (execPath.Length > 0)
+            {
+                engine.AddGlobalBinding(seq, new ActionRequest { ExecPath = execPath, ExecArgs = string.IsNullOrWhiteSpace(execArgs) ? null : execArgs, ExecCwd = string.IsNullOrWhiteSpace(execCwd) ? null : execCwd }, label);
+                applied++;
+            }
         }
 
         if (node.Children is { Count: > 0 })
         {
             foreach (var child in node.Children)
             {
-                ApplyNode(engine, seq, child, ref applied, ref skippedUnknown, ref skippedInvalid);
+                foreach (var seq in seqVariants)
+                {
+                    ApplyNode(engine, seq, child, ref applied, ref skippedUnknown, ref skippedInvalid);
+                }
             }
         }
     }
@@ -345,12 +355,15 @@ public sealed class YamlKeymapProvider : IKeymapProvider
             return;
         }
 
-        var seq = prefix + keySeq;
-
-        var existing = engine.GetPerAppPrefixDescription(processName, seq);
-        if (string.IsNullOrWhiteSpace(existing))
+        var seqBase = prefix + keySeq;
+        var seqVariants = ExpandGenericModifierVariants(seqBase);
+        foreach (var seq in seqVariants)
         {
-            engine.SetPerAppPrefixDescription(processName, seq, label);
+            var existing = engine.GetPerAppPrefixDescription(processName, seq);
+            if (string.IsNullOrWhiteSpace(existing))
+            {
+                engine.SetPerAppPrefixDescription(processName, seq, label);
+            }
         }
 
         var actionId = (node.Action ?? string.Empty).Trim();
@@ -361,62 +374,121 @@ public sealed class YamlKeymapProvider : IKeymapProvider
         var execArgs = (node.ExecArgs ?? string.Empty).Trim();
         var execCwd = (node.ExecCwd ?? string.Empty).Trim();
 
-        if (node.Steps is { Count: > 0 })
-        {
-            var steps = node.Steps.Select(s => new ActionRequest
-            {
-                ActionId = string.IsNullOrWhiteSpace(s.Action) ? null : s.Action,
-                TypeText = string.IsNullOrWhiteSpace(s.Type) ? null : s.Type,
-                SendSpec = string.IsNullOrWhiteSpace(s.Send) ? null : s.Send,
-                ExecPath = string.IsNullOrWhiteSpace(s.Exec) ? null : s.Exec,
-                ExecArgs = string.IsNullOrWhiteSpace(s.ExecArgs) ? null : s.ExecArgs,
-                ExecCwd = string.IsNullOrWhiteSpace(s.ExecCwd) ? null : s.ExecCwd,
-            }).ToList();
 
-            engine.AddPerAppBinding(processName, seq, new ActionRequest { Steps = steps }, label);
-            applied++;
-        }
-        else if (actionId.Length > 0)
+        foreach (var seq in seqVariants)
         {
-            if (!ActionRuntime.KnownActionIds.Contains(actionId))
+            if (node.Steps is { Count: > 0 })
             {
-                skippedUnknown++;
-                Logger.Info($"Keymaps: unknown action '{actionId}' for app '{processName}' '{seq}' ({label})");
-            }
-            else
-            {
-                engine.AddPerAppBinding(processName, seq, new ActionRequest(actionId), label);
+                var steps = node.Steps.Select(s => new ActionRequest
+                {
+                    ActionId = string.IsNullOrWhiteSpace(s.Action) ? null : s.Action,
+                    TypeText = string.IsNullOrWhiteSpace(s.Type) ? null : s.Type,
+                    SendSpec = string.IsNullOrWhiteSpace(s.Send) ? null : s.Send,
+                    ExecPath = string.IsNullOrWhiteSpace(s.Exec) ? null : s.Exec,
+                    ExecArgs = string.IsNullOrWhiteSpace(s.ExecArgs) ? null : s.ExecArgs,
+                    ExecCwd = string.IsNullOrWhiteSpace(s.ExecCwd) ? null : s.ExecCwd,
+                }).ToList();
+
+                engine.AddPerAppBinding(processName, seq, new ActionRequest { Steps = steps }, label);
                 applied++;
             }
-        }
-        else if (typeText.Length > 0 && thenSpec.Length > 0)
-        {
-            engine.AddPerAppBinding(processName, seq, new ActionRequest { Steps = new List<ActionRequest> { new() { TypeText = typeText }, new() { SendSpec = thenSpec } } }, label);
-            applied++;
-        }
-        else if (typeText.Length > 0)
-        {
-            engine.AddPerAppBinding(processName, seq, new ActionRequest { TypeText = typeText }, label);
-            applied++;
-        }
-        else if (sendSpec.Length > 0)
-        {
-            engine.AddPerAppBinding(processName, seq, new ActionRequest { SendSpec = sendSpec }, label);
-            applied++;
-        }
-        else if (execPath.Length > 0)
-        {
-            engine.AddPerAppBinding(processName, seq, new ActionRequest { ExecPath = execPath, ExecArgs = string.IsNullOrWhiteSpace(execArgs) ? null : execArgs, ExecCwd = string.IsNullOrWhiteSpace(execCwd) ? null : execCwd }, label);
-            applied++;
+            else if (actionId.Length > 0)
+            {
+                if (!ActionRuntime.KnownActionIds.Contains(actionId))
+                {
+                    skippedUnknown++;
+                    Logger.Info($"Keymaps: unknown action '{actionId}' for app '{processName}' '{seq}' ({label})");
+                }
+                else
+                {
+                    engine.AddPerAppBinding(processName, seq, new ActionRequest(actionId), label);
+                    applied++;
+                }
+            }
+            else if (typeText.Length > 0 && thenSpec.Length > 0)
+            {
+                engine.AddPerAppBinding(processName, seq, new ActionRequest { Steps = new List<ActionRequest> { new() { TypeText = typeText }, new() { SendSpec = thenSpec } } }, label);
+                applied++;
+            }
+            else if (typeText.Length > 0)
+            {
+                engine.AddPerAppBinding(processName, seq, new ActionRequest { TypeText = typeText }, label);
+                applied++;
+            }
+            else if (sendSpec.Length > 0)
+            {
+                engine.AddPerAppBinding(processName, seq, new ActionRequest { SendSpec = sendSpec }, label);
+                applied++;
+            }
+            else if (execPath.Length > 0)
+            {
+                engine.AddPerAppBinding(processName, seq, new ActionRequest { ExecPath = execPath, ExecArgs = string.IsNullOrWhiteSpace(execArgs) ? null : execArgs, ExecCwd = string.IsNullOrWhiteSpace(execCwd) ? null : execCwd }, label);
+                applied++;
+            }
         }
 
         if (node.Children is { Count: > 0 })
         {
             foreach (var child in node.Children)
             {
-                ApplyAppNode(engine, processName, seq, child, ref applied, ref skippedUnknown, ref skippedInvalid);
+                foreach (var seq in seqVariants)
+                {
+                    ApplyAppNode(engine, processName, seq, child, ref applied, ref skippedUnknown, ref skippedInvalid);
+                }
             }
         }
+    }
+
+    private static IReadOnlyList<string> ExpandGenericModifierVariants(string seq)
+    {
+        if (string.IsNullOrEmpty(seq)) return new[] { seq };
+
+        if (!KeyTokens.TryEncode("Ctrl", out var ctrl)) return new[] { seq };
+        if (!KeyTokens.TryEncode("LCtrl", out var lctrl)) return new[] { seq };
+        if (!KeyTokens.TryEncode("RCtrl", out var rctrl)) return new[] { seq };
+        if (!KeyTokens.TryEncode("Shift", out var shift)) return new[] { seq };
+        if (!KeyTokens.TryEncode("LShift", out var lshift)) return new[] { seq };
+        if (!KeyTokens.TryEncode("RShift", out var rshift)) return new[] { seq };
+        if (!KeyTokens.TryEncode("Alt", out var alt)) return new[] { seq };
+        if (!KeyTokens.TryEncode("LAlt", out var lalt)) return new[] { seq };
+        if (!KeyTokens.TryEncode("RAlt", out var ralt)) return new[] { seq };
+
+        var replacements = new Dictionary<char, char[]>
+        {
+            [ctrl] = new[] { ctrl, lctrl, rctrl },
+            [shift] = new[] { shift, lshift, rshift },
+            [alt] = new[] { alt, lalt, ralt },
+        };
+
+        // Fast path: no generic modifiers present.
+        if (!seq.Any(c => replacements.ContainsKey(c))) return new[] { seq };
+
+        var results = new HashSet<string>(StringComparer.Ordinal) { seq };
+        for (var i = 0; i < seq.Length; i++)
+        {
+            if (!replacements.TryGetValue(seq[i], out var options)) continue;
+
+            var next = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var s in results)
+            {
+                foreach (var opt in options)
+                {
+                    if (s[i] == opt)
+                    {
+                        next.Add(s);
+                        continue;
+                    }
+
+                    var chars = s.ToCharArray();
+                    chars[i] = opt;
+                    next.Add(new string(chars));
+                }
+            }
+
+            results = next;
+        }
+
+        return results.ToList();
     }
 
     private static string ParseKeySequence(string key, List<string>? keyTokens, ref int skippedInvalid)
@@ -449,9 +521,9 @@ public sealed class YamlKeymapProvider : IKeymapProvider
 
         // Convenience: allow a bare "Win" key for the most common case.
         // For everything else, users can use keyTokens (recommended) or <Token> segments inside key.
-        if (string.Equals(key, "Win", StringComparison.OrdinalIgnoreCase) && KeyTokens.TryEncode("Win", out var win))
+        if (key.IndexOf('<') < 0 && key.IndexOf('>') < 0 && KeyTokens.TryEncode(key, out var singleToken))
         {
-            return new string(win, 1);
+            return new string(singleToken, 1);
         }
 
         // Parse <Token> segments inside the key string. Anything else is treated as literal single-character steps.
@@ -479,7 +551,15 @@ public sealed class YamlKeymapProvider : IKeymapProvider
                 }
             }
 
-            chars.Add(c);
+            // Normalize literal letters so `A` behaves like `a`.
+            if (c is >= 'A' and <= 'Z')
+            {
+                chars.Add((char)(c + 32));
+            }
+            else
+            {
+                chars.Add(c);
+            }
         }
 
         return new string(chars.ToArray());

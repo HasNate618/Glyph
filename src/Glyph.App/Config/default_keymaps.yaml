@@ -61,7 +61,8 @@ bindings:
       - key: v
         label: Toggle Volume Mute
         action: volumeMute
-  - key: w
+
+  - key: Win
     label: Windows
     children:
       - key: l
@@ -83,7 +84,7 @@ bindings:
         label: Show Desktop
         send: Win+D
 
-  - key: q
+  - key: w
     label: Manage Windows
     children:
       - key: n
@@ -357,6 +358,13 @@ apps:
         steps:
           - type: 'npm run dev'
           - send: Enter
+      - key: n
+        label: New File
+        send: Ctrl+Alt+Win+N
+      - key: w
+        label: New Window
+        send: Ctrl+Shift+N
+
 groups:
   - name: Browser
     processes: [ chrome, msedge, firefox, brave, opera, zen ]

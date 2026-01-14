@@ -13,18 +13,35 @@ public static class KeyTokens
     {
         // Modifiers / special
         ["Win"] = (char)(Base + 1),
+        ["Ctrl"] = (char)(Base + 2),
+        ["Control"] = (char)(Base + 2),
+        ["Shift"] = (char)(Base + 3),
+        ["Alt"] = (char)(Base + 4),
+        ["Menu"] = (char)(Base + 4),
+
+        // Left/right modifier variants
+        ["LCtrl"] = (char)(Base + 5),
+        ["LControl"] = (char)(Base + 5),
+        ["RCtrl"] = (char)(Base + 6),
+        ["RControl"] = (char)(Base + 6),
+        ["LShift"] = (char)(Base + 7),
+        ["RShift"] = (char)(Base + 8),
+        ["LAlt"] = (char)(Base + 9),
+        ["LMenu"] = (char)(Base + 9),
+        ["RAlt"] = (char)(Base + 10),
+        ["RMenu"] = (char)(Base + 10),
 
         // Navigation
-        ["Left"] = (char)(Base + 10),
-        ["Up"] = (char)(Base + 11),
-        ["Right"] = (char)(Base + 12),
-        ["Down"] = (char)(Base + 13),
-        ["Home"] = (char)(Base + 14),
-        ["End"] = (char)(Base + 15),
-        ["PageUp"] = (char)(Base + 16),
-        ["PageDown"] = (char)(Base + 17),
-        ["Insert"] = (char)(Base + 18),
-        ["Delete"] = (char)(Base + 19),
+        ["Left"] = (char)(Base + 20),
+        ["Up"] = (char)(Base + 21),
+        ["Right"] = (char)(Base + 22),
+        ["Down"] = (char)(Base + 23),
+        ["Home"] = (char)(Base + 24),
+        ["End"] = (char)(Base + 25),
+        ["PageUp"] = (char)(Base + 26),
+        ["PageDown"] = (char)(Base + 27),
+        ["Insert"] = (char)(Base + 28),
+        ["Delete"] = (char)(Base + 29),
 
         // Editing / system
         ["Enter"] = (char)(Base + 30),
@@ -45,18 +62,18 @@ public static class KeyTokens
         ["Ins"] = (char)(Base + 18),
 
         // Arrow aliases (string forms commonly used in configs)
-        ["ArrowLeft"] = (char)(Base + 10),
-        ["ArrowUp"] = (char)(Base + 11),
-        ["ArrowRight"] = (char)(Base + 12),
-        ["ArrowDown"] = (char)(Base + 13),
-        ["LeftArrow"] = (char)(Base + 10),
-        ["UpArrow"] = (char)(Base + 11),
-        ["RightArrow"] = (char)(Base + 12),
-        ["DownArrow"] = (char)(Base + 13),
-        ["LeftArrowKey"] = (char)(Base + 10),
-        ["RightArrowKey"] = (char)(Base + 12),
-        ["UpArrowKey"] = (char)(Base + 11),
-        ["DownArrowKey"] = (char)(Base + 13),
+        ["ArrowLeft"] = (char)(Base + 20),
+        ["ArrowUp"] = (char)(Base + 21),
+        ["ArrowRight"] = (char)(Base + 22),
+        ["ArrowDown"] = (char)(Base + 23),
+        ["LeftArrow"] = (char)(Base + 20),
+        ["UpArrow"] = (char)(Base + 21),
+        ["RightArrow"] = (char)(Base + 22),
+        ["DownArrow"] = (char)(Base + 23),
+        ["LeftArrowKey"] = (char)(Base + 20),
+        ["RightArrowKey"] = (char)(Base + 22),
+        ["UpArrowKey"] = (char)(Base + 21),
+        ["DownArrowKey"] = (char)(Base + 23),
     };
 
     private static readonly Dictionary<char, string> CharToToken = BuildReverseMap();
@@ -72,6 +89,15 @@ public static class KeyTokens
         }
 
         add("Win", TokenToChar["Win"]);
+        add("Ctrl", TokenToChar["Ctrl"]);
+        add("Shift", TokenToChar["Shift"]);
+        add("Alt", TokenToChar["Alt"]);
+        add("LCtrl", TokenToChar["LCtrl"]);
+        add("RCtrl", TokenToChar["RCtrl"]);
+        add("LShift", TokenToChar["LShift"]);
+        add("RShift", TokenToChar["RShift"]);
+        add("LAlt", TokenToChar["LAlt"]);
+        add("RAlt", TokenToChar["RAlt"]);
         add("Left", TokenToChar["Left"]);
         add("Up", TokenToChar["Up"]);
         add("Right", TokenToChar["Right"]);

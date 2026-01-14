@@ -186,8 +186,9 @@ public sealed class SequenceEngine
             return EngineResult.ConsumedNoOverlay;
         }
 
-        // Ignore non-text keys during session (prototype).
-        if (stroke.Key is null || stroke.Key == ' ')
+        // Ignore unmapped keys during session.
+        // Note: Space is a valid bindable step (use `Space` token or literal space).
+        if (stroke.Key is null)
         {
             return new EngineResult(Consumed: true, Overlay: BuildOverlay(activeProcessName), Action: null, ExecuteAfter: null);
         }

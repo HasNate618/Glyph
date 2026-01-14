@@ -13,6 +13,18 @@ public readonly record struct KeyStroke(
         // Prototype: only map A–Z keys to lowercase chars. Everything else is treated as non-text.
         char? key = null;
 
+        // Modifiers (as single-step tokens)
+        // We map left/right variants when available so bindings can be specific.
+        if (vkCode == 0xA2 && KeyTokens.TryEncode("LCtrl", out var lctrl)) key = lctrl; // VK_LCONTROL
+        if (vkCode == 0xA3 && KeyTokens.TryEncode("RCtrl", out var rctrl)) key = rctrl; // VK_RCONTROL
+        if (vkCode == 0x11 && KeyTokens.TryEncode("Ctrl", out var ctrlKey)) key = ctrlKey; // VK_CONTROL
+        if (vkCode == 0xA0 && KeyTokens.TryEncode("LShift", out var lshift)) key = lshift; // VK_LSHIFT
+        if (vkCode == 0xA1 && KeyTokens.TryEncode("RShift", out var rshift)) key = rshift; // VK_RSHIFT
+        if (vkCode == 0x10 && KeyTokens.TryEncode("Shift", out var shiftKey)) key = shiftKey; // VK_SHIFT
+        if (vkCode == 0xA4 && KeyTokens.TryEncode("LAlt", out var lalt)) key = lalt; // VK_LMENU
+        if (vkCode == 0xA5 && KeyTokens.TryEncode("RAlt", out var ralt)) key = ralt; // VK_RMENU
+        if (vkCode == 0x12 && KeyTokens.TryEncode("Alt", out var altKey)) key = altKey; // VK_MENU
+
         // Named/special keys (single-step tokens)
         // NOTE: we keep these as private-use chars so the existing char-based engine remains unchanged.
         if (vkCode == 0x5B || vkCode == 0x5C) // VK_LWIN / VK_RWIN
