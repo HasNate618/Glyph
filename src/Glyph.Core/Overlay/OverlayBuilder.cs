@@ -11,6 +11,7 @@ public static class OverlayBuilder
         string? activeProcessName,
         IReadOnlyList<TrieNextKey> nextKeys,
         Func<string, TrieLookupResult<ActionRequest>> lookup,
+        Func<string, string?> getGlobalPrefixDescription,
         Func<string, string?> getPerAppPrefixDescription,
         OverlayPolicy policy)
     {
@@ -82,9 +83,10 @@ public static class OverlayBuilder
             .OrderBy(o => o.Key, StringComparer.Ordinal)
             .ToList();
 
+        var title = BuildTitle(buffer, activeProcessName, lookup, getGlobalPrefixDescription, getPerAppPrefixDescription, policy);
+
         if (options.Count == 0)
         {
-            var seq = $"Glyph {KeyTokens.FormatInlineSequence(buffer)}".TrimEnd();
             string msg;
             if (buffer.StartsWith("p", StringComparison.Ordinal))
             {
@@ -102,9 +104,77 @@ public static class OverlayBuilder
                 msg = "No keys defined for this layer";
             }
 
-            return new OverlayModel(seq, new List<OverlayOption> { new("—", msg, false, false) });
+            return new OverlayModel(title, new List<OverlayOption> { new("—", msg, false, false) });
         }
 
-        return new OverlayModel($"Glyph {KeyTokens.FormatInlineSequence(buffer)}".TrimEnd(), options);
+        return new OverlayModel(title, options);
+    }
+
+    private static string BuildTitle(
+        string buffer,
+        string? activeProcessName,
+        Func<string, TrieLookupResult<ActionRequest>> lookup,
+        Func<string, string?> getGlobalPrefixDescription,
+        Func<string, string?> getPerAppPrefixDescription,
+        OverlayPolicy policy)
+    {
+        // Build a label breadcrumb from prefix descriptions.
+        // Example: buffer=",tc" => [",", ",t", ",tc"] => "Glyph > Text > Copy"
+        if (string.IsNullOrEmpty(buffer))
+        {
+            return "Glyph";
+        }
+
+        var parts = new List<string>(capacity: Math.Min(8, buffer.Length + 1))
+        {
+            "Glyph",
+        };
+
+        for (var i = 1; i <= buffer.Length; i++)
+        {
+            var prefix = buffer.Substring(0, i);
+
+            string? label = null;
+
+            // Special-case Program layer: show active process label when configured.
+            if (policy.SubstituteProgramLayerLabelWithActiveProcess && string.Equals(prefix, "p", StringComparison.Ordinal))
+            {
+                if (string.IsNullOrWhiteSpace(activeProcessName))
+                {
+                    label = "No Program Focused";
+                }
+                else
+                {
+                    var per = getPerAppPrefixDescription("p");
+                    var pLookup = lookup("p");
+                    var isConfigured = pLookup.IsValidPrefix && (pLookup.IsComplete || pLookup.NextKeys.Count > 0);
+
+                    label = isConfigured
+                        ? (!string.IsNullOrWhiteSpace(per) ? per : activeProcessName)
+                        : $"{activeProcessName} Not Configured";
+                }
+            }
+            else
+            {
+                // Prefer per-app descriptions for prefixes under the Program layer.
+                if (prefix.StartsWith("p", StringComparison.Ordinal))
+                {
+                    label = getPerAppPrefixDescription(prefix);
+                }
+
+                label ??= getGlobalPrefixDescription(prefix);
+            }
+
+            if (string.IsNullOrWhiteSpace(label))
+            {
+                // Fallback: show the actual keycap for this step if no label exists.
+                var step = buffer.Substring(i - 1, 1);
+                label = KeyTokens.FormatInlineSequence(step);
+            }
+
+            parts.Add(label);
+        }
+
+        return string.Join(" > ", parts);
     }
 }

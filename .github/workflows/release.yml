@@ -5,17 +5,21 @@ on:
     tags:
       - "v*"
   workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag name to create/release (e.g., v1.2.3). If empty, uses the ref name."
+        required: false
+        type: string
 
 permissions:
   contents: write
 
 jobs:
-  build-and-release:
+  build-test:
     runs-on: windows-latest
 
     env:
       CONFIGURATION: Release
-      RUNTIME: win-x64
       PROJECT_PATH: src/Glyph.App/Glyph.App.csproj
 
     steps:
@@ -36,19 +40,50 @@ jobs:
       - name: Test
         run: dotnet test "${{ github.workspace }}" -c ${{ env.CONFIGURATION }} --no-build --verbosity normal
 
+  publish:
+    runs-on: windows-latest
+    needs: build-test
+
+    env:
+      CONFIGURATION: Release
+      PROJECT_PATH: src/Glyph.App/Glyph.App.csproj
+
+    strategy:
+      fail-fast: false
+      matrix:
+        runtime: [win-x64, win-arm64]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Resolve tag
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $tag = "${{ github.event.inputs.tag }}"
+          if ([string]::IsNullOrWhiteSpace($tag)) { $tag = "${{ github.ref_name }}" }
+          "TAG=$tag" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
       - name: Publish
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
 
-          $tag = "${{ github.ref_name }}"
-          $outDir = Join-Path "${{ github.workspace }}" "artifacts\\publish\\${{ env.RUNTIME }}"
+          $tag = $env:TAG
+          $runtime = "${{ matrix.runtime }}"
+          $outDir = Join-Path "${{ github.workspace }}" "artifacts\\publish\\$runtime"
           New-Item -ItemType Directory -Force -Path $outDir | Out-Null
 
-          dotnet publish "${{ env.PROJECT_PATH }}" -c "${{ env.CONFIGURATION }}" -r "${{ env.RUNTIME }}" --self-contained true -o "$outDir"
+          dotnet publish "${{ env.PROJECT_PATH }}" -c "${{ env.CONFIGURATION }}" -r "$runtime" --self-contained true -o "$outDir"
 
           "PUBLISH_DIR=$outDir" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          "TAG=$tag" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "RUNTIME=$runtime" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Package artifacts
         shell: pwsh
@@ -57,27 +92,72 @@ jobs:
 
           $tag = $env:TAG
           $publishDir = $env:PUBLISH_DIR
+          $runtime = $env:RUNTIME
 
-          $zipName = "Glyph-${{ env.RUNTIME }}-$tag.zip"
+          $zipName = "Glyph-$runtime-$tag.zip"
           $zipPath = Join-Path "${{ github.workspace }}" "artifacts\\$zipName"
           if (Test-Path $zipPath) { Remove-Item -Force $zipPath }
 
           Compress-Archive -Path (Join-Path $publishDir '*') -DestinationPath $zipPath -Force
 
           $hash = (Get-FileHash -Path $zipPath -Algorithm SHA256).Hash.ToLowerInvariant()
-          $sumsPath = Join-Path "${{ github.workspace }}" "artifacts\\SHA256SUMS.txt"
+          $sumsName = "SHA256SUMS-$runtime.txt"
+          $sumsPath = Join-Path "${{ github.workspace }}" "artifacts\\$sumsName"
           "$hash  $zipName" | Out-File -FilePath $sumsPath -Encoding ascii
 
           "ZIP_PATH=$zipPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           "SUMS_PATH=$sumsPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
+      - name: Upload publish artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: glyph-${{ matrix.runtime }}
+          path: |
+            ${{ env.ZIP_PATH }}
+            ${{ env.SUMS_PATH }}
+
+  release:
+    runs-on: windows-latest
+    needs: publish
+
+    steps:
+      - name: Resolve tag
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $tag = "${{ github.event.inputs.tag }}"
+          if ([string]::IsNullOrWhiteSpace($tag)) { $tag = "${{ github.ref_name }}" }
+          "TAG=$tag" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Combine checksums
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+
+          $outDir = Join-Path "${{ github.workspace }}" "artifacts"
+          $combined = Join-Path $outDir "SHA256SUMS.txt"
+          if (Test-Path $combined) { Remove-Item -Force $combined }
+
+          Get-ChildItem -Path $outDir -Recurse -Filter 'SHA256SUMS-*.txt' |
+            Sort-Object FullName |
+            ForEach-Object {
+              Get-Content $_.FullName | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Out-File -FilePath $combined -Encoding ascii -Append
+            }
+
+          "COMBINED_SUMS=$combined" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref_name }}
-          name: ${{ github.ref_name }}
+          tag_name: ${{ env.TAG }}
+          name: ${{ env.TAG }}
           generate_release_notes: true
-          prerelease: ${{ contains(github.ref_name, '-beta') || contains(github.ref_name, '-rc') }}
+          prerelease: ${{ contains(github.ref_name, '-beta') || contains(github.ref_name, '-rc') || contains(github.event.inputs.tag, '-beta') || contains(github.event.inputs.tag, '-rc') }}
           files: |
-            ${{ env.ZIP_PATH }}
-            ${{ env.SUMS_PATH }}
+            artifacts/**/Glyph-*.zip
+            ${{ env.COMBINED_SUMS }}

@@ -242,6 +242,7 @@ public sealed class SequenceEngine
             activeProcessName: activeProcessName,
             nextKeys: nextKeys,
             lookup: p => LookupMerged(p, activeProcessName),
+            getGlobalPrefixDescription: prefix => GetPrefixDescription(prefix),
             getPerAppPrefixDescription: prefix =>
             {
                 if (string.IsNullOrWhiteSpace(activeProcessName)) return null;
