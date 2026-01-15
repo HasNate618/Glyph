@@ -13,19 +13,8 @@ public static class ThemeManager
 {
     private static readonly ResourceDictionary _defaultsDictionary = BuildOverlayDefaults();
 
-    // Preferred theme selection file (contains a theme id, e.g. "Fluent").
-    // Path: %APPDATA%\Glyph\theme.selected
-    public static readonly string DefaultThemeSelectedPath = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        "Glyph",
-        "theme.selected");
-
-    // Legacy base theme selector file (contains a built-in theme name).
-    // Path: %APPDATA%\Glyph\theme.base
-    public static readonly string DefaultBaseThemeSelectorPath = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        "Glyph",
-        "theme.base");
+    // Theme selection is stored in the application config (`config.json`).
+    // Use Glyph.App.Config.AppConfig.ConfigPath to watch/read/write selected theme.
 
     // Theme directory containing user + built-in themes (JSON).
     // Path: %APPDATA%\Glyph\themes
@@ -73,13 +62,12 @@ public static class ThemeManager
         EnsureBuiltInThemesExtracted();
 
         EnsureDefaultsInserted();
-        ApplyThemeFromSelector();
+        ApplyThemeFromConfig();
 
         TryLoadUserTheme(path);
 
         StartWatcher(path);
-        StartWatcher(DefaultThemeSelectedPath);
-        StartWatcher(DefaultBaseThemeSelectorPath);
+        StartWatcher(Glyph.App.Config.AppConfig.ConfigPath);
         StartThemesDirectoryWatcher(DefaultThemesDirectory);
     }
 
@@ -89,7 +77,7 @@ public static class ThemeManager
         try
         {
             EnsureDefaultsInserted();
-            ApplyThemeFromSelector();
+            ApplyThemeFromConfig();
             TryLoadUserTheme(DefaultUserThemePath);
         }
         catch (Exception ex)
@@ -202,31 +190,23 @@ public static class ThemeManager
         }
     }
 
-    private static void ApplyThemeFromSelector()
+    private static void ApplyThemeFromConfig()
     {
         try
         {
             var themeId = "Fluent";
 
-            var dir = Path.GetDirectoryName(DefaultThemeSelectedPath);
-            if (!string.IsNullOrWhiteSpace(dir))
+            try
             {
-                Directory.CreateDirectory(dir);
+                var cfg = Glyph.App.Config.AppConfig.Load();
+                if (!string.IsNullOrWhiteSpace(cfg.BaseTheme))
+                {
+                    themeId = cfg.BaseTheme!.Trim();
+                }
             }
-
-            if (File.Exists(DefaultThemeSelectedPath))
+            catch
             {
-                themeId = (File.ReadAllText(DefaultThemeSelectedPath) ?? string.Empty).Trim();
-            }
-            else if (File.Exists(DefaultBaseThemeSelectorPath))
-            {
-                // Back-compat.
-                themeId = (File.ReadAllText(DefaultBaseThemeSelectorPath) ?? string.Empty).Trim();
-            }
-
-            if (string.IsNullOrWhiteSpace(themeId))
-            {
-                themeId = "Fluent";
+                // best-effort; fall back to Fluent
             }
 
             ApplyTheme(themeId);
@@ -639,14 +619,12 @@ public static class ThemeManager
                 EnableRaisingEvents = true
             };
 
-            // If we're watching the selector files, trigger theme application;
+            // If we're watching the config file, trigger theme application;
             // otherwise treat it as a user override theme change.
-            var legacySelector = Path.GetFullPath(DefaultBaseThemeSelectorPath);
-            var selectedSelector = Path.GetFullPath(DefaultThemeSelectedPath);
+            var configPath = Path.GetFullPath(Glyph.App.Config.AppConfig.ConfigPath);
             var targetPath = Path.GetFullPath(path);
 
-            if (string.Equals(legacySelector, targetPath, StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(selectedSelector, targetPath, StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(configPath, targetPath, StringComparison.OrdinalIgnoreCase))
             {
                 watcher.Changed += (_, _) => DebouncedApplySelectedTheme();
                 watcher.Created += (_, _) => DebouncedApplySelectedTheme();
@@ -699,10 +677,10 @@ public static class ThemeManager
 
         _lastReloadAttemptUtc = now;
 
-        System.Windows.Application.Current?.Dispatcher?.BeginInvoke(() =>
-        {
-            ApplyThemeFromSelector();
-        });
+            System.Windows.Application.Current?.Dispatcher?.BeginInvoke(() =>
+            {
+                ApplyThemeFromConfig();
+            });
     }
 
     private static void TryLoadUserTheme(string path)

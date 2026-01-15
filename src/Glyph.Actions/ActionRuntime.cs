@@ -421,23 +421,45 @@ public sealed class ActionRuntime
         cancellationToken.ThrowIfCancellationRequested();
         try
         {
-            var selectedPath = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                "Glyph",
-                "theme.selected");
+            // Persist selection into config.json
+            try
+            {
+                var cfgPath = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                    "Glyph",
+                    "config.json");
 
-            var legacyPath = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                "Glyph",
-                "theme.base");
+                var dir = Path.GetDirectoryName(cfgPath);
+                if (!string.IsNullOrWhiteSpace(dir)) Directory.CreateDirectory(dir);
 
-            var dir = Path.GetDirectoryName(selectedPath);
-            if (!string.IsNullOrWhiteSpace(dir)) Directory.CreateDirectory(dir);
+                // Read existing config if present, merge BaseTheme.
+                var options = new System.Text.Json.JsonSerializerOptions { WriteIndented = true };
+                Dictionary<string, object?> cfg = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
+                if (File.Exists(cfgPath))
+                {
+                    try
+                    {
+                        var existing = File.ReadAllText(cfgPath);
+                        var parsed = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object?>>(existing);
+                        if (parsed is not null)
+                        {
+                            cfg = parsed;
+                        }
+                    }
+                    catch
+                    {
+                        // ignore parse errors and overwrite
+                    }
+                }
 
-            File.WriteAllText(selectedPath, baseName);
-            // Keep legacy selector in sync for older code paths.
-            File.WriteAllText(legacyPath, baseName);
-            Logger.Info($"Set theme to: {baseName} (wrote {selectedPath})");
+                cfg["BaseTheme"] = baseName;
+                File.WriteAllText(cfgPath, System.Text.Json.JsonSerializer.Serialize(cfg, options));
+                Logger.Info($"Set theme to: {baseName} (saved to config.json)");
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Failed to persist theme selection: {baseName}", ex);
+            }
         }
         catch (Exception ex)
         {

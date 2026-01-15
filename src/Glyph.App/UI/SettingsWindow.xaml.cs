@@ -152,16 +152,11 @@ public partial class SettingsWindow : Window
             if (ThemeCombo.SelectedItem is System.Windows.Controls.ComboBoxItem themeItem)
             {
                 cfg.BaseTheme = themeItem.Tag?.ToString();
-
-                // New preferred selector.
-                var selectedPath = ThemeManager.DefaultThemeSelectedPath;
-                System.IO.File.WriteAllText(selectedPath, cfg.BaseTheme ?? string.Empty);
-                // Keep legacy selector in sync.
-                var legacyPath = ThemeManager.DefaultBaseThemeSelectorPath;
-                System.IO.File.WriteAllText(legacyPath, cfg.BaseTheme ?? string.Empty);
             }
 
             AppConfig.Save(cfg);
+            // Apply immediately
+            ThemeManager.Reload();
 
             var leaderSeq = NormalizeGlyphSequence(cfg);
             CurrentGlyphText.Text = DescribeGlyphSequence(leaderSeq);

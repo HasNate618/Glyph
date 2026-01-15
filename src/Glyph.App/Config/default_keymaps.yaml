@@ -58,6 +58,9 @@ bindings:
       - key: f
         label: File Explorer
         exec: explorer
+      - key: y
+        label: Yazi
+        exec: yazi
   - key: m
     label: Media
     children:
@@ -170,6 +173,24 @@ bindings:
         label: Find
         steps:
           - send: Ctrl+F
+      - key: e
+        label: Expansion
+        children:
+          - key: e
+            label: Email
+            type: 'your.name@example.com'
+          - key: a
+            label: Address
+            type: '123 Example St\nCity, State ZIP'
+          - key: w
+            label: Website
+            type: 'https://example.com'
+          - key: l
+            label: LinkedIn
+            type: 'https://www.linkedin.com/in/yourprofile'
+          - key: p
+            label: Phone
+            type: '+1 (555) 123-4567'
 
       # Vim-style operations: use multi-stroke keys for safe, program-friendly edits
       - key: yy
@@ -202,16 +223,16 @@ bindings:
           - send: Ctrl+V
 
   - key: ","
-    label: Glyph
+    label: Glyph Settings
     children:
       - key: o
         label: Open Glyph GUI
         action: openGlyphGui
       - key: c
-        label: Open Config
-        action: openGlyphGui
+        label: Open Config Folder
+        action: openConfig
       - key: l
-        label: Open Logs
+        label: Open Log Folder
         action: openLogs
       - key: r
         label: Reload keymaps
@@ -356,11 +377,11 @@ apps:
       - key: s
         label: Save All
         send: Ctrl+K S
-      - key: b
+      - key: '['
         label: Toggle Side Bar
         send: Ctrl+B
-      - key: l
-        label: Open Secondary Side Bar
+      - key: ']'
+        label: pToggle Secondary Side Bar
         send: Ctrl+Alt+B
       - key: j
         label: Toggle Panel
@@ -381,7 +402,7 @@ groups:
   - name: Browser
     processes: [ chrome, msedge, firefox, brave, opera, zen ]
     bindings:
-      - key: b
+      - key: '['
         label: Toggle Side Bar
         send: Ctrl+S
       - key: t
@@ -417,14 +438,14 @@ groups:
       - key: j
         label: Downloads
         send: Ctrl+J
-      - key: k
+      - key: ']'
         label: Switch Workspace
         send: Ctrl+Alt+Left
 
   - name: JetBrains
     processes: [ idea64, pycharm64, webstorm64, datagrip64, clion64, studio64 ]
     bindings:
-      - key: b
+      - key: '['
         label: Toggle Side Bar
         send: Ctrl+Shift+E
       - key: f
