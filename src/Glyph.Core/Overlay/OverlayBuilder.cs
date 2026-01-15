@@ -175,6 +175,6 @@ public static class OverlayBuilder
             parts.Add(label);
         }
 
-        return string.Join(" > ", parts);
+        return string.Join(" → ", parts);
     }
 }

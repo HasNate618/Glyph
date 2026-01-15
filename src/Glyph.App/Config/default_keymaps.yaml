@@ -15,6 +15,18 @@
 # - action must be a known action id; unknown actions are skipped (but the prefix label stays).
 
 bindings:
+  - key: k
+    label: Komorebi
+    children:
+      - key: o
+        label: Open Komorebi
+        exec: komorebic
+        execArgs: start ---whkd
+      - key: c
+        label: Close Komorebi
+        exec: komorebic
+        execArgs: kill ---whkd
+
   - key: o
     label: Open
     children:
@@ -212,22 +224,22 @@ bindings:
         children:
           - key: f
             label: Fluent
-            action: setThemeFluent
+            setTheme: 'fluent'
           - key: c
             label: Catppuccin Mocha
-            action: setThemeCatppuccinMocha
+            setTheme: 'catppuccinMocha'
           - key: l
             label: Light
-            action: setThemeLight
+            setTheme: 'light'
           - key: n
             label: Nord
-            action: setThemeNord
+            setTheme: 'nord'
           - key: d
             label: Darcula
-            action: setThemeDarcula
+            setTheme: 'darcula'
           - key: r
             label: RosePine
-            action: setThemeRosePine
+            setTheme: 'rosePine'
           - key: x
             label: Test
             setTheme: 'Test'
@@ -369,6 +381,9 @@ groups:
   - name: Browser
     processes: [ chrome, msedge, firefox, brave, opera, zen ]
     bindings:
+      - key: b
+        label: Toggle Side Bar
+        send: Ctrl+S
       - key: t
         label: New Tab
         send: Ctrl+T
@@ -405,3 +420,23 @@ groups:
       - key: k
         label: Switch Workspace
         send: Ctrl+Alt+Left
+
+  - name: JetBrains
+    processes: [ idea64, pycharm64, webstorm64, datagrip64, clion64, studio64 ]
+    bindings:
+      - key: b
+        label: Toggle Side Bar
+        send: Ctrl+Shift+E
+      - key: f
+        label: Find in Files
+        send: Ctrl+Shift+F
+      - key: r
+        label: Run
+        send: Ctrl+F5
+      - key: n
+        label: New File
+        send: Alt+Insert
+      - key: t
+        label: Run Tests
+        send: Ctrl+Shift+F10
+

@@ -35,14 +35,8 @@ public sealed class ActionRuntime
         "typeNvimDot",
         "openGlyphGui",
         "quitGlyph",
-        // Theme actions
-        "setThemeFluent",
-        "setThemeCatppuccinMocha",
-        "setThemeLight",
-        "setThemeNord",
-        "setThemeDarcula",
-        "setThemeRosePine",
-        // Parameterized: setTheme:<ThemeId>
+        // Theme action family (parameterized): setTheme:<ThemeId>
+        "setTheme",
         "reloadKeymaps",
     };
 
@@ -126,13 +120,6 @@ public sealed class ActionRuntime
             "openLogs" => OpenLogsFolderAsync(cancellationToken),
             "openConfig" => OpenConfigFolderAsync(cancellationToken),
 
-            // Theme setters: write the base selector file so ThemeManager watcher applies it.
-            "setThemeFluent" => SetBaseThemeAsync("Fluent", cancellationToken),
-            "setThemeCatppuccinMocha" => SetBaseThemeAsync("CatppuccinMocha", cancellationToken),
-            "setThemeLight" => SetBaseThemeAsync("Light", cancellationToken),
-            "setThemeNord" => SetBaseThemeAsync("Nord", cancellationToken),
-            "setThemeDarcula" => SetBaseThemeAsync("Darcula", cancellationToken),
-            "setThemeRosePine" => SetBaseThemeAsync("RosePine", cancellationToken),
             _ => Task.CompletedTask,
         });
     }

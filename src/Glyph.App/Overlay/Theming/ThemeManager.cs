@@ -266,23 +266,17 @@ public static class ThemeManager
             return;
         }
 
-        // Fallback to legacy built-in XAML dictionaries.
-        try
+        // No legacy built-in XAML themes anymore; fall back to Fluent JSON.
+        if (!string.Equals(themeId, "Fluent", StringComparison.OrdinalIgnoreCase)
+            && TryLoadThemeJson("Fluent", out var fluentDict))
         {
-            var uri = new Uri($"Overlay/Themes/{themeId}.xaml", UriKind.Relative);
-            var dict = new ResourceDictionary { Source = uri };
-            merged.Insert(insertIndex, dict);
-            _baseDictionary = dict;
-            Logger.Info($"Theme applied (XAML fallback): {themeId}");
+            merged.Insert(insertIndex, fluentDict);
+            _baseDictionary = fluentDict;
+            Logger.Info("Theme applied (JSON fallback): Fluent");
+            return;
         }
-        catch
-        {
-            var uri = new Uri("Overlay/Themes/Fluent.xaml", UriKind.Relative);
-            var dict = new ResourceDictionary { Source = uri };
-            merged.Insert(insertIndex, dict);
-            _baseDictionary = dict;
-            Logger.Info("Theme applied (XAML fallback): Fluent");
-        }
+
+        Logger.Info($"Theme not found: {themeId}");
     }
 
     private static void EnsureBuiltInThemesExtracted()

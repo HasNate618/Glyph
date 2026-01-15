@@ -245,6 +245,11 @@ public sealed class YamlKeymapProvider : IKeymapProvider
         }
 
         var actionId = (node.Action ?? string.Empty).Trim();
+        var setTheme = (node.SetTheme ?? string.Empty).Trim();
+        if ((actionId.Length == 0 || string.Equals(actionId, "setTheme", StringComparison.OrdinalIgnoreCase)) && setTheme.Length > 0)
+        {
+            actionId = $"setTheme:{setTheme}";
+        }
         var typeText = (node.Type ?? string.Empty).Trim();
         var sendSpec = (node.Send ?? string.Empty).Trim();
         var thenSpec = (node.Then ?? string.Empty).Trim();
@@ -272,7 +277,10 @@ public sealed class YamlKeymapProvider : IKeymapProvider
             }
             else if (actionId.Length > 0)
             {
-                if (!ActionRuntime.KnownActionIds.Contains(actionId))
+                var isKnown = ActionRuntime.KnownActionIds.Contains(actionId)
+                    || actionId.StartsWith("setTheme:", StringComparison.OrdinalIgnoreCase);
+
+                if (!isKnown)
                 {
                     skippedUnknown++;
                     Logger.Info($"Keymaps: unknown action '{actionId}' for '{seq}' ({label})");
@@ -367,6 +375,11 @@ public sealed class YamlKeymapProvider : IKeymapProvider
         }
 
         var actionId = (node.Action ?? string.Empty).Trim();
+        var setTheme = (node.SetTheme ?? string.Empty).Trim();
+        if ((actionId.Length == 0 || string.Equals(actionId, "setTheme", StringComparison.OrdinalIgnoreCase)) && setTheme.Length > 0)
+        {
+            actionId = $"setTheme:{setTheme}";
+        }
         var typeText = (node.Type ?? string.Empty).Trim();
         var sendSpec = (node.Send ?? string.Empty).Trim();
         var thenSpec = (node.Then ?? string.Empty).Trim();
@@ -394,7 +407,10 @@ public sealed class YamlKeymapProvider : IKeymapProvider
             }
             else if (actionId.Length > 0)
             {
-                if (!ActionRuntime.KnownActionIds.Contains(actionId))
+                var isKnown = ActionRuntime.KnownActionIds.Contains(actionId)
+                    || actionId.StartsWith("setTheme:", StringComparison.OrdinalIgnoreCase);
+
+                if (!isKnown)
                 {
                     skippedUnknown++;
                     Logger.Info($"Keymaps: unknown action '{actionId}' for app '{processName}' '{seq}' ({label})");
@@ -605,6 +621,7 @@ public sealed class KeymapYamlNode
     public List<string>? KeyTokens { get; set; }
     public string? Label { get; set; }
     public string? Action { get; set; }
+    public string? SetTheme { get; set; }
     public string? Type { get; set; }
     public string? Send { get; set; }
     public string? Then { get; set; }
