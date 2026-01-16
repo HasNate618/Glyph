@@ -56,7 +56,7 @@ bindings:
         exec: '%localappdata%\Discord\Update.exe'
         execArgs: --processStart Discord.exe
       - key: f
-        label: File Explorer
+        label: File
         exec: explorer
       - key: y
         label: Yazi
