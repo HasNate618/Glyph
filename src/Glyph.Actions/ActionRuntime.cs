@@ -372,12 +372,16 @@ public sealed class ActionRuntime
 
         try
         {
-            Logger.Info($"Launching: {exe} {args ?? string.Empty}".Trim());
-            
+            // Normalize values: remove surrounding quotes and expand environment variables
+            var exeNorm = NormalizeExecString(exe);
+            var argsNorm = string.IsNullOrWhiteSpace(args) ? string.Empty : Environment.ExpandEnvironmentVariables(args.Trim());
+
+            Logger.Info($"Launching: {exeNorm} {argsNorm}".Trim());
+
             var psi = new ProcessStartInfo
             {
-                FileName = exe,
-                Arguments = args ?? string.Empty,
+                FileName = exeNorm,
+                Arguments = argsNorm,
                 UseShellExecute = true,
                 WindowStyle = ProcessWindowStyle.Hidden,
             };
@@ -475,18 +479,23 @@ public sealed class ActionRuntime
 
         try
         {
-            Logger.Info($"Launching: {exe} {args ?? string.Empty} (cwd: {workingDirectory ?? ""})".Trim());
+            // Normalize and expand env vars; trim surrounding quotes which may be present in YAML
+            var exeNorm = NormalizeExecString(exe);
+            var argsNorm = string.IsNullOrWhiteSpace(args) ? string.Empty : Environment.ExpandEnvironmentVariables(args.Trim());
+            var cwdNorm = string.IsNullOrWhiteSpace(workingDirectory) ? null : NormalizeExecString(workingDirectory);
+
+            Logger.Info($"Launching: {exeNorm} {argsNorm} (cwd: {cwdNorm ?? ""})".Trim());
 
             var psi = new ProcessStartInfo
             {
-                FileName = exe,
-                Arguments = args ?? string.Empty,
+                FileName = exeNorm,
+                Arguments = argsNorm,
                 UseShellExecute = true,
             };
 
-            if (!string.IsNullOrWhiteSpace(workingDirectory))
+            if (!string.IsNullOrWhiteSpace(cwdNorm))
             {
-                psi.WorkingDirectory = workingDirectory;
+                psi.WorkingDirectory = cwdNorm;
             }
 
             var proc = Process.Start(psi);
@@ -505,6 +514,31 @@ public sealed class ActionRuntime
         }
 
         return Task.CompletedTask;
+    }
+
+    private static string NormalizeExecString(string? s)
+    {
+        if (string.IsNullOrWhiteSpace(s)) return string.Empty;
+
+        var t = s.Trim();
+
+        // Remove surrounding matching quotes if present
+        if (t.Length >= 2)
+        {
+            if ((t[0] == '"' && t[^1] == '"') || (t[0] == '\'' && t[^1] == '\''))
+            {
+                t = t.Substring(1, t.Length - 2).Trim();
+            }
+        }
+
+        try
+        {
+            return Environment.ExpandEnvironmentVariables(t);
+        }
+        catch
+        {
+            return t;
+        }
     }
 
     private static async Task TypeTextAsync(string text, CancellationToken cancellationToken)

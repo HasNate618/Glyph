@@ -32,7 +32,7 @@ bindings:
         exec: code
       - key: s
         label: Spotify
-        exec: '%appdata%\Spotify\Spotify.exe'
+        exec: '%APPDATA%\Spotify\Spotify.exe'
       - key: st
         label: Steam
         exec: 'C:\Program Files (x86)\Steam\steam.exe'
@@ -41,7 +41,7 @@ bindings:
         exec: notepad
       - key: d
         label: Discord
-        exec: '%localappdata%\Discord\Update.exe'
+        exec: '%LOCALAPPDATA%\Discord\Update.exe'
         execArgs: --processStart Discord.exe
       - key: f
         label: File
@@ -354,7 +354,7 @@ apps:
         label: Toggle Side Bar
         send: Ctrl+B
       - key: ']'
-        label: pToggle Secondary Side Bar
+        label: Toggle Secondary Side Bar
         send: Ctrl+Alt+B
       - key: j
         label: Toggle Panel
