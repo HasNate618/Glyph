@@ -52,7 +52,7 @@ public static class OverlayBuilder
                     IsAction: k.Completes);
             }
 
-            if (!k.Continues || (!policy.ShowLookaheadForBlankIntermediates && !policy.ShowRepeatedKeyDisambiguation))
+            if (!k.Continues)
             {
                 continue;
             }
@@ -66,9 +66,12 @@ public static class OverlayBuilder
                 if (string.IsNullOrWhiteSpace(childDesc)) continue;
 
                 var shouldIncludeBlankIntermediate = policy.ShowLookaheadForBlankIntermediates && !includeSingle;
-                var isRepeatedKeyDisambiguation = policy.ShowRepeatedKeyDisambiguation && (child.Key == k.Key && k.Completes);
+                var shouldIncludeDisambiguation = k.Completes;
 
-                if (!shouldIncludeBlankIntermediate && !isRepeatedKeyDisambiguation) continue;
+                if (!shouldIncludeBlankIntermediate && !shouldIncludeDisambiguation)
+                {
+                    continue;
+                }
 
                 var keyString = string.Concat(k.Key, child.Key);
                 byKey[keyString] = new OverlayOption(
