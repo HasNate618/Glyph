@@ -1,4 +1,7 @@
-﻿using System.Windows;
+﻿using System;
+using System.IO;
+using System.Runtime.InteropServices;
+using System.Windows;
 
 using Glyph.App.Overlay.Theming;
 using Glyph.App.Tray;
@@ -51,6 +54,8 @@ public partial class App : System.Windows.Application
     {
         base.OnStartup(e);
 
+        TrySetWorkingDirectoryToExecutableDirectory();
+
         ShutdownMode = System.Windows.ShutdownMode.OnExplicitShutdown;
 
         Logger.Info("Glyph.App starting (background mode)");
@@ -65,6 +70,68 @@ public partial class App : System.Windows.Application
         _tray = new TrayIconService();
         _tray.Start();
     }
+
+    private static void TrySetWorkingDirectoryToExecutableDirectory()
+    {
+        try
+        {
+            var processPath = Environment.ProcessPath;
+            if (string.IsNullOrWhiteSpace(processPath) || !File.Exists(processPath))
+            {
+                return;
+            }
+
+            var resolvedPath = GetFinalPathName(processPath) ?? processPath;
+            var dir = Path.GetDirectoryName(resolvedPath);
+            if (string.IsNullOrWhiteSpace(dir) || !Directory.Exists(dir))
+            {
+                return;
+            }
+
+            Directory.SetCurrentDirectory(dir);
+            Logger.Info($"Working directory set to: {dir}");
+        }
+        catch
+        {
+            // Best-effort; never fail app startup due to cwd.
+        }
+    }
+
+    private static string? GetFinalPathName(string path)
+    {
+        try
+        {
+            using var stream = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+            var handle = stream.SafeFileHandle;
+            if (handle.IsInvalid)
+            {
+                return null;
+            }
+
+            // 4096 should be plenty for a Windows path.
+            Span<char> buffer = stackalloc char[4096];
+            var len = GetFinalPathNameByHandleW(handle, buffer, (uint)buffer.Length, 0);
+            if (len == 0 || len >= buffer.Length)
+            {
+                return null;
+            }
+
+            var full = new string(buffer[..(int)len]);
+            // Strip Win32 extended-length prefix if present.
+            return full.StartsWith("\\\\?\\", StringComparison.Ordinal) ? full[4..] : full;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    private static extern uint GetFinalPathNameByHandleW(
+        Microsoft.Win32.SafeHandles.SafeFileHandle hFile,
+        Span<char> lpszFilePath,
+        uint cchFilePath,
+        uint dwFlags);
 
     protected override void OnExit(ExitEventArgs e)
     {

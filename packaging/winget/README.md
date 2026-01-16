@@ -147,3 +147,15 @@ Users can also try `winget install glyph` (winget treats this as a search query)
 
 - Winget community generally prefers **stable** versions. Pre-releases like `0.1.0-beta.3` may be rejected.
 - The portable installer declares a command alias `glyph` pointing to `Glyph.App.exe`.
+
+## Troubleshooting
+
+### Manual validation: missing `Glyph.App.dll`
+
+If winget PR manual validation shows an error like:
+
+`The application to execute does not exist: ...\Glyph.App.dll`
+
+this is typically because the app is not published as a true standalone executable. With portable installs, winget may execute the alias from the WinGet Links directory, and a .NET app host can fail if it expects the adjacent `Glyph.App.dll`.
+
+Fix (recommended): publish as a single-file self-contained executable, then cut a new versioned release (e.g., `v0.1.1`) and update the winget manifest hashes for that version.

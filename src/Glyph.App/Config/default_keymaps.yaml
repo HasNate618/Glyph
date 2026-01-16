@@ -15,18 +15,6 @@
 # - action must be a known action id; unknown actions are skipped (but the prefix label stays).
 
 bindings:
-  - key: k
-    label: Komorebi
-    children:
-      - key: o
-        label: Open Komorebi
-        exec: komorebic
-        execArgs: start ---whkd
-      - key: c
-        label: Close Komorebi
-        exec: komorebic
-        execArgs: kill ---whkd
-
   - key: o
     label: Open
     children:
@@ -58,9 +46,6 @@ bindings:
       - key: f
         label: File
         exec: explorer
-      - key: y
-        label: Yazi
-        exec: yazi
   - key: m
     label: Media
     children:
