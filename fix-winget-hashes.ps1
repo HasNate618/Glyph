@@ -1,9 +1,12 @@
 [CmdletBinding()]
-param()
+param(
+    [Parameter(Mandatory = $false)]
+    [string]$Version = '0.1.0'
+)
 
 $ErrorActionPreference = 'Stop'
 
-$version = '0.1.0'
+$version = $Version
 $repoUrl = 'https://github.com/HasNate618/Glyph'
 $releaseTag = "v$version"
 
@@ -84,7 +87,7 @@ Write-Host ''
 Write-Host 'Next steps:' -ForegroundColor Cyan
 Write-Host '1. Commit changes:'
 Write-Host "   git add packaging/winget/manifests/h/HasNate618/Glyph/$version/"
-Write-Host "   git commit -m 'Fix: correct SHA256 hashes for v0.1.0 installers'"
+Write-Host "   git commit -m 'Fix: correct SHA256 hashes for v$version installers'"
 Write-Host ''
 Write-Host '2. Push to branch:'
 Write-Host '   git push origin add-glyph-0-1-0'
