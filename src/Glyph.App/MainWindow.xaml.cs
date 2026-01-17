@@ -1,4 +1,7 @@
-﻿using System.Windows;
+﻿using System.IO;
+using System.Reflection;
+using System.Windows;
+using System.Windows.Media.Imaging;
 
 using Glyph.Actions;
 using Glyph.Core.Actions;
@@ -26,6 +29,12 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
 
+        var icon = LoadWindowIcon();
+        if (icon is not null)
+        {
+            Icon = icon;
+        }
+
         Logger.Info("Glyph starting...");
         Logger.Info($"Log file: {Logger.LogFile}");
 
@@ -38,6 +47,31 @@ public partial class MainWindow : Window
         _keyboardHook.Start();
         
         Logger.Info("Keyboard hook started. Press Ctrl+Shift+NumPad * to activate.");
+    }
+
+    private static System.Windows.Media.ImageSource? LoadWindowIcon()
+    {
+        try
+        {
+            var exeDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? AppDomain.CurrentDomain.BaseDirectory;
+            var iconPath = Path.Combine(exeDir, WindowsThemeHelper.GetIconFileName());
+
+            if (!File.Exists(iconPath))
+            {
+                iconPath = Path.Combine(exeDir, "Logo.ico");
+            }
+
+            if (File.Exists(iconPath))
+            {
+                return BitmapFrame.Create(new Uri(iconPath, UriKind.Absolute));
+            }
+        }
+        catch
+        {
+            // Ignore and fall back to default icon.
+        }
+
+        return null;
     }
 
     protected override void OnClosed(EventArgs e)

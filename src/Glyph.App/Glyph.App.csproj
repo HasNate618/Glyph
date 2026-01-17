@@ -20,13 +20,16 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <!-- Use the repository root assets/Logo.ico as the application icon -->
-    <ApplicationIcon>..\..\assets\Logo.ico</ApplicationIcon>
+    <!-- Use the repository root assets/LogoBlack.ico as the application icon -->
+    <ApplicationIcon>..\..\assets\LogoBlack.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Ensure the .ico is copied to the output so runtime code can load it for the tray icon -->
-    <None Include="..\..\assets\Logo.ico">
+    <!-- Ensure the .ico files are copied to the output so runtime code can load them for the tray icon -->
+    <None Include="..\..\assets\LogoBlack.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\..\assets\LogoWhite.ico">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

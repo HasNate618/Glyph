@@ -7,6 +7,7 @@ using System.Windows;
 using Glyph.App.Overlay.Theming;
 using Glyph.App.UI;
 using Glyph.Core.Logging;
+using Glyph.App;
 
 namespace Glyph.App.Tray;
 
@@ -85,13 +86,19 @@ public sealed class TrayIconService : IDisposable
     {
         try
         {
-            // The build copies Logo.ico to the output directory (see project file).
+            // The build copies the icons to the output directory (see project file).
             var exeDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? AppDomain.CurrentDomain.BaseDirectory;
-            var iconPath = Path.Combine(exeDir, "Logo.ico");
+            var iconPath = Path.Combine(exeDir, WindowsThemeHelper.GetIconFileName());
 
             if (File.Exists(iconPath))
             {
                 return new Icon(iconPath);
+            }
+
+            var fallbackPath = Path.Combine(exeDir, "Logo.ico");
+            if (File.Exists(fallbackPath))
+            {
+                return new Icon(fallbackPath);
             }
         }
         catch
