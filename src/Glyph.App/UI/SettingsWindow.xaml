@@ -36,6 +36,7 @@
                 <StackPanel Margin="8">
                     <ComboBox x:Name="ThemeCombo" Width="200" />
                     <Button x:Name="OpenThemesFolderButton" Margin="0,8,0,0" Content="Open Themes Folder" />
+                    <CheckBox x:Name="BreadcrumbsModeCheckBox" Margin="0,8,0,0" Content="Breadcrumbs mode" />
                 </StackPanel>
             </GroupBox>
         </StackPanel>

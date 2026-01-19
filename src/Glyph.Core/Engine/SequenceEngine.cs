@@ -66,7 +66,9 @@ public sealed class SequenceEngine
             Consumed: true,
             Overlay: BuildOverlay(activeProcessName),
             Action: null,
-            ExecuteAfter: null);
+            ExecuteAfter: null,
+            ForceHide: false,
+            HideAfterSustain: false);
     }
 
     public static SequenceEngine CreatePrototype(Func<KeyStroke, bool> isGlyphKey)
@@ -164,7 +166,9 @@ public sealed class SequenceEngine
                     Consumed: true,
                     Overlay: BuildOverlay(activeProcessName),
                     Action: null,
-                    ExecuteAfter: null);
+                    ExecuteAfter: null,
+                    ForceHide: false,
+                    HideAfterSustain: false);
             }
 
             return EngineResult.None;
@@ -176,21 +180,27 @@ public sealed class SequenceEngine
             Logger.Info("Glyph double-press detected");
             Reset();
 
-            return new EngineResult(Consumed: true, Overlay: null, Action: null, ExecuteAfter: null);
+            return new EngineResult(Consumed: true, Overlay: null, Action: null, ExecuteAfter: null, ForceHide: false, HideAfterSustain: false);
         }
 
         // While active, Esc cancels.
         if (stroke.Key == '\u001B')
         {
             Reset();
-            return EngineResult.ConsumedNoOverlay;
+            return new EngineResult(Consumed: true, Overlay: null, Action: null, ExecuteAfter: null, ForceHide: true, HideAfterSustain: false);
         }
 
         // Ignore unmapped keys during session.
         // Note: Space is a valid bindable step (use `Space` token or literal space).
         if (stroke.Key is null)
         {
-            return new EngineResult(Consumed: true, Overlay: BuildOverlay(activeProcessName), Action: null, ExecuteAfter: null);
+            return new EngineResult(
+                Consumed: true,
+                Overlay: BuildOverlay(activeProcessName),
+                Action: null,
+                ExecuteAfter: null,
+                ForceHide: false,
+                HideAfterSustain: false);
         }
 
         _buffer += stroke.Key.Value;
@@ -199,8 +209,26 @@ public sealed class SequenceEngine
         if (!lookup.IsValidPrefix)
         {
             Logger.Info($"Invalid sequence: {_buffer}");
+            var invalidTitle = OverlayBuilder.BuildTitle(
+                buffer: _buffer,
+                activeProcessName: activeProcessName,
+                lookup: p => LookupMerged(p, activeProcessName),
+                getGlobalPrefixDescription: prefix => GetPrefixDescription(prefix),
+                getPerAppPrefixDescription: prefix =>
+                {
+                    if (string.IsNullOrWhiteSpace(activeProcessName)) return null;
+                    return GetPerAppPrefixDescription(activeProcessName, prefix);
+                },
+                policy: _overlayPolicy);
+
             Reset();
-            return EngineResult.ConsumedNoOverlay;
+            return new EngineResult(
+                Consumed: true,
+                Overlay: new OverlayModel($"{invalidTitle} (not bound)", Array.Empty<OverlayOption>()),
+                Action: null,
+                ExecuteAfter: null,
+                ForceHide: false,
+                HideAfterSustain: true);
         }
 
         if (lookup.IsComplete && lookup.Value is not null)
@@ -216,15 +244,40 @@ public sealed class SequenceEngine
                     Consumed: true,
                     Overlay: BuildOverlay(activeProcessName, lookup.NextKeys),
                     Action: action,
-                    ExecuteAfter: _disambiguationTimeout);
+                    ExecuteAfter: _disambiguationTimeout,
+                    ForceHide: false,
+                    HideAfterSustain: false);
             }
 
             Logger.Info($"Complete sequence: {_buffer} -> {action.ActionId}");
+            var completeTitle = OverlayBuilder.BuildTitle(
+                buffer: _buffer,
+                activeProcessName: activeProcessName,
+                lookup: p => LookupMerged(p, activeProcessName),
+                getGlobalPrefixDescription: prefix => GetPrefixDescription(prefix),
+                getPerAppPrefixDescription: prefix =>
+                {
+                    if (string.IsNullOrWhiteSpace(activeProcessName)) return null;
+                    return GetPerAppPrefixDescription(activeProcessName, prefix);
+                },
+                policy: _overlayPolicy);
             Reset();
-            return new EngineResult(Consumed: true, Overlay: null, Action: action, ExecuteAfter: null);
+            return new EngineResult(
+                Consumed: true,
+                Overlay: new OverlayModel(completeTitle, Array.Empty<OverlayOption>()),
+                Action: action,
+                ExecuteAfter: null,
+                ForceHide: false,
+                HideAfterSustain: true);
         }
 
-        return new EngineResult(Consumed: true, Overlay: BuildOverlay(activeProcessName, lookup.NextKeys), Action: null, ExecuteAfter: null);
+        return new EngineResult(
+            Consumed: true,
+            Overlay: BuildOverlay(activeProcessName, lookup.NextKeys),
+            Action: null,
+            ExecuteAfter: null,
+            ForceHide: false,
+            HideAfterSustain: false);
     }
 
     private void Reset()

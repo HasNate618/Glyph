@@ -3,6 +3,7 @@ using System.Windows;
 using Glyph.Actions;
 using Glyph.App.Config;
 using Glyph.App.Services;
+using Glyph.App.Overlay.Theming;
 using Glyph.Core.Actions;
 using Glyph.Core.Engine;
 using Glyph.Core.Input;
@@ -79,6 +80,22 @@ public sealed class GlyphHost : IDisposable
         _keyboardHook.KeyUp += OnGlobalKeyUp;
     }
 
+    private static void ToggleBreadcrumbsMode()
+    {
+        try
+        {
+            var cfg = AppConfig.Load();
+            cfg.BreadcrumbsMode = !cfg.BreadcrumbsMode;
+            AppConfig.Save(cfg);
+            ThemeManager.Reload();
+            Logger.Info($"Breadcrumbs mode {(cfg.BreadcrumbsMode ? "enabled" : "disabled")}");
+        }
+        catch (Exception ex)
+        {
+            Logger.Error("Failed to toggle breadcrumbs mode", ex);
+        }
+    }
+
     public void Start()
     {
         Logger.Info("GlyphHost starting...");
@@ -123,7 +140,7 @@ public sealed class GlyphHost : IDisposable
                 }
                 if (began.Overlay is not null)
                 {
-                    _overlayPresenter.Render(began.Overlay);
+                    _overlayPresenter.Render(began.Overlay, false, false);
                 }
             }
 
@@ -157,7 +174,7 @@ public sealed class GlyphHost : IDisposable
                     e.Suppress = true;
                     if (beganSession is not null)
                     {
-                        _overlayPresenter.Render(beganSession.Value.Overlay!);
+                        _overlayPresenter.Render(beganSession.Value.Overlay!, false, false);
                     }
                     return;
                 }
@@ -169,7 +186,7 @@ public sealed class GlyphHost : IDisposable
                     e.Suppress = true;
                     if (beganSession is not null)
                     {
-                        _overlayPresenter.Render(beganSession.Value.Overlay!);
+                        _overlayPresenter.Render(beganSession.Value.Overlay!, false, false);
                     }
                     return;
                 }
@@ -187,7 +204,7 @@ public sealed class GlyphHost : IDisposable
             e.Suppress = true;
         }
 
-        _overlayPresenter.Render(result.Overlay);
+        _overlayPresenter.Render(result.Overlay, result.ForceHide, result.HideAfterSustain);
 
         if (result.Action is not null)
         {
@@ -234,6 +251,12 @@ public sealed class GlyphHost : IDisposable
                 // Re-apply keymaps from YAML into the current engine instance so user edits take effect immediately.
                 _keymapProvider.ApplyToEngine(_engine);
                 Logger.Info("Keymaps reloaded from YAML");
+                return;
+            }
+
+            if (string.Equals(result.Action.ActionId, "toggleBreadcrumbsMode", StringComparison.OrdinalIgnoreCase))
+            {
+                ToggleBreadcrumbsMode();
                 return;
             }
 
@@ -290,7 +313,7 @@ public sealed class GlyphHost : IDisposable
                 _engine.EndSession();
             }
 
-            _overlayPresenter.Render(null);
+            _overlayPresenter.Render(null, false, false);
 
             Logger.Info($"Delayed action triggered: {action.ActionId} (app={activeProcess ?? "?"})");
 
@@ -336,7 +359,7 @@ public sealed class GlyphHost : IDisposable
 
                     if (began.Overlay is not null)
                     {
-                        _overlayPresenter.Render(began.Overlay);
+                        _overlayPresenter.Render(began.Overlay, false, false);
                     }
                 }
             }
@@ -362,7 +385,7 @@ public sealed class GlyphHost : IDisposable
                             // Important: do NOT suppress modifier events; suppressing can lead to a stuck modifier state.
                             if (beganSession is not null)
                             {
-                                _overlayPresenter.Render(beganSession.Value.Overlay!);
+                                _overlayPresenter.Render(beganSession.Value.Overlay!, false, false);
                             }
                         }
                         return;

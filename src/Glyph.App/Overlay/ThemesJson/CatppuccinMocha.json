@@ -4,6 +4,18 @@
   "name": "Catppuccin Mocha",
   "description": "Catppuccin Mocha-inspired theme",
   "breadcrumbsOnly": false,
+  "breadcrumbs": {
+    "breadcrumbsOnly": true,
+    "strings": {
+      "Glyph.Overlay.ScreenAnchor": "BottomLeft"
+    },
+    "thickness": {
+      "Glyph.Overlay.PanelPadding": "12,8,12,8"
+    },
+    "numbers": {
+      "Glyph.Overlay.SustainMs": 300
+    }
+  },
   "inherits": null,
   "brushes": {
     "Glyph.Overlay.BackgroundBrush": "#BF1E1E2E",

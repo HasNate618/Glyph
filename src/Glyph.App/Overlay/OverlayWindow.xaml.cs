@@ -182,7 +182,7 @@ public partial class OverlayWindow : Window
     public void Update(OverlayModel model)
     {
         SequenceText.Text = model.Sequence;
-        // Respect theme-driven breadcrumbs-only mode. If enabled, hide discovery options.
+        // Respect theme-driven breadcrumbs-only mode. If enabled, hide discovery options and shrink background.
         var breadcrumbsOnly = false;
         try
         {
@@ -198,11 +198,31 @@ public partial class OverlayWindow : Window
         {
             OptionsList.ItemsSource = Array.Empty<OverlayOption>();
             OptionsList.Visibility = Visibility.Collapsed;
+
+            // Shrink background to breadcrumb width: remove min width and left-align content.
+            try
+            {
+                RootPanel.MinWidth = 0;
+                RootPanel.HorizontalAlignment = System.Windows.HorizontalAlignment.Left;
+            }
+            catch { }
         }
         else
         {
             OptionsList.ItemsSource = model.Options;
             OptionsList.Visibility = Visibility.Visible;
+
+            // Restore panel sizing behavior
+            try
+            {
+                var val = System.Windows.Application.Current?.Resources["Glyph.Overlay.PanelMinWidth"];
+                if (val is double d) RootPanel.MinWidth = d;
+                else if (val is int i) RootPanel.MinWidth = i;
+                else RootPanel.MinWidth = 300.0;
+
+                RootPanel.HorizontalAlignment = System.Windows.HorizontalAlignment.Stretch;
+            }
+            catch { }
         }
 
         // Ensure theme-driven placement stays correct as the overlay size changes.

@@ -29,20 +29,17 @@ public partial class App : System.Windows.Application
                 _host.UpdateGlyphSequence(seq);
             }
 
-            if (!string.IsNullOrWhiteSpace(cfg.BaseTheme))
+            // Persist config and reload ThemeManager (theme and breadcrumbs mode)
+            try
             {
-                // Persist theme in config.json and reload ThemeManager.
-                try
-                {
-                    Glyph.App.Config.AppConfig.Save(cfg);
-                }
-                catch
-                {
-                    // best-effort
-                }
-
-                Glyph.App.Overlay.Theming.ThemeManager.Reload();
+                Glyph.App.Config.AppConfig.Save(cfg);
             }
+            catch
+            {
+                // best-effort
+            }
+
+            Glyph.App.Overlay.Theming.ThemeManager.Reload();
         }
         catch
         {

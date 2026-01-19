@@ -41,9 +41,13 @@ public static class ThemeManager
         public string? Name { get; set; }
         public string? Description { get; set; }
         public string? Inherits { get; set; }
+        public bool? Hidden { get; set; }
 
         // New: control whether overlay shows discovery options or only breadcrumbs
         public bool? BreadcrumbsOnly { get; set; }
+
+        // New: per-theme overrides applied when BreadcrumbsMode is enabled
+        public ThemeOverrides? Breadcrumbs { get; set; }
 
         public Dictionary<string, string>? Brushes { get; set; }
         public Dictionary<string, string>? Fonts { get; set; }
@@ -53,6 +57,18 @@ public static class ThemeManager
         // - numbers: doubles (sizes, font sizes, offsets)
         // - thickness: WPF Thickness strings (e.g. "20,14,20,14")
         // - strings: string values (anchors, backdrop modes, etc.)
+        public Dictionary<string, double>? Numbers { get; set; }
+        public Dictionary<string, string>? Thickness { get; set; }
+        public Dictionary<string, string>? Strings { get; set; }
+    }
+
+    private sealed class ThemeOverrides
+    {
+        public bool? BreadcrumbsOnly { get; set; }
+
+        public Dictionary<string, string>? Brushes { get; set; }
+        public Dictionary<string, string>? Fonts { get; set; }
+        public Dictionary<string, double>? CornerRadii { get; set; }
         public Dictionary<string, double>? Numbers { get; set; }
         public Dictionary<string, string>? Thickness { get; set; }
         public Dictionary<string, string>? Strings { get; set; }
@@ -146,6 +162,9 @@ public static class ThemeManager
         d["Glyph.Overlay.WindowAcrylicColor"] = "#991B1B1B";
         d["Glyph.Overlay.WindowCorners"] = "Round";
 
+        // Sustain (ms): keep overlay visible for this many milliseconds after it is cleared
+        d["Glyph.Overlay.SustainMs"] = 0.0;
+
         return d;
     }
 
@@ -170,6 +189,11 @@ public static class ThemeManager
                     {
                         PropertyNameCaseInsensitive = true
                     });
+
+                    if (theme?.Hidden == true)
+                    {
+                        continue;
+                    }
 
                     if (!string.IsNullOrWhiteSpace(theme?.Name))
                     {
@@ -198,6 +222,7 @@ public static class ThemeManager
         try
         {
             var themeId = "Fluent";
+            var breadcrumbsMode = false;
 
             try
             {
@@ -206,22 +231,24 @@ public static class ThemeManager
                 {
                     themeId = cfg.BaseTheme!.Trim();
                 }
+
+                breadcrumbsMode = cfg.BreadcrumbsMode;
             }
             catch
             {
                 // best-effort; fall back to Fluent
             }
 
-            ApplyTheme(themeId);
+            ApplyTheme(themeId, breadcrumbsMode);
         }
         catch (Exception ex)
         {
             Logger.Error("Failed to apply theme selector", ex);
-            ApplyTheme("Fluent");
+            ApplyTheme("Fluent", false);
         }
     }
 
-    private static void ApplyTheme(string themeId)
+    private static void ApplyTheme(string themeId, bool breadcrumbsMode)
     {
         if (System.Windows.Application.Current is null)
         {
@@ -241,7 +268,7 @@ public static class ThemeManager
         insertIndex = insertIndex < 0 ? 0 : insertIndex + 1;
 
         // Prefer JSON themes in %APPDATA%\Glyph\themes
-        if (TryLoadThemeJson(themeId, out var jsonDict))
+        if (TryLoadThemeJson(themeId, breadcrumbsMode, out var jsonDict))
         {
             merged.Insert(insertIndex, jsonDict);
             _baseDictionary = jsonDict;
@@ -251,7 +278,7 @@ public static class ThemeManager
 
         // No legacy built-in XAML themes anymore; fall back to Fluent JSON.
         if (!string.Equals(themeId, "Fluent", StringComparison.OrdinalIgnoreCase)
-            && TryLoadThemeJson("Fluent", out var fluentDict))
+            && TryLoadThemeJson("Fluent", breadcrumbsMode, out var fluentDict))
         {
             merged.Insert(insertIndex, fluentDict);
             _baseDictionary = fluentDict;
@@ -311,7 +338,7 @@ public static class ThemeManager
         }
     }
 
-    private static bool TryLoadThemeJson(string themeId, out ResourceDictionary dictionary)
+    private static bool TryLoadThemeJson(string themeId, bool breadcrumbsMode, out ResourceDictionary dictionary)
     {
         dictionary = new ResourceDictionary();
 
@@ -331,7 +358,7 @@ public static class ThemeManager
                 return false;
             }
 
-            dictionary = BuildResourceDictionary(mergedTheme);
+            dictionary = BuildResourceDictionary(mergedTheme, breadcrumbsMode);
             return true;
         }
         catch (Exception ex)
@@ -398,6 +425,8 @@ public static class ThemeManager
             Name = string.IsNullOrWhiteSpace(child.Name) ? parent.Name : child.Name,
             Description = string.IsNullOrWhiteSpace(child.Description) ? parent.Description : child.Description,
             Inherits = child.Inherits,
+            BreadcrumbsOnly = child.BreadcrumbsOnly ?? parent.BreadcrumbsOnly,
+            Breadcrumbs = MergeOverrides(parent.Breadcrumbs, child.Breadcrumbs),
             Brushes = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase),
             Fonts = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase),
             CornerRadii = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase),
@@ -460,8 +489,77 @@ public static class ThemeManager
             foreach (var kvp in child.Strings) merged.Strings[kvp.Key] = kvp.Value;
         }
 
-        // Merge BreadcrumbsOnly: child overrides parent when present
-        merged.BreadcrumbsOnly = child.BreadcrumbsOnly ?? parent.BreadcrumbsOnly;
+        return merged;
+    }
+
+    private static ThemeOverrides? MergeOverrides(ThemeOverrides? parent, ThemeOverrides? child)
+    {
+        if (parent is null && child is null) return null;
+
+        var merged = new ThemeOverrides
+        {
+            BreadcrumbsOnly = child?.BreadcrumbsOnly ?? parent?.BreadcrumbsOnly,
+            Brushes = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase),
+            Fonts = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase),
+            CornerRadii = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase),
+            Numbers = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase),
+            Thickness = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase),
+            Strings = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        };
+
+        if (parent?.Brushes is not null)
+        {
+            foreach (var kvp in parent.Brushes) merged.Brushes[kvp.Key] = kvp.Value;
+        }
+        if (child?.Brushes is not null)
+        {
+            foreach (var kvp in child.Brushes) merged.Brushes[kvp.Key] = kvp.Value;
+        }
+
+        if (parent?.Fonts is not null)
+        {
+            foreach (var kvp in parent.Fonts) merged.Fonts[kvp.Key] = kvp.Value;
+        }
+        if (child?.Fonts is not null)
+        {
+            foreach (var kvp in child.Fonts) merged.Fonts[kvp.Key] = kvp.Value;
+        }
+
+        if (parent?.CornerRadii is not null)
+        {
+            foreach (var kvp in parent.CornerRadii) merged.CornerRadii[kvp.Key] = kvp.Value;
+        }
+        if (child?.CornerRadii is not null)
+        {
+            foreach (var kvp in child.CornerRadii) merged.CornerRadii[kvp.Key] = kvp.Value;
+        }
+
+        if (parent?.Numbers is not null)
+        {
+            foreach (var kvp in parent.Numbers) merged.Numbers[kvp.Key] = kvp.Value;
+        }
+        if (child?.Numbers is not null)
+        {
+            foreach (var kvp in child.Numbers) merged.Numbers[kvp.Key] = kvp.Value;
+        }
+
+        if (parent?.Thickness is not null)
+        {
+            foreach (var kvp in parent.Thickness) merged.Thickness[kvp.Key] = kvp.Value;
+        }
+        if (child?.Thickness is not null)
+        {
+            foreach (var kvp in child.Thickness) merged.Thickness[kvp.Key] = kvp.Value;
+        }
+
+        if (parent?.Strings is not null)
+        {
+            foreach (var kvp in parent.Strings) merged.Strings[kvp.Key] = kvp.Value;
+        }
+        if (child?.Strings is not null)
+        {
+            foreach (var kvp in child.Strings) merged.Strings[kvp.Key] = kvp.Value;
+        }
 
         return merged;
     }
@@ -478,7 +576,7 @@ public static class ThemeManager
         return reader.ReadToEnd();
     }
 
-    private static ResourceDictionary BuildResourceDictionary(ThemeJson theme)
+    private static ResourceDictionary BuildResourceDictionary(ThemeJson theme, bool breadcrumbsMode)
     {
         var dict = new ResourceDictionary();
 
@@ -577,10 +675,17 @@ public static class ThemeManager
             }
         }
 
-        // BreadcrumbsOnly: whether to show only the breadcrumb trail and hide discovery options
+        if (breadcrumbsMode && theme.Breadcrumbs is not null)
+        {
+            ApplyOverrides(dict, theme.Breadcrumbs);
+        }
+
+        // BreadcrumbsOnly: show only the breadcrumb trail when mode is enabled
         try
         {
-            var breadcrumbsOnly = theme.BreadcrumbsOnly ?? false;
+            var breadcrumbsOnly = breadcrumbsMode
+                ? (theme.Breadcrumbs?.BreadcrumbsOnly ?? true)
+                : (theme.BreadcrumbsOnly ?? false);
             dict["Glyph.Overlay.BreadcrumbsOnly"] = breadcrumbsOnly;
         }
         catch
@@ -588,6 +693,104 @@ public static class ThemeManager
         }
 
         return dict;
+    }
+
+    private static void ApplyOverrides(ResourceDictionary dict, ThemeOverrides overrides)
+    {
+        if (overrides.Brushes is not null)
+        {
+            foreach (var kvp in overrides.Brushes)
+            {
+                try
+                {
+                    var obj = System.Windows.Media.ColorConverter.ConvertFromString(kvp.Value);
+                    if (obj is System.Windows.Media.Color color)
+                    {
+                        var brush = new SolidColorBrush(color);
+                        if (brush.CanFreeze) brush.Freeze();
+                        dict[kvp.Key] = brush;
+                    }
+                }
+                catch
+                {
+                }
+            }
+        }
+
+        if (overrides.Fonts is not null)
+        {
+            foreach (var kvp in overrides.Fonts)
+            {
+                try
+                {
+                    dict[kvp.Key] = new System.Windows.Media.FontFamily(kvp.Value);
+                }
+                catch
+                {
+                }
+            }
+        }
+
+        if (overrides.CornerRadii is not null)
+        {
+            foreach (var kvp in overrides.CornerRadii)
+            {
+                try
+                {
+                    dict[kvp.Key] = new CornerRadius(kvp.Value);
+                }
+                catch
+                {
+                }
+            }
+        }
+
+        if (overrides.Numbers is not null)
+        {
+            foreach (var kvp in overrides.Numbers)
+            {
+                try
+                {
+                    dict[kvp.Key] = kvp.Value;
+                }
+                catch
+                {
+                }
+            }
+        }
+
+        if (overrides.Strings is not null)
+        {
+            foreach (var kvp in overrides.Strings)
+            {
+                try
+                {
+                    dict[kvp.Key] = kvp.Value;
+                }
+                catch
+                {
+                }
+            }
+        }
+
+        if (overrides.Thickness is not null)
+        {
+            var converter = new ThicknessConverter();
+            foreach (var kvp in overrides.Thickness)
+            {
+                try
+                {
+                    var obj = converter.ConvertFromString(kvp.Value);
+                    if (obj is Thickness thickness)
+                    {
+                        dict[kvp.Key] = thickness;
+                    }
+                }
+                catch
+                {
+                }
+            }
+        }
     }
 
     private static void StartThemesDirectoryWatcher(string themesDir)

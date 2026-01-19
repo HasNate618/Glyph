@@ -71,6 +71,7 @@ public partial class SettingsWindow : Window
             RecordedGlyphText.Text = DescribeGlyphSequence(leaderSeq);
 
             LoadThemesIntoCombo(cfg.BaseTheme);
+            BreadcrumbsModeCheckBox.IsChecked = cfg.BreadcrumbsMode;
         }
         catch (Exception ex)
         {
@@ -153,6 +154,8 @@ public partial class SettingsWindow : Window
             {
                 cfg.BaseTheme = themeItem.Tag?.ToString();
             }
+
+            cfg.BreadcrumbsMode = BreadcrumbsModeCheckBox.IsChecked == true;
 
             AppConfig.Save(cfg);
             // Apply immediately

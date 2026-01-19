@@ -222,6 +222,9 @@ bindings:
       - key: r
         label: Reload keymaps
         action: reloadKeymaps
+      - key: b
+        label: Toggle Breadcrumbs Mode
+        action: toggleBreadcrumbsMode
       - key: q
         label: Quit Glyph
         action: quitGlyph

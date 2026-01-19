@@ -18,7 +18,7 @@
         SnapsToDevicePixels="True">
         <!-- Use system backdrop/shadow where available; avoid WPF DropShadowEffect which can force layered rendering -->
 
-        <StackPanel MinWidth="{DynamicResource Glyph.Overlay.PanelMinWidth}" MaxWidth="{DynamicResource Glyph.Overlay.PanelMaxWidth}">
+        <StackPanel x:Name="RootPanel" MinWidth="{DynamicResource Glyph.Overlay.PanelMinWidth}" MaxWidth="{DynamicResource Glyph.Overlay.PanelMaxWidth}">
             <TextBlock
                 x:Name="SequenceText"
                 Foreground="{DynamicResource Glyph.Overlay.SequenceForeground}"

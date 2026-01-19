@@ -4,5 +4,5 @@ namespace Glyph.App.Services;
 
 public interface IOverlayPresenter : IDisposable
 {
-    void Render(OverlayModel? overlay);
+    void Render(OverlayModel? overlay, bool forceHide, bool hideAfterSustain);
 }

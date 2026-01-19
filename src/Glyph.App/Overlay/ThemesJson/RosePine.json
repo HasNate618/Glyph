@@ -4,6 +4,18 @@
   "name": "Rose Pine",
   "description": "RosePine-inspired theme",
   "breadcrumbsOnly": false,
+  "breadcrumbs": {
+    "breadcrumbsOnly": true,
+    "strings": {
+      "Glyph.Overlay.ScreenAnchor": "BottomLeft"
+    },
+    "thickness": {
+      "Glyph.Overlay.PanelPadding": "12,8,12,8"
+    },
+    "numbers": {
+      "Glyph.Overlay.SustainMs": 300
+    }
+  },
   "inherits": null,
   "brushes": {
     "Glyph.Overlay.BackgroundBrush": "#CFE9DCEB",

@@ -113,7 +113,7 @@ public static class OverlayBuilder
         return new OverlayModel(title, options);
     }
 
-    private static string BuildTitle(
+    internal static string BuildTitle(
         string buffer,
         string? activeProcessName,
         Func<string, TrieLookupResult<ActionRequest>> lookup,

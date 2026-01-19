@@ -18,6 +18,7 @@ public sealed class AppConfig
     public GlyphKeyConfig? Glyph { get; set; }
     public List<GlyphKeyConfig>? GlyphSequence { get; set; }
     public string? BaseTheme { get; set; }
+    public bool BreadcrumbsMode { get; set; }
     public bool StartWithWindows { get; set; }
 
     public static string ConfigPath => Path.Combine(
@@ -39,6 +40,7 @@ public sealed class AppConfig
                 {
                     Glyph = null,
                     BaseTheme = null,
+                    BreadcrumbsMode = false,
                     StartWithWindows = false
                 };
                 Save(cfg);

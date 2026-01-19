@@ -38,6 +38,7 @@ public sealed class ActionRuntime
         // Theme action family (parameterized): setTheme:<ThemeId>
         "setTheme",
         "reloadKeymaps",
+        "toggleBreadcrumbsMode",
     };
 
 
