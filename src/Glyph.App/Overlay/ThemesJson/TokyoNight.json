@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "id": "TokyoNight",
+  "name": "Tokyo Night",
+  "description": "A vibrant dark theme inspired by Tokyo night lights",
+  "breadcrumbs": {
+    "strings": {
+      "Glyph.Overlay.ScreenAnchor": "BottomLeft"
+    },
+    "thickness": {
+      "Glyph.Overlay.PanelPadding": "12,8,12,8"
+    },
+    "numbers": {
+      "Glyph.Overlay.SustainMs": 300
+    },
+    "brushes": {
+      "Glyph.Overlay.SequenceForeground": "#FFC0CAF5",
+      "Glyph.Overlay.OptionForeground": "#FF565F89",
+      "Glyph.Overlay.KeycapForeground": "#FFFFFFFF",
+      "Glyph.Overlay.KeycapBackground": "#FF414868",
+      "Glyph.Overlay.KeycapBackgroundAction": "#FF7AA2F7",
+      "Glyph.Overlay.KeycapForegroundAction": "#FFFFFFFF",
+      "Glyph.Overlay.KeycapBorderAction": "#FF9ECE6A"
+    }
+  },
+  "inherits": null,
+  "brushes": {
+    "Glyph.Overlay.BackgroundBrush": "#BF1A1B26",
+    "Glyph.Overlay.SequenceForeground": "#FFC0CAF5",
+    "Glyph.Overlay.OptionForeground": "#FF565F89",
+
+    "Glyph.Overlay.KeycapBackground": "#FF414868",
+    "Glyph.Overlay.KeycapForeground": "#FFFFFFFF",
+
+    "Glyph.Overlay.KeycapBackgroundAction": "#FF7AA2F7",
+    "Glyph.Overlay.KeycapForegroundAction": "#FFFFFFFF",
+    "Glyph.Overlay.KeycapBorderAction": "#FFFF9E64",
+
+    "Glyph.Overlay.KeycapBackgroundLayer": "#FF1A1B26",
+    "Glyph.Overlay.KeycapForegroundLayer": "#FFC0CAF5"
+  },
+  "fonts": {
+    "Glyph.Overlay.FontFamily": "Segoe UI Variable, Segoe UI, Arial"
+  },
+  "cornerRadii": {
+    "Glyph.Overlay.PanelCornerRadius": 12,
+    "Glyph.Overlay.KeycapCornerRadius": 8
+  },
+  "numbers": {
+    "Glyph.Overlay.SustainMs": 300
+  }
+}

@@ -128,26 +128,48 @@ bindings:
             send: Win+Shift+Right
 
   - key: t
-    label: Text
+    label: Theme
     children:
+      - key: d
+        label: Dark
+        action: setTheme
+        args:
+          - Dark
+      - key: f
+        label: Fluent
+        action: setTheme
+        args:
+          - Fluent
+      - key: l
+        label: Light
+        action: setTheme
+        args:
+          - Light
+      - key: n
+        label: Nord
+        action: setTheme
+        args:
+          - Nord
       - key: c
-        label: Copy
-        steps:
-          - send: Ctrl+C
-      - key: v
-        label: Paste
-        steps:
-          - send: Ctrl+V
-      - key: x
-        label: Cut
-        steps:
-          - send: Ctrl+X
-      - key: a
-        label: Select All
-        steps:
-          - send: Ctrl+A
-      - key: u
-        label: Undo
+        label: Catppuccin Mocha
+        action: setTheme
+        args:
+          - CatppuccinMocha
+      - key: r
+        label: Rose Pine
+        action: setTheme
+        args:
+          - RosePine
+      - key: t
+        label: Tokyo Night
+        action: setTheme
+        args:
+          - TokyoNight
+      - key: da
+        label: Darcula
+        action: setTheme
+        args:
+          - Darcula
         steps:
           - send: Ctrl+Z
       - key: r

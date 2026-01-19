@@ -13,22 +13,26 @@
     "numbers": {
       "Glyph.Overlay.SustainMs": 300
     }
+    ,
+    "brushes": {
+      "Glyph.Overlay.SequenceForeground": "#FFD8DEE9"
+    }
   },
   "inherits": null,
   "brushes": {
     "Glyph.Overlay.BackgroundBrush": "#BF2E3440",
     "Glyph.Overlay.SequenceForeground": "#FFD8DEE9",
-    "Glyph.Overlay.OptionForeground": "#FFA3B1C6",
+    "Glyph.Overlay.OptionForeground": "#FFA1ADB8",
 
     "Glyph.Overlay.KeycapBackground": "#FF3B4252",
-    "Glyph.Overlay.KeycapForeground": "#FFD8DEE9",
+    "Glyph.Overlay.KeycapForeground": "#FFFFFFFF",
 
-    "Glyph.Overlay.KeycapBackgroundAction": "#FF3B4252",
-    "Glyph.Overlay.KeycapForegroundAction": "#FFD8DEE9",
-    "Glyph.Overlay.KeycapBorderAction": "#FF6C8591",
+    "Glyph.Overlay.KeycapBackgroundAction": "#FF88C0D0",
+    "Glyph.Overlay.KeycapForegroundAction": "#FFFFFFFF",
+    "Glyph.Overlay.KeycapBorderAction": "#FFA3BE8C",
 
-    "Glyph.Overlay.KeycapBackgroundLayer": "#FF3F4756",
-    "Glyph.Overlay.KeycapForegroundLayer": "#FFCFD8E3"
+    "Glyph.Overlay.KeycapBackgroundLayer": "#FF434C5E",
+    "Glyph.Overlay.KeycapForegroundLayer": "#FFE5E9F0"
   },
   "fonts": {
     "Glyph.Overlay.FontFamily": "Segoe UI Variable, Segoe UI, Arial"

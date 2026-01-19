@@ -14,30 +14,30 @@
       "Glyph.Overlay.SustainMs": 300
     },
     "brushes": {
-      "Glyph.Overlay.SequenceForeground": "#FFF5E0DC",
-      "Glyph.Overlay.OptionForeground": "#FFD8A6B8",
-      "Glyph.Overlay.KeycapForeground": "#FFF5E0DC",
-      "Glyph.Overlay.KeycapBackground": "#FF31748F",
-      "Glyph.Overlay.KeycapBackgroundAction": "#FFC4A7E7",
-      "Glyph.Overlay.KeycapForegroundAction": "#FF191724",
-      "Glyph.Overlay.KeycapBorderAction": "#FFF5E0DC"
+      "Glyph.Overlay.SequenceForeground": "#FFE0DEF4",
+      "Glyph.Overlay.OptionForeground": "#FF6E6A86",
+      "Glyph.Overlay.KeycapForeground": "#FFFFFFFF",
+      "Glyph.Overlay.KeycapBackground": "#FF26233C",
+      "Glyph.Overlay.KeycapBackgroundAction": "#FFEB6F92",
+      "Glyph.Overlay.KeycapForegroundAction": "#FFFFFFFF",
+      "Glyph.Overlay.KeycapBorderAction": "#FF31748F"
     }
   },
   "inherits": null,
   "brushes": {
     "Glyph.Overlay.BackgroundBrush": "#BF191724",
-    "Glyph.Overlay.SequenceForeground": "#FFF5E0DC",
-    "Glyph.Overlay.OptionForeground": "#FFD8A6B8",
+    "Glyph.Overlay.SequenceForeground": "#FFE0DEF4",
+    "Glyph.Overlay.OptionForeground": "#FF6E6A86",
 
-    "Glyph.Overlay.KeycapBackground": "#FF31748F",
-    "Glyph.Overlay.KeycapForeground": "#FFF5E0DC",
+    "Glyph.Overlay.KeycapBackground": "#FF26233C",
+    "Glyph.Overlay.KeycapForeground": "#FFFFFFFF",
 
-    "Glyph.Overlay.KeycapBackgroundAction": "#FFC4A7E7",
-    "Glyph.Overlay.KeycapForegroundAction": "#FF191724",
-    "Glyph.Overlay.KeycapBorderAction": "#FFEBBCBA",
+    "Glyph.Overlay.KeycapBackgroundAction": "#FFEB6F92",
+    "Glyph.Overlay.KeycapForegroundAction": "#FFFFFFFF",
+    "Glyph.Overlay.KeycapBorderAction": "#FF31748F",
 
-    "Glyph.Overlay.KeycapBackgroundLayer": "#FF403D52",
-    "Glyph.Overlay.KeycapForegroundLayer": "#FFF5E0DC"
+    "Glyph.Overlay.KeycapBackgroundLayer": "#FF26233C",
+    "Glyph.Overlay.KeycapForegroundLayer": "#FFE0DEF4"
   },
   "fonts": {
     "Glyph.Overlay.FontFamily": "Segoe UI Variable, Segoe UI, Arial"

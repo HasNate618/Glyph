@@ -13,6 +13,10 @@
     "numbers": {
       "Glyph.Overlay.SustainMs": 300
     }
+    ,
+    "brushes": {
+      "Glyph.Overlay.SequenceForeground": "#FFFFFFFF"
+    }
   },
   "inherits": null,
   "brushes": {

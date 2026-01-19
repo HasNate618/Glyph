@@ -13,22 +13,26 @@
     "numbers": {
       "Glyph.Overlay.SustainMs": 300
     }
+    ,
+    "brushes": {
+      "Glyph.Overlay.SequenceForeground": "#FFCDD6F4"
+    }
   },
   "inherits": null,
   "brushes": {
     "Glyph.Overlay.BackgroundBrush": "#BF1E1E2E",
     "Glyph.Overlay.SequenceForeground": "#FFCDD6F4",
-    "Glyph.Overlay.OptionForeground": "#FFEBA0AC",
+    "Glyph.Overlay.OptionForeground": "#FFA6ADC8",
 
     "Glyph.Overlay.KeycapBackground": "#FF313244",
-    "Glyph.Overlay.KeycapForeground": "#FFCDD6F4",
+    "Glyph.Overlay.KeycapForeground": "#FFFFFFFF",
 
-    "Glyph.Overlay.KeycapBackgroundAction": "#FF313244",
-    "Glyph.Overlay.KeycapForegroundAction": "#FFCDD6F4",
-    "Glyph.Overlay.KeycapBorderAction": "#FF6F9BE8",
+    "Glyph.Overlay.KeycapBackgroundAction": "#FF89B4FA",
+    "Glyph.Overlay.KeycapForegroundAction": "#FFFFFFFF",
+    "Glyph.Overlay.KeycapBorderAction": "#FFCBA6F7",
 
     "Glyph.Overlay.KeycapBackgroundLayer": "#FF37384A",
-    "Glyph.Overlay.KeycapForegroundLayer": "#FFC9D3F8"
+    "Glyph.Overlay.KeycapForegroundLayer": "#FFCDD6F4"
   },
   "fonts": {
     "Glyph.Overlay.FontFamily": "Segoe UI Variable, Segoe UI, Arial"
