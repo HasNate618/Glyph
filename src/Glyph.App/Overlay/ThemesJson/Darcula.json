@@ -3,9 +3,7 @@
   "id": "Darcula",
   "name": "Darcula",
   "description": "Darcula-like dark theme",
-  "breadcrumbsOnly": false,
   "breadcrumbs": {
-    "breadcrumbsOnly": true,
     "strings": {
       "Glyph.Overlay.ScreenAnchor": "BottomLeft"
     },
@@ -38,5 +36,8 @@
   "cornerRadii": {
     "Glyph.Overlay.PanelCornerRadius": 12,
     "Glyph.Overlay.KeycapCornerRadius": 8
+  },
+  "numbers": {
+    "Glyph.Overlay.SustainMs": 300
   }
 }
