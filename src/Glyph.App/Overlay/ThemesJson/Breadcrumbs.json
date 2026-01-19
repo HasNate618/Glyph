@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "id": "Breadcrumbs",
+  "name": "Breadcrumbs",
+  "description": "Minimal theme that displays only the breadcrumb trail (no discovery options)",
+  "breadcrumbsOnly": true,
+  "inherits": "Fluent"
+}

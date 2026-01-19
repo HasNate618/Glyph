@@ -182,7 +182,28 @@ public partial class OverlayWindow : Window
     public void Update(OverlayModel model)
     {
         SequenceText.Text = model.Sequence;
-        OptionsList.ItemsSource = model.Options;
+        // Respect theme-driven breadcrumbs-only mode. If enabled, hide discovery options.
+        var breadcrumbsOnly = false;
+        try
+        {
+            var val = System.Windows.Application.Current?.Resources["Glyph.Overlay.BreadcrumbsOnly"];
+            if (val is bool b) breadcrumbsOnly = b;
+            else if (val is string s && bool.TryParse(s, out var parsed)) breadcrumbsOnly = parsed;
+        }
+        catch
+        {
+        }
+
+        if (breadcrumbsOnly)
+        {
+            OptionsList.ItemsSource = Array.Empty<OverlayOption>();
+            OptionsList.Visibility = Visibility.Collapsed;
+        }
+        else
+        {
+            OptionsList.ItemsSource = model.Options;
+            OptionsList.Visibility = Visibility.Visible;
+        }
 
         // Ensure theme-driven placement stays correct as the overlay size changes.
         PositionFromTheme();

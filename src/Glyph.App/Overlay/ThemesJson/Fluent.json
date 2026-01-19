@@ -3,6 +3,7 @@
   "id": "Fluent",
   "name": "Fluent",
   "description": "Windows 11 look, true transparency",
+  "breadcrumbsOnly": false,
   "inherits": null,
   "brushes": {
     "Glyph.Overlay.BackgroundBrush": "#14000000",

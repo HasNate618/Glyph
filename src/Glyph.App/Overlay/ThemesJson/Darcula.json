@@ -3,6 +3,7 @@
   "id": "Darcula",
   "name": "Darcula",
   "description": "Darcula-like dark theme",
+  "breadcrumbsOnly": false,
   "inherits": null,
   "brushes": {
     "Glyph.Overlay.BackgroundBrush": "#BF0F1115",

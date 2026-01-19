@@ -42,6 +42,9 @@ public static class ThemeManager
         public string? Description { get; set; }
         public string? Inherits { get; set; }
 
+        // New: control whether overlay shows discovery options or only breadcrumbs
+        public bool? BreadcrumbsOnly { get; set; }
+
         public Dictionary<string, string>? Brushes { get; set; }
         public Dictionary<string, string>? Fonts { get; set; }
         public Dictionary<string, double>? CornerRadii { get; set; }
@@ -457,6 +460,9 @@ public static class ThemeManager
             foreach (var kvp in child.Strings) merged.Strings[kvp.Key] = kvp.Value;
         }
 
+        // Merge BreadcrumbsOnly: child overrides parent when present
+        merged.BreadcrumbsOnly = child.BreadcrumbsOnly ?? parent.BreadcrumbsOnly;
+
         return merged;
     }
 
@@ -569,6 +575,16 @@ public static class ThemeManager
                 {
                 }
             }
+        }
+
+        // BreadcrumbsOnly: whether to show only the breadcrumb trail and hide discovery options
+        try
+        {
+            var breadcrumbsOnly = theme.BreadcrumbsOnly ?? false;
+            dict["Glyph.Overlay.BreadcrumbsOnly"] = breadcrumbsOnly;
+        }
+        catch
+        {
         }
 
         return dict;

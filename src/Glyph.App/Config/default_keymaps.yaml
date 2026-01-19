@@ -68,11 +68,11 @@ bindings:
       - key: l
         label: Lock
         send: Win+L
-      - key: s
+      - key: sl
         label: Sleep
         exec: rundll32.exe
         execArgs: 'powrprof.dll,SetSuspendState 0,1,0'
-      - key: ss
+      - key: sd
         label: Shutdown
         exec: shutdown
         execArgs: '/s /t 0'
@@ -292,6 +292,31 @@ bindings:
         steps:
           - type: git branch
           - send: Enter
+      - key: f
+        label: Fetch
+        steps:
+          - type: git fetch
+          - send: Enter
+      - key: m
+        label: Merge
+        steps:
+          - type: git merge 
+          - send: Left
+      - key: r
+        label: Rebase
+        steps:
+          - type: git rebase 
+          - send: Left
+      - key: d
+        label: Diff
+        steps:
+          - type: git diff
+          - send: Enter
+      - key: o
+        label: Checkout
+        steps:
+          - type: git checkout 
+          - send: Left
 
   - key: ss
     label: Screenshot

@@ -3,6 +3,7 @@
   "id": "Test",
   "name": "Test (Debug)",
   "description": "High-contrast debug theme for quickly spotting resource usage",
+  "breadcrumbsOnly": false,
   "inherits": null,
   "brushes": {
     "Glyph.Overlay.BackgroundBrush": "#CC001B4D",

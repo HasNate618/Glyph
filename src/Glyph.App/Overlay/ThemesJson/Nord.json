@@ -3,6 +3,7 @@
   "id": "Nord",
   "name": "Nord",
   "description": "Nord-inspired theme",
+  "breadcrumbsOnly": false,
   "inherits": null,
   "brushes": {
     "Glyph.Overlay.BackgroundBrush": "#BF2E3440",

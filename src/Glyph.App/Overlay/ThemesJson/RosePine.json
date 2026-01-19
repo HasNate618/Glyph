@@ -3,6 +3,7 @@
   "id": "RosePine",
   "name": "Rose Pine",
   "description": "RosePine-inspired theme",
+  "breadcrumbsOnly": false,
   "inherits": null,
   "brushes": {
     "Glyph.Overlay.BackgroundBrush": "#CFE9DCEB",

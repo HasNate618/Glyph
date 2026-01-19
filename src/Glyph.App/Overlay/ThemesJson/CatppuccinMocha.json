@@ -3,6 +3,7 @@
   "id": "CatppuccinMocha",
   "name": "Catppuccin Mocha",
   "description": "Catppuccin Mocha-inspired theme",
+  "breadcrumbsOnly": false,
   "inherits": null,
   "brushes": {
     "Glyph.Overlay.BackgroundBrush": "#BF1E1E2E",

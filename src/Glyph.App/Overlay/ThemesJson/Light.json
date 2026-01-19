@@ -3,6 +3,7 @@
   "id": "Light",
   "name": "Light",
   "description": "Light theme",
+  "breadcrumbsOnly": false,
   "inherits": null,
   "brushes": {
     "Glyph.Overlay.BackgroundBrush": "#E6FFFFFF",
