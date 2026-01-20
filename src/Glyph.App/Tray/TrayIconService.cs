@@ -61,12 +61,6 @@ public sealed class TrayIconService : IDisposable
         var openLogs = new System.Windows.Forms.ToolStripMenuItem("Open Logs Folder");
         openLogs.Click += (_, _) => OpenLogsFolder();
 
-        var reloadTheme = new System.Windows.Forms.ToolStripMenuItem("Reload Theme");
-        reloadTheme.Click += (_, _) => ReloadTheme();
-
-        var about = new System.Windows.Forms.ToolStripMenuItem("About");
-        about.Click += (_, _) => About();
-
         var exit = new System.Windows.Forms.ToolStripMenuItem("Exit");
         exit.Click += (_, _) => Exit();
 
@@ -74,8 +68,6 @@ public sealed class TrayIconService : IDisposable
         menu.Items.Add(new System.Windows.Forms.ToolStripSeparator());
         menu.Items.Add(openConfig);
         menu.Items.Add(openLogs);
-        menu.Items.Add(reloadTheme);
-        menu.Items.Add(about);
         menu.Items.Add(new System.Windows.Forms.ToolStripSeparator());
         menu.Items.Add(exit);
 
@@ -170,41 +162,6 @@ public sealed class TrayIconService : IDisposable
         catch (Exception ex)
         {
             Logger.Error("Failed to open logs folder", ex);
-        }
-    }
-
-    private static void ReloadTheme()
-    {
-        try
-        {
-            System.Windows.Application.Current.Dispatcher.Invoke(() =>
-            {
-                ThemeManager.Reload();
-            });
-        }
-        catch (Exception ex)
-        {
-            Logger.Error("Failed to reload theme", ex);
-        }
-    }
-
-    private static void About()
-    {
-        try
-        {
-            System.Windows.Application.Current.Dispatcher.Invoke(() =>
-            {
-                var version = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "?";
-                System.Windows.MessageBox.Show(
-                    $"Glyph\nVersion: {version}\n\nRight-click the tray icon for actions.",
-                    "About Glyph",
-                    System.Windows.MessageBoxButton.OK,
-                    System.Windows.MessageBoxImage.Information);
-            });
-        }
-        catch (Exception ex)
-        {
-            Logger.Error("Failed to show About dialog", ex);
         }
     }
 
