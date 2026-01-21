@@ -137,6 +137,16 @@ public static class OverlayBuilder
         {
             var prefix = buffer.Substring(0, i);
 
+            // If this is an intermediate prefix (not the final entered buffer)
+            // and the trie says this prefix is both a complete action and
+            // has children (i.e. it's also a layer), skip showing it in the
+            // breadcrumb to avoid confusing intermediate labels.
+            var prefixLookup = lookup(prefix);
+            if (i < buffer.Length && prefixLookup.IsValidPrefix && prefixLookup.IsComplete && prefixLookup.NextKeys.Count > 0)
+            {
+                continue;
+            }
+
             string? label = null;
 
             // Special-case Program layer: show active process label when configured.
