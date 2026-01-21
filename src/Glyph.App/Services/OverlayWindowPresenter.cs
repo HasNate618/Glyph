@@ -35,6 +35,7 @@ public sealed class OverlayWindowPresenter : IOverlayPresenter
                 _window.Update(overlay);
                 if (!_window.IsVisible)
                 {
+                    _window.PrepareForShow();
                     _window.Show();
                 }
 

@@ -223,9 +223,11 @@ public partial class OverlayWindow : Window
                 RootPanel.HorizontalAlignment = System.Windows.HorizontalAlignment.Stretch;
             }
             catch { }
-        }
-
-        // Ensure theme-driven placement stays correct as the overlay size changes.
-        PositionFromTheme();
+        }   
     }
+
+    public void PrepareForShow() {
+        this.UpdateLayout();
+        PositionFromTheme();
+    }     
 }
