@@ -5,13 +5,14 @@
   "description": "Windows 11 look, true transparency",
   "breadcrumbs": {
     "strings": {
-      "Glyph.Overlay.ScreenAnchor": "BottomLeft"
+      "Glyph.Overlay.ScreenAnchor": "Center"
     },
     "thickness": {
-      "Glyph.Overlay.PanelPadding": "12,8,12,8"
+      "Glyph.Overlay.PanelPadding": "10,6,10,2"
     },
     "numbers": {
-      "Glyph.Overlay.SustainMs": 300
+      "Glyph.Overlay.SustainMs": 300,
+      "Glyph.Overlay.OffsetY": 420
     }
   },
   "inherits": null,
@@ -38,7 +39,7 @@
     "Glyph.Overlay.KeycapCornerRadius": 8
   },
   "numbers": {
-    "Glyph.Overlay.ScreenPadding": 10,
+    "Glyph.Overlay.ScreenPadding": 8,
     "Glyph.Overlay.SustainMs": 300,
     "Glyph.Overlay.SequenceFontSize": 14,
     "Glyph.Overlay.OptionDescriptionFontSize": 13,
