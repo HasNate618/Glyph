@@ -128,58 +128,54 @@ bindings:
             send: Win+Shift+Right
 
   - key: t
-    label: Theme
+    label: Text
     children:
-      - key: d
-        label: Dark
-        action: setTheme
-        args:
-          - Dark
-      - key: f
-        label: Fluent
-        action: setTheme
-        args:
-          - Fluent
-      - key: l
-        label: Light
-        action: setTheme
-        args:
-          - Light
-      - key: n
-        label: Nord
-        action: setTheme
-        args:
-          - Nord
       - key: c
-        label: Catppuccin Mocha
-        action: setTheme
-        args:
-          - CatppuccinMocha
-      - key: r
-        label: Rose Pine
-        action: setTheme
-        args:
-          - RosePine
-      - key: t
-        label: Tokyo Night
-        action: setTheme
-        args:
-          - TokyoNight
-      - key: da
-        label: Darcula
-        action: setTheme
-        args:
-          - Darcula
-        steps:
-          - send: Ctrl+Z
+        label: Copy
+        send: Ctrl+C
+      - key: v
+        label: Paste
+        send: Ctrl+V
+      - key: x
+        label: Cut
+        send: Ctrl+X
+      - key: a
+        label: Select All
+        send: Ctrl+A
+      - key: u
+        label: Undo
+        send: Ctrl+Z
       - key: r
         label: Replace
-        steps:
-          - send: Ctrl+H
+        send: Ctrl+H
       - key: f
         label: Find
+        send: Ctrl+F
+                  
+      # Vim-style operations: use multi-stroke keys for safe, program-friendly edits
+      - key: y
+        label: Yank Line
         steps:
-          - send: Ctrl+F
+          - send: Home
+          - send: Shift+End
+          - send: Ctrl+C
+      - key: d
+        label: Delete Line
+        steps:
+          - send: Home
+          - send: Shift+End
+          - send: Ctrl+X
+      - key: p
+        label: Duplicate Line
+        steps:
+          - send: Home
+          - send: Shift+End
+          - send: Ctrl+C
+          - send: End
+          - send: Enter
+          - send: Ctrl+V
+
+      # Text expansion macros
       - key: e
         label: Expansion
         children:
@@ -198,36 +194,6 @@ bindings:
           - key: p
             label: Phone
             type: '+1 (555) 123-4567'
-
-      # Vim-style operations: use multi-stroke keys for safe, program-friendly edits
-      - key: yy
-        label: Yank Line
-        steps:
-          - send: Home
-          - send: Shift+End
-          - send: Shift+End
-          - send: Ctrl+C
-
-      - key: dd
-        label: Delete Line
-        steps:
-          - send: Home
-          - send: Shift+End
-          - send: Delete
-      - key: d
-        label: Duplicate Line
-        steps:
-          - send: Home
-          - send: Shift+End
-          - send: Ctrl+C
-          - send: End
-          - send: Enter
-          - send: Ctrl+V
-
-      - key: p
-        label: Paste (after yank)
-        steps:
-          - send: Ctrl+V
 
   - key: ","
     label: Glyph Settings
@@ -271,9 +237,9 @@ bindings:
           - key: r
             label: RosePine
             setTheme: 'rosePine'
-          - key: x
-            label: Test
-            setTheme: 'Test'
+          - key: t
+            label: Tokyo Night
+            setTheme: 'tokyoNight'
 
   - key: g
     label: Git
@@ -285,7 +251,9 @@ bindings:
           - send: Enter
       - key: a
         label: Add All
-        type: git add .
+        steps:
+          - type: git add .
+          - send: Enter
       - key: aa
         label: Add All (Enter)
         steps:
@@ -298,7 +266,9 @@ bindings:
           - send: Left
       - key: p
         label: Push
-        type: git push
+        steps:
+          - type: git push
+          - send: Enter
       - key: pp
         label: Push (Enter)
         steps: 
@@ -306,7 +276,9 @@ bindings:
           - send: Enter
       - key: l
         label: Pull
-        type: git pull
+        steps:
+          - type: git pull
+          - send: Enter
       - key: ll
         label: Pull (Enter)
         steps:
@@ -337,11 +309,10 @@ bindings:
         steps:
           - type: git diff
           - send: Enter
-      - key: o
+      - key: co
         label: Checkout
         steps:
           - type: git checkout 
-          - send: Left
 
   - key: ss
     label: Screenshot
