@@ -83,6 +83,29 @@ Keymaps are a tree of bindings. Each node has a `key` and `label`, and then eith
 
 Reloading keymaps at runtime: the default keymap binds `reloadKeymaps` to glyph → `,` → `r`.
 
+### Backspace & Shift behavior
+
+- **Backspace (layer-back):** When the overlay is open, pressing Backspace will pop the last entered key from the current sequence (i.e. go up one layer). If you are at the root layer (no buffer), Backspace behaves like `Esc` and immediately hides the overlay. You can still reference Backspace in YAML using the named token `Backspace` (for example in `keyTokens` or `<Backspace>`), but the overlay will always treat it as a navigation key while open.
+
+- **Shift is a modifier (case-sensitive mapping):** `Shift`, `LShift`, and `RShift` are not treated as standalone bindable keys. Instead the engine uses the held Shift state to produce shifted characters in the input buffer:
+  - Letters become uppercase when Shift is held (e.g. `b` vs `B` are distinct steps).
+  - Numbers and punctuation produce their shifted symbols (for example `Shift+1` -> `!`, `Shift+=` -> `+`, `Shift+/` -> `?`).
+
+  In practice, write separate YAML bindings for lowercase and uppercase forms when you want different actions. Example:
+
+  ```yaml
+  bindings:
+    - key: b
+      label: Build
+      action: buildProject
+
+    - key: B
+      label: Build Debug
+      action: buildDebug
+  ```
+
+  Attempting to bind `Shift` (or `LShift`/`RShift`) as a standalone token (for example `Shift+b`) is rejected by the YAML loader; instead prefer `B` or the corresponding shifted symbol.
+
 ### Examples
 
 Chain steps (preferred):
