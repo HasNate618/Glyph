@@ -190,6 +190,31 @@ public sealed class SequenceEngine
             return new EngineResult(Consumed: true, Overlay: null, Action: null, ExecuteAfter: null, ForceHide: true, HideAfterSustain: false);
         }
 
+        // While active, Backspace pops the last character (go back one layer).
+        if (stroke.Key == KeyTokens.GetBackspaceToken())
+        {
+            if (_buffer.Length > 0)
+            {
+                _buffer = _buffer.Substring(0, _buffer.Length - 1);
+                Logger.Info($"Layer back: buffer now '{_buffer}'");
+            }
+            else
+            {
+                // At root: exit session entirely (behave like Esc — immediate hide)
+                Reset();
+                return new EngineResult(Consumed: true, Overlay: null, Action: null, ExecuteAfter: null, ForceHide: true, HideAfterSustain: false);
+            }
+
+            // Rebuild overlay with updated buffer
+            return new EngineResult(
+                Consumed: true,
+                Overlay: BuildOverlay(activeProcessName),
+                Action: null,
+                ExecuteAfter: null,
+                ForceHide: false,
+                HideAfterSustain: false);
+        }
+
         // Ignore unmapped keys during session.
         // Note: Space is a valid bindable step (use `Space` token or literal space).
         if (stroke.Key is null)

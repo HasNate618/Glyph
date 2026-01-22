@@ -225,4 +225,9 @@ public static class KeyTokens
 
         return result.ToString();
     }
+
+    public static char GetBackspaceToken()
+    {
+        return TokenToChar["Backspace"];
+    }
 }
