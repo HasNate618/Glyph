@@ -118,12 +118,18 @@ public sealed class GlyphHost : IDisposable
         ReconcileModifierCandidates();
         _currentlyDown.Add(e.VkCode);
 
+        // Derive modifier state from the currently-down set to avoid timing issues
+        var ctrlDown = _currentlyDown.Contains(VirtualKey.VK_CONTROL) || _currentlyDown.Contains(0xA2) || _currentlyDown.Contains(0xA3);
+        var shiftDown = _currentlyDown.Contains(VirtualKey.VK_SHIFT) || _currentlyDown.Contains(0xA0) || _currentlyDown.Contains(0xA1);
+        var altDown = _currentlyDown.Contains(VirtualKey.VK_MENU) || _currentlyDown.Contains(0xA4) || _currentlyDown.Contains(0xA5);
+        var winDown = _currentlyDown.Contains(VirtualKey.VK_LWIN) || _currentlyDown.Contains(VirtualKey.VK_RWIN);
+
         var stroke = KeyStroke.FromVkCode(
             e.VkCode,
-            ctrl: NativeMethods.IsKeyDown(VirtualKey.VK_CONTROL),
-            shift: NativeMethods.IsKeyDown(VirtualKey.VK_SHIFT),
-            alt: NativeMethods.IsKeyDown(VirtualKey.VK_MENU),
-            win: NativeMethods.IsKeyDown(VirtualKey.VK_LWIN) || NativeMethods.IsKeyDown(VirtualKey.VK_RWIN));
+            ctrl: ctrlDown,
+            shift: shiftDown,
+            alt: altDown,
+            win: winDown);
 
         var activeProcess = ForegroundApp.TryGetProcessName();
 
@@ -336,12 +342,17 @@ public sealed class GlyphHost : IDisposable
         // Remove from currently down
         _currentlyDown.Remove(e.VkCode);
 
+        var ctrlDown = _currentlyDown.Contains(VirtualKey.VK_CONTROL) || _currentlyDown.Contains(0xA2) || _currentlyDown.Contains(0xA3);
+        var shiftDown = _currentlyDown.Contains(VirtualKey.VK_SHIFT) || _currentlyDown.Contains(0xA0) || _currentlyDown.Contains(0xA1);
+        var altDown = _currentlyDown.Contains(VirtualKey.VK_MENU) || _currentlyDown.Contains(0xA4) || _currentlyDown.Contains(0xA5);
+        var winDown = _currentlyDown.Contains(VirtualKey.VK_LWIN) || _currentlyDown.Contains(VirtualKey.VK_RWIN);
+
         var stroke = KeyStroke.FromVkCode(
             e.VkCode,
-            ctrl: NativeMethods.IsKeyDown(VirtualKey.VK_CONTROL),
-            shift: NativeMethods.IsKeyDown(VirtualKey.VK_SHIFT),
-            alt: NativeMethods.IsKeyDown(VirtualKey.VK_MENU),
-            win: NativeMethods.IsKeyDown(VirtualKey.VK_LWIN) || NativeMethods.IsKeyDown(VirtualKey.VK_RWIN));
+            ctrl: ctrlDown,
+            shift: shiftDown,
+            alt: altDown,
+            win: winDown);
 
         var activeProcess = ForegroundApp.TryGetProcessName();
 

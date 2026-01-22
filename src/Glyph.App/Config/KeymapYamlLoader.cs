@@ -226,6 +226,28 @@ public sealed class YamlKeymapProvider : IKeymapProvider
             return;
         }
 
+        // Reject Shift tokens: Shift is not independently bindable; use uppercase/lowercase letters instead
+        if (KeyTokens.TryEncode("Shift", out var shiftToken) && keySeq.Contains(shiftToken))
+        {
+            Logger.Info($"Keymaps: Shift cannot be used as a standalone bindable key; use uppercase letter instead (e.g., 'B' instead of 'Shift+b')");
+            skippedInvalid++;
+            return;
+        }
+
+        if (KeyTokens.TryEncode("LShift", out var lshiftToken) && keySeq.Contains(lshiftToken))
+        {
+            Logger.Info($"Keymaps: LShift cannot be used as a standalone bindable key; use uppercase letter instead");
+            skippedInvalid++;
+            return;
+        }
+
+        if (KeyTokens.TryEncode("RShift", out var rshiftToken) && keySeq.Contains(rshiftToken))
+        {
+            Logger.Info($"Keymaps: RShift cannot be used as a standalone bindable key; use uppercase letter instead");
+            skippedInvalid++;
+            return;
+        }
+
         var seqBase = prefix + keySeq;
         var seqVariants = ExpandGenericModifierVariants(seqBase);
         foreach (var seq in seqVariants)
@@ -462,9 +484,8 @@ public sealed class YamlKeymapProvider : IKeymapProvider
         if (!KeyTokens.TryEncode("Ctrl", out var ctrl)) return new[] { seq };
         if (!KeyTokens.TryEncode("LCtrl", out var lctrl)) return new[] { seq };
         if (!KeyTokens.TryEncode("RCtrl", out var rctrl)) return new[] { seq };
-        if (!KeyTokens.TryEncode("Shift", out var shift)) return new[] { seq };
-        if (!KeyTokens.TryEncode("LShift", out var lshift)) return new[] { seq };
-        if (!KeyTokens.TryEncode("RShift", out var rshift)) return new[] { seq };
+        // NOTE: Shift is NOT expanded as a generic modifier variant.
+        // Shift is handled via case-sensitive key mapping (lowercase vs uppercase chars in buffer).
         if (!KeyTokens.TryEncode("Alt", out var alt)) return new[] { seq };
         if (!KeyTokens.TryEncode("LAlt", out var lalt)) return new[] { seq };
         if (!KeyTokens.TryEncode("RAlt", out var ralt)) return new[] { seq };
@@ -472,7 +493,7 @@ public sealed class YamlKeymapProvider : IKeymapProvider
         var replacements = new Dictionary<char, char[]>
         {
             [ctrl] = new[] { ctrl, lctrl, rctrl },
-            [shift] = new[] { shift, lshift, rshift },
+            // [shift] = removed — Shift is not a generic modifier variant; use uppercase/lowercase letters instead
             [alt] = new[] { alt, lalt, ralt },
         };
 

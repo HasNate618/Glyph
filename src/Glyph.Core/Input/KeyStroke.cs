@@ -18,9 +18,8 @@ public readonly record struct KeyStroke(
         if (vkCode == 0xA2 && KeyTokens.TryEncode("LCtrl", out var lctrl)) key = lctrl; // VK_LCONTROL
         if (vkCode == 0xA3 && KeyTokens.TryEncode("RCtrl", out var rctrl)) key = rctrl; // VK_RCONTROL
         if (vkCode == 0x11 && KeyTokens.TryEncode("Ctrl", out var ctrlKey)) key = ctrlKey; // VK_CONTROL
-        if (vkCode == 0xA0 && KeyTokens.TryEncode("LShift", out var lshift)) key = lshift; // VK_LSHIFT
-        if (vkCode == 0xA1 && KeyTokens.TryEncode("RShift", out var rshift)) key = rshift; // VK_RSHIFT
-        if (vkCode == 0x10 && KeyTokens.TryEncode("Shift", out var shiftKey)) key = shiftKey; // VK_SHIFT
+        // NOTE: Shift is handled as a modifier (via the `shift` parameter) and is NOT emitted
+        // as a standalone bindable token. Do not set `key` for Shift VK codes here.
         if (vkCode == 0xA4 && KeyTokens.TryEncode("LAlt", out var lalt)) key = lalt; // VK_LMENU
         if (vkCode == 0xA5 && KeyTokens.TryEncode("RAlt", out var ralt)) key = ralt; // VK_RMENU
         if (vkCode == 0x12 && KeyTokens.TryEncode("Alt", out var altKey)) key = altKey; // VK_MENU
@@ -63,15 +62,37 @@ public readonly record struct KeyStroke(
             }
         }
 
+        // Letters: A-Z (case depends on Shift state)
         if (vkCode is >= 0x41 and <= 0x5A)
         {
-            key = (char)('a' + (vkCode - 0x41));
+            key = shift ? (char)('A' + (vkCode - 0x41)) : (char)('a' + (vkCode - 0x41));
         }
 
-        // Digits 0-9
+        // Digits 0-9 (and their shifted symbols when Shift is pressed)
         if (vkCode is >= 0x30 and <= 0x39)
         {
-            key = (char)('0' + (vkCode - 0x30));
+            if (shift)
+            {
+                // Shifted number symbols: ! @ # $ % ^ & * ( )
+                key = vkCode switch
+                {
+                    0x31 => '!',  // Shift+1
+                    0x32 => '@',  // Shift+2
+                    0x33 => '#',  // Shift+3
+                    0x34 => '$',  // Shift+4
+                    0x35 => '%',  // Shift+5
+                    0x36 => '^',  // Shift+6
+                    0x37 => '&',  // Shift+7
+                    0x38 => '*',  // Shift+8
+                    0x39 => '(',  // Shift+9
+                    0x30 => ')',  // Shift+0
+                    _ => (char)('0' + (vkCode - 0x30))
+                };
+            }
+            else
+            {
+                key = (char)('0' + (vkCode - 0x30));
+            }
         }
 
         // Numpad digits
@@ -80,22 +101,22 @@ public readonly record struct KeyStroke(
             key = (char)('0' + (vkCode - 0x60));
         }
 
-        // Common punctuation (unshifted)
+        // Common punctuation (with Shift variants)
         // VK_OEM_COMMA = 0xBC, VK_OEM_PERIOD = 0xBE, VK_OEM_2 = 0xBF (slash)
         // VK_OEM_1 = 0xBA (semicolon), VK_OEM_7 = 0xDE (apostrophe)
         // VK_OEM_4 = 0xDB ([), VK_OEM_6 = 0xDD (]), VK_OEM_MINUS = 0xBD (-)
         // VK_OEM_PLUS = 0xBB (=), VK_OEM_5 = 0xDC (\), VK_OEM_3 = 0xC0 (`)
-        if (vkCode == 0xBC) key = ',';
-        if (vkCode == 0xBE) key = '.';
-        if (vkCode == 0xBF) key = '/';
-        if (vkCode == 0xBA) key = ';';
-        if (vkCode == 0xDE) key = '\'';
-        if (vkCode == 0xDB) key = '[';
-        if (vkCode == 0xDD) key = ']';
-        if (vkCode == 0xBD) key = '-';
-        if (vkCode == 0xBB) key = '=';
-        if (vkCode == 0xDC) key = '\\';
-        if (vkCode == 0xC0) key = '`';
+        if (vkCode == 0xBC) key = shift ? '<' : ',';
+        if (vkCode == 0xBE) key = shift ? '>' : '.';
+        if (vkCode == 0xBF) key = shift ? '?' : '/';
+        if (vkCode == 0xBA) key = shift ? ':' : ';';
+        if (vkCode == 0xDE) key = shift ? '"' : '\'';
+        if (vkCode == 0xDB) key = shift ? '{' : '[';
+        if (vkCode == 0xDD) key = shift ? '}' : ']';
+        if (vkCode == 0xBD) key = shift ? '_' : '-';
+        if (vkCode == 0xBB) key = shift ? '+' : '=';
+        if (vkCode == 0xDC) key = shift ? '|' : '\\';
+        if (vkCode == 0xC0) key = shift ? '~' : '`';
 
         // Space is used as part of the glyph gesture (Ctrl+Shift+Space) in the engine.
         if (vkCode == 0x20)
