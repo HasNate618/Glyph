@@ -4,6 +4,7 @@ using System.Windows.Media;
 
 using Glyph.Core.Overlay;
 using Glyph.Win32.Windowing;
+using Glyph.Win32.Interop;
 
 namespace Glyph.App;
 
@@ -88,7 +89,54 @@ public partial class OverlayWindow : Window
 
     private void PositionFromTheme()
     {
+        // Determine the work area for the monitor that contains the foreground window.
+        // Fall back to the primary monitor / SystemParameters if detection fails.
         var workArea = SystemParameters.WorkArea;
+        try
+        {
+            // Determine the foreground window handle and its containing monitor
+            var hwndForeground = NativeMethods.GetForegroundWindow();
+            var hMonitor = Glyph.Win32.Windowing.MonitorHelper.GetMonitorForWindow(hwndForeground);
+            if (hMonitor != IntPtr.Zero)
+            {
+                var monitorWorkArea = Glyph.Win32.Windowing.MonitorHelper.GetMonitorWorkArea(hMonitor);
+                if (monitorWorkArea.HasValue)
+                {
+                    var rect = monitorWorkArea.Value;
+
+                    // Convert physical pixels to WPF device-independent pixels (DIPs).
+                    var transform = System.Windows.Media.Matrix.Identity;
+                    try
+                    {
+                        var ps = PresentationSource.FromVisual(this);
+                        if (ps?.CompositionTarget is not null)
+                        {
+                            transform = ps.CompositionTarget.TransformFromDevice;
+                        }
+                        else if (_hwnd != IntPtr.Zero)
+                        {
+                            var src = HwndSource.FromHwnd(_hwnd);
+                            if (src?.CompositionTarget is not null)
+                            {
+                                transform = src.CompositionTarget.TransformFromDevice;
+                            }
+                        }
+                    }
+                    catch
+                    {
+                        transform = System.Windows.Media.Matrix.Identity;
+                    }
+
+                    var topLeft = transform.Transform(new System.Windows.Point(rect.Left, rect.Top));
+                    var bottomRight = transform.Transform(new System.Windows.Point(rect.Right, rect.Bottom));
+                    workArea = new System.Windows.Rect(topLeft.X, topLeft.Y, Math.Max(0, bottomRight.X - topLeft.X), Math.Max(0, bottomRight.Y - topLeft.Y));
+                }
+            }
+        }
+        catch
+        {
+            // ignore and keep primary workArea
+        }
 
         var anchor = GetStringResource("Glyph.Overlay.ScreenAnchor") ?? "BottomRight";
         var padding = GetDoubleResource("Glyph.Overlay.ScreenPadding", 8.0);
