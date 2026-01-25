@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.installer.1.6.0.schema.json
+
+PackageIdentifier: HasNate618.Glyph
+PackageVersion: 0.1.4
+InstallerType: zip
+NestedInstallerType: portable
+UpgradeBehavior: install
+
+Installers:
+  - Architecture: x64
+    InstallerType: zip
+    InstallerUrl: https://github.com/HasNate618/Glyph/releases/download/v0.1.4/Glyph-win-x64-v0.1.4.zip
+    InstallerSha256: 8e04b943ab5fbbab79c2a7ed7ae2b09afbd1deb408ae0c69797a25687ce94bc0
+    NestedInstallerType: portable
+    NestedInstallerFiles:
+      - RelativeFilePath: Glyph.App.exe
+        PortableCommandAlias: glyph
+
+  - Architecture: arm64
+    InstallerType: zip
+    InstallerUrl: https://github.com/HasNate618/Glyph/releases/download/v0.1.4/Glyph-win-arm64-v0.1.4.zip
+    InstallerSha256: af90091ea1a4e7d6542ab8c65d7872e84ffcb5ae0bea31316b7ec0fbfd02494d
+    NestedInstallerType: portable
+    NestedInstallerFiles:
+      - RelativeFilePath: Glyph.App.exe
+        PortableCommandAlias: glyph
+
+ManifestType: installer
+ManifestVersion: 1.6.0
