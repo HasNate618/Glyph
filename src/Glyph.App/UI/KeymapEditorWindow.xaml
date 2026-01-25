@@ -1,0 +1,201 @@
+<Window x:Class="Glyph.App.UI.KeymapEditorWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Glyph Keymap Editor" Height="700" Width="1000"
+        WindowStartupLocation="CenterScreen"
+        Background="{DynamicResource Window.Background}">
+    <DockPanel LastChildFill="True">
+        <!-- Header -->
+        <StackPanel DockPanel.Dock="Top" Margin="16" Background="Transparent">
+            <TextBlock FontSize="20" FontWeight="SemiBold" Text="Keymap Editor" />
+            <TextBlock Foreground="Gray" Margin="0,4,0,0" Text="Edit keybindings, create layers, and manage actions" />
+        </StackPanel>
+
+        <!-- Toolbar -->
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="16,0,16,8" Height="40">
+            <Button x:Name="AddGlobalBindingButton" Width="120" Content="Add Global Binding" Margin="0,0,8,0" />
+            <Button x:Name="ReloadButton" Width="100" Content="Reload" Margin="0,0,8,0" />
+            <Button x:Name="SaveButton" Width="100" Content="Save" Margin="0,0,8,0" Foreground="Green" FontWeight="SemiBold" />
+            <TextBlock Margin="16,0,0,0" VerticalAlignment="Center" Foreground="Gray" Text="Status:" />
+            <TextBlock x:Name="StatusText" Margin="8,0,0,0" VerticalAlignment="Center" Text="Ready" />
+            <TextBlock Margin="16,0,0,0" VerticalAlignment="Center" Foreground="Orange" x:Name="WarningText" Text="" />
+        </StackPanel>
+
+        <!-- Main Content - Tabs -->
+        <TabControl DockPanel.Dock="Top" Margin="16,0,16,16">
+            <!-- Global Bindings Tab -->
+            <TabItem Header="Global Bindings">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="350" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Binding Tree -->
+                    <Border Grid.Column="0" BorderBrush="Gray" BorderThickness="1">
+                        <DockPanel LastChildFill="True">
+                            <StackPanel DockPanel.Dock="Top" Margin="8" Orientation="Horizontal">
+                                <TextBlock FontWeight="SemiBold" Text="Bindings" VerticalAlignment="Center" />
+                                <Button x:Name="AddGlobalButton" Content="+" Width="30" Margin="8,0,0,0" />
+                            </StackPanel>
+                            <TreeView x:Name="GlobalBindingTree" DockPanel.Dock="Top" Margin="8,0,8,8" />
+                        </DockPanel>
+                    </Border>
+
+                    <!-- Details Panel -->
+                    <Border Grid.Column="1" BorderBrush="Gray" BorderThickness="1" Margin="16,0,0,0">
+                        <StackPanel Margin="12" VerticalAlignment="Top">
+                            <TextBlock FontWeight="SemiBold" Text="Binding Details" Margin="0,0,0,12" />
+                            
+                            <TextBlock Text="Key Sequence" FontSize="11" Foreground="Gray" Margin="0,0,0,2" />
+                            <TextBox x:Name="DetailKeyBox" Height="32" Margin="0,0,0,8" />
+                            
+                            <TextBlock Text="Label" FontSize="11" Foreground="Gray" Margin="0,0,0,2" />
+                            <TextBox x:Name="DetailLabelBox" Height="32" Margin="0,0,0,8" />
+
+                            <TextBlock Text="Action Type" FontSize="11" Foreground="Gray" Margin="0,0,0,2" />
+                            <ComboBox x:Name="ActionTypeCombo" Height="32" Margin="0,0,0,8">
+                                <ComboBoxItem Content="None (Layer)" />
+                                <ComboBoxItem Content="Action" />
+                                <ComboBoxItem Content="Type Text" />
+                                <ComboBoxItem Content="Send Keys" />
+                                <ComboBoxItem Content="Execute Program" />
+                                <ComboBoxItem Content="Set Theme" />
+                            </ComboBox>
+
+                            <TextBlock x:Name="DetailActionLabel" Text="Action" FontSize="11" Foreground="Gray" Margin="0,0,0,2" />
+                            <ComboBox x:Name="DetailActionCombo" Height="32" Margin="0,0,0,8" />
+
+                            <TextBlock x:Name="DetailValueLabel" Text="Value" FontSize="11" Foreground="Gray" Margin="0,0,0,2" />
+                            <TextBox x:Name="DetailValueBox" Height="32" Margin="0,0,0,8" />
+
+                            <Button x:Name="RecordKeyButton" Width="120" Content="Record Key" Margin="0,0,0,8" />
+                            <Button x:Name="DeleteBindingButton" Content="Delete" Margin="0,0,0,0" Foreground="Red" />
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </TabItem>
+
+            <!-- Per-App Bindings Tab -->
+            <TabItem Header="Per-App Bindings">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="200" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="350" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- App List -->
+                    <Border Grid.Column="0" BorderBrush="Gray" BorderThickness="1">
+                        <DockPanel LastChildFill="True">
+                            <StackPanel DockPanel.Dock="Top" Margin="8" Orientation="Horizontal">
+                                <TextBlock FontWeight="SemiBold" Text="Apps" VerticalAlignment="Center" />
+                                <Button x:Name="AddAppButton" Content="+" Width="30" Margin="8,0,0,0" />
+                            </StackPanel>
+                            <ListBox x:Name="AppList" DockPanel.Dock="Top" Margin="8,0,8,8" />
+                        </DockPanel>
+                    </Border>
+
+                    <!-- App Bindings Tree -->
+                    <Border Grid.Column="1" BorderBrush="Gray" BorderThickness="1" Margin="16,0,16,0">
+                        <DockPanel LastChildFill="True">
+                            <StackPanel DockPanel.Dock="Top" Margin="8" Orientation="Horizontal">
+                                <TextBlock FontWeight="SemiBold" Text="Bindings" VerticalAlignment="Center" />
+                                <Button x:Name="AddAppBindingButton" Content="+" Width="30" Margin="8,0,0,0" />
+                            </StackPanel>
+                            <TreeView x:Name="AppBindingTree" DockPanel.Dock="Top" Margin="8,0,8,8" />
+                        </DockPanel>
+                    </Border>
+
+                    <!-- App Details -->
+                    <Border Grid.Column="2" BorderBrush="Gray" BorderThickness="1" Margin="16,0,0,0">
+                        <StackPanel Margin="12" VerticalAlignment="Top">
+                            <TextBlock FontWeight="SemiBold" Text="App Details" Margin="0,0,0,12" />
+                            
+                            <TextBlock Text="Process Name" FontSize="11" Foreground="Gray" Margin="0,0,0,2" />
+                            <TextBox x:Name="AppProcessNameBox" Height="32" Margin="0,0,0,8" />
+                            <TextBlock FontSize="9" Foreground="Gray" TextWrapping="Wrap" Margin="0,0,0,12" 
+                                       Text="E.g., 'chrome', 'spotify', 'Code'" />
+
+                            <TextBlock FontWeight="SemiBold" Text="Binding Details" Margin="0,12,0,12" />
+                            
+                            <TextBlock Text="Key Sequence" FontSize="11" Foreground="Gray" Margin="0,0,0,2" />
+                            <TextBox x:Name="AppDetailKeyBox" Height="32" Margin="0,0,0,8" />
+                            
+                            <TextBlock Text="Label" FontSize="11" Foreground="Gray" Margin="0,0,0,2" />
+                            <TextBox x:Name="AppDetailLabelBox" Height="32" Margin="0,0,0,8" />
+
+                            <TextBlock Text="Action Type" FontSize="11" Foreground="Gray" Margin="0,0,0,2" />
+                            <ComboBox x:Name="AppActionTypeCombo" Height="32" Margin="0,0,0,8">
+                                <ComboBoxItem Content="None (Layer)" />
+                                <ComboBoxItem Content="Action" />
+                                <ComboBoxItem Content="Type Text" />
+                                <ComboBoxItem Content="Send Keys" />
+                                <ComboBoxItem Content="Execute Program" />
+                                <ComboBoxItem Content="Set Theme" />
+                            </ComboBox>
+
+                            <TextBlock Text="Action/Value" FontSize="11" Foreground="Gray" Margin="0,0,0,2" />
+                            <ComboBox x:Name="AppDetailActionCombo" Height="32" Margin="0,0,0,8" />
+
+                            <Button x:Name="AppRecordKeyButton" Content="Record Key" Margin="0,0,0,8" Width="120" />
+                            <Button x:Name="DeleteAppButton" Content="Delete App" Foreground="Red" Margin="0,0,0,8" />
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </TabItem>
+
+            <!-- Groups Tab -->
+            <TabItem Header="Groups">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="200" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Group List -->
+                    <Border Grid.Column="0" BorderBrush="Gray" BorderThickness="1">
+                        <DockPanel LastChildFill="True">
+                            <StackPanel DockPanel.Dock="Top" Margin="8" Orientation="Horizontal">
+                                <TextBlock FontWeight="SemiBold" Text="Groups" VerticalAlignment="Center" />
+                                <Button x:Name="AddGroupButton" Content="+" Width="30" Margin="8,0,0,0" />
+                            </StackPanel>
+                            <ListBox x:Name="GroupList" DockPanel.Dock="Top" Margin="8,0,8,8" />
+                        </DockPanel>
+                    </Border>
+
+                    <!-- Group Editor -->
+                    <Border Grid.Column="1" BorderBrush="Gray" BorderThickness="1" Margin="16,0,0,0">
+                        <StackPanel Margin="12" VerticalAlignment="Top">
+                            <TextBlock FontWeight="SemiBold" Text="Group Details" Margin="0,0,0,12" />
+                            
+                            <TextBlock Text="Group Name" FontSize="11" Foreground="Gray" Margin="0,0,0,2" />
+                            <TextBox x:Name="GroupNameBox" Height="32" Margin="0,0,0,8" />
+
+                            <TextBlock Text="Process Names (comma-separated)" FontSize="11" Foreground="Gray" Margin="0,0,0,2" />
+                            <TextBox x:Name="GroupProcessesBox" Height="80" Margin="0,0,0,8" TextWrapping="Wrap" AcceptsReturn="True" />
+                            <TextBlock FontSize="9" Foreground="Gray" TextWrapping="Wrap" Margin="0,0,0,12" 
+                                       Text="E.g., 'chrome, firefox, msedge'" />
+
+                            <TextBlock FontWeight="SemiBold" Text="Bindings" Margin="0,0,0,12" />
+                            <TreeView x:Name="GroupBindingTree" Height="300" Margin="0,0,0,8" />
+
+                            <StackPanel Orientation="Horizontal">
+                                <Button x:Name="AddGroupBindingButton" Content="Add Binding" Width="140" Margin="0,0,8,0" />
+                                <Button x:Name="DeleteGroupButton" Content="Delete Group" Foreground="Red" Width="140" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </TabItem>
+        </TabControl>
+
+        <!-- Footer -->
+        <StackPanel DockPanel.Dock="Bottom" Margin="16,8,16,16" Orientation="Horizontal" Height="40">
+            <Button x:Name="CancelButton" Width="100" Content="Cancel" />
+            <Button x:Name="SaveCloseButton" Width="100" Content="Save &amp; Close" Margin="8,0,0,0" Foreground="Green" FontWeight="SemiBold" />
+            <TextBlock Margin="16,0,0,0" VerticalAlignment="Center" Foreground="Gray" FontSize="11" TextWrapping="Wrap" 
+                       Text="Keymaps are validated on save. Changes require app reload to take effect." />
+        </StackPanel>
+    </DockPanel>
+</Window>

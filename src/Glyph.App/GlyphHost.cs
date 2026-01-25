@@ -246,6 +246,31 @@ public sealed class GlyphHost : IDisposable
                         });
                         return;
                     }
+                    
+                    if (string.Equals(result.Action.ActionId, "openKeymapEditor", StringComparison.OrdinalIgnoreCase))
+                    {
+                        System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
+                        {
+                            var window = System.Windows.Application.Current.Windows.OfType<UI.KeymapEditorWindow>().FirstOrDefault() ?? 
+                                         new UI.KeymapEditorWindow(Glyph.App.Config.AppConfig.Load(), _engine);
+
+                            if (!window.IsVisible)
+                            {
+                                window.Show();
+                            }
+
+                            if (window.WindowState == WindowState.Minimized)
+                            {
+                                window.WindowState = WindowState.Normal;
+                            }
+
+                            window.Activate();
+                            window.Topmost = true;
+                            window.Topmost = false;
+                            window.Focus();
+                        });
+                        return;
+                    }
             if (string.Equals(result.Action.ActionId, "quitGlyph", StringComparison.OrdinalIgnoreCase))
             {
                 System.Windows.Application.Current.Dispatcher.BeginInvoke(() => System.Windows.Application.Current.Shutdown());

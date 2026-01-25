@@ -34,6 +34,7 @@ public sealed class ActionRuntime
 
         "typeNvimDot",
         "openGlyphGui",
+        "openKeymapEditor",
         "quitGlyph",
         // Theme action family (parameterized): setTheme:<ThemeId>
         "setTheme",
