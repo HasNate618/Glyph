@@ -145,6 +145,25 @@ public partial class OverlayWindow : Window
 
         var width = ActualWidth;
         var height = ActualHeight;
+
+        // If the window hasn't been measured/rendered yet (first show), ActualWidth/Height
+        // may be 0. Fall back to measuring the root panel to compute desired size so
+        // we can correctly position the overlay even before it's visible.
+        if (width <= 0 || height <= 0)
+        {
+            try
+            {
+                RootPanel.Measure(new System.Windows.Size(double.PositiveInfinity, double.PositiveInfinity));
+                var ds = RootPanel.DesiredSize;
+                if (ds.Width > 0) width = ds.Width;
+                if (ds.Height > 0) height = ds.Height;
+            }
+            catch
+            {
+                // ignore and fall through to the existing guard
+            }
+        }
+
         if (width <= 0 || height <= 0)
         {
             return;
