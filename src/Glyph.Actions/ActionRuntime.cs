@@ -386,6 +386,7 @@ public sealed class ActionRuntime
                 UseShellExecute = true,
                 WindowStyle = ProcessWindowStyle.Hidden,
             };
+            psi.WorkingDirectory = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
 
             var proc = Process.Start(psi);
             if (proc is null)
@@ -493,11 +494,7 @@ public sealed class ActionRuntime
                 Arguments = argsNorm,
                 UseShellExecute = true,
             };
-
-            if (!string.IsNullOrWhiteSpace(cwdNorm))
-            {
-                psi.WorkingDirectory = cwdNorm;
-            }
+            psi.WorkingDirectory = cwdNorm ?? Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
 
             var proc = Process.Start(psi);
             if (proc is null)
