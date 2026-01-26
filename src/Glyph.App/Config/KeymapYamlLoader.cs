@@ -207,10 +207,19 @@ public sealed class YamlKeymapProvider : IKeymapProvider
         var keyTokens = node.KeyTokens;
         var label = (node.Label ?? string.Empty).Trim();
 
-        if ((key.Length == 0 && (keyTokens is null || keyTokens.Count == 0)) || label.Length == 0)
+        // Key or KeyTokens must be present. Label is optional — default to the key text
+        // or a joined token representation when not provided.
+        if (key.Length == 0 && (keyTokens is null || keyTokens.Count == 0))
         {
             skippedInvalid++;
             return;
+        }
+
+        if (string.IsNullOrEmpty(label))
+        {
+            if (!string.IsNullOrEmpty(key)) label = key;
+            else if (keyTokens is { Count: > 0 }) label = string.Join(" ", keyTokens);
+            else label = string.Empty;
         }
 
         if (key.Any(char.IsWhiteSpace))
@@ -366,10 +375,18 @@ public sealed class YamlKeymapProvider : IKeymapProvider
         var keyTokens = node.KeyTokens;
         var label = (node.Label ?? string.Empty).Trim();
 
-        if ((key.Length == 0 && (keyTokens is null || keyTokens.Count == 0)) || label.Length == 0)
+        // Require a key or explicit keyTokens. Label is optional — default to key or tokens.
+        if (key.Length == 0 && (keyTokens is null || keyTokens.Count == 0))
         {
             skippedInvalid++;
             return;
+        }
+
+        if (string.IsNullOrEmpty(label))
+        {
+            if (!string.IsNullOrEmpty(key)) label = key;
+            else if (keyTokens is { Count: > 0 }) label = string.Join(" ", keyTokens);
+            else label = string.Empty;
         }
 
         if (key.Any(char.IsWhiteSpace))

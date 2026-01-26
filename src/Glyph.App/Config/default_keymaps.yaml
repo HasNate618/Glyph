@@ -58,7 +58,7 @@ bindings:
       - key: b
         label: Previous Track
         action: mediaPrev
-      - key: v
+      - key: m
         label: Toggle Volume Mute
         action: volumeMute
 
@@ -76,7 +76,7 @@ bindings:
         label: Shutdown
         exec: shutdown
         execArgs: '/s /t 0'
-      - key: rr
+      - key: rs
         label: Restart
         exec: shutdown
         execArgs: '/r /t 0'
@@ -337,7 +337,7 @@ apps:
   - process: Discord
     bindings:
       - key: m
-        label: Toggle Mute (Discord)
+        label: Toggle Mute
         send: Ctrl+Shift+M
 
   - process: WindowsTerminal
