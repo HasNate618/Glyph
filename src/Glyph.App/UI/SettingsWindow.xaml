@@ -24,7 +24,7 @@
                 <TextBlock FontSize="20" FontWeight="SemiBold" Text="Glyph Settings" />
                 <TextBlock FontSize="11" Foreground="Gray" Margin="0,4,0,0" x:Name="VersionText" Text="Version (loading...)" />
             </StackPanel>
-            <TextBlock Grid.Column="1" x:Name="CurrentGlyphText" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="Gray" Text="Glyph: (loading...)" FontSize="12" />
+            <!-- Current glyph moved into the Glyph Key section below -->
         </Grid>
 
         <!-- Info section explaining Glyph (native GroupBox style) -->
@@ -47,6 +47,8 @@
                         <Button x:Name="RecordButton" Width="120" Padding="8,4" Content="Record" />
                         <TextBlock x:Name="RecordedGlyphText" Margin="12,0,0,0" VerticalAlignment="Center" Text="(not recording)" Foreground="#666" />
                     </StackPanel>
+                    
+                    <TextBlock x:Name="CurrentGlyphText" Margin="4,8,0,0" Foreground="#666" FontSize="12" Text="Glyph: (loading...)" />
                 </StackPanel>
             </GroupBox>
 
