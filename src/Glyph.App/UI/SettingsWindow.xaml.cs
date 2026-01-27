@@ -266,6 +266,20 @@ public partial class SettingsWindow : Window
             {
                 RecordedGlyphText.Text = "(not recording)";
             }
+            // Persist and apply the new glyph sequence immediately when recording stops.
+            try
+            {
+                SaveConfigInternal(userInitiated: true);
+                var cfg = AppConfig.Load();
+                if (System.Windows.Application.Current is Glyph.App.App app)
+                {
+                    app.ApplyConfig(cfg);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error("Failed to save/apply glyph after recording", ex);
+            }
         }
     }
 

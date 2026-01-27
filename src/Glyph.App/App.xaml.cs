@@ -66,6 +66,26 @@ public partial class App : System.Windows.Application
         // Tray icon for background UX
         _tray = new TrayIconService();
         _tray.Start();
+
+        // Show Settings window on first run so users notice Glyph is running.
+        try
+        {
+            var cfg = Glyph.App.Config.AppConfig.Load();
+            if (!cfg.HasShownInitialGui)
+            {
+                // Mark as shown before opening to avoid reentrancy on failures.
+                cfg.HasShownInitialGui = true;
+                Glyph.App.Config.AppConfig.Save(cfg);
+
+                // Open Settings window on the UI thread.
+                var settings = new Glyph.App.UI.SettingsWindow();
+                settings.Show();
+            }
+        }
+        catch
+        {
+            // Best-effort; don't crash startup if settings window fails to open.
+        }
     }
 
     private static void TrySetWorkingDirectoryToExecutableDirectory()

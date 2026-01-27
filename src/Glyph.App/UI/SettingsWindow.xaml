@@ -58,9 +58,9 @@
                         <Button x:Name="OpenThemesFolderButton" Margin="8,0,0,0" Padding="6,4" Content="Open Themes Folder" />
                     </StackPanel>
 
-                    <CheckBox x:Name="BreadcrumbsModeCheckBox" Margin="0,4,0,6" Content="Enable breadcrumbs mode" />
+                    <CheckBox x:Name="BreadcrumbsModeCheckBox" Margin="0,4,0,6" Content="Enable breadcrumbs mode (show only inline breadcrumbs)" />
                     <TextBlock TextWrapping="Wrap" Foreground="Gray" FontSize="10" LineHeight="14">
-                        Breadcrumbs show hints and available keys as you type, helping you navigate your keymaps.
+                        When enabled, the overlay shows only compact breadcrumbs/hints as you type — it does not display the full keymap list. Use this for a minimal, non-distracting overlay.
                     </TextBlock>
                 </StackPanel>
             </GroupBox>
@@ -80,7 +80,7 @@
                         <Run FontWeight="SemiBold">1. Set your Glyph key:</Run> Click Record above and press the key (e.g., Capslock, CapsLock+Shift).
                     </TextBlock>
                     <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}" Margin="0,0,0,8" LineHeight="16">
-                        <Run FontWeight="SemiBold">2. Configure keymaps:</Run> Edit the keymaps YAML in the Keymap Editor (in Settings). Define key sequences and actions.
+                        <Run FontWeight="SemiBold">2. Configure keymaps:</Run> Edit the keymaps YAML in the Keymap Editor (in Settings). Define key sequences and actions. Tip: enable Breadcrumbs mode for a compact overlay that shows only inline hints instead of the full keymap list.
                     </TextBlock>
                     <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}" Margin="0,0,0,8" LineHeight="16">
                         <Run FontWeight="SemiBold">3. Customize themes:</Run> Choose a theme above or create your own in the Themes folder (JSON).

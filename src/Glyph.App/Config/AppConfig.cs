@@ -20,6 +20,9 @@ public sealed class AppConfig
     public string? BaseTheme { get; set; }
     public bool BreadcrumbsMode { get; set; }
     public bool StartWithWindows { get; set; }
+        // Internal flag to indicate whether the initial GUI has already been shown to the user.
+        // Defaults to false so the Settings window can be shown on first startup.
+        public bool HasShownInitialGui { get; set; }
 
     public static string ConfigPath => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
@@ -42,6 +45,7 @@ public sealed class AppConfig
                     BaseTheme = null,
                     BreadcrumbsMode = false,
                     StartWithWindows = false
+                    ,HasShownInitialGui = false
                 };
                 Save(cfg);
                 return cfg;
