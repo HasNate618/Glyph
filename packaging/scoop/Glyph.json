@@ -1,0 +1,27 @@
+{
+  "version": "0.1.4",
+  "description": "A modern, highly configurable leader-key driven command overlay for Windows.",
+  "homepage": "https://github.com/HasNate618/Glyph",
+  "license": "MIT",
+  "architecture": {
+    "64bit": {
+      "url": "https://github.com/HasNate618/Glyph/releases/download/v0.1.4/Glyph-win-x64-v0.1.4.zip",
+      "hash": "sha256:8e04b943ab5fbbab79c2a7ed7ae2b09afbd1deb408ae0c69797a25687ce94bc0"
+    },
+    "arm64": {
+      "url": "https://github.com/HasNate618/Glyph/releases/download/v0.1.4/Glyph-win-arm64-v0.1.4.zip",
+      "hash": "sha256:af90091ea1a4e7d6542ab8c65d7872e84ffcb5ae0bea31316b7ec0fbfd02494d"
+    }
+  },
+  "bin": [
+    "Glyph.App.exe"
+  ]
+  ,
+  "post_install": [
+    "$target = Join-Path $dir 'Glyph.App.exe'",
+    "$cmdLines = @('@echo off', '\"' + $target + '\" %*')",
+    "Set-Content -Path (Join-Path $env:USERPROFILE 'scoop\\shims\\glyph.cmd') -Value $cmdLines -Encoding ASCII",
+    "$psLines = @('& \"' + $target + '\" $args')",
+    "Set-Content -Path (Join-Path $env:USERPROFILE 'scoop\\shims\\glyph.ps1') -Value $psLines -Encoding ASCII"
+  ]
+}
