@@ -64,6 +64,10 @@ public partial class SettingsWindow : Window
     {
         try
         {
+            // Display version
+            var version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
+            VersionText.Text = $"Version {version?.Major}.{version?.Minor}.{version?.Build}";
+
             var cfg = AppConfig.Load();
 
             var leaderSeq = NormalizeGlyphSequence(cfg);

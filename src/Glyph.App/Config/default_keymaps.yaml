@@ -365,6 +365,12 @@ apps:
       - key: 3
         label: Tab 3
         send: Ctrl+Alt+3
+      - key: t
+        label: New Tab
+        send: Ctrl+Shift+T
+      - key: w
+        label: Close Tab
+        send: Ctrl+Shift+W
 
   - process: Code
     bindings:
