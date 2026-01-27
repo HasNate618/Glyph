@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Glyph Settings" Height="700" Width="680"
         WindowStartupLocation="CenterScreen">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
     <Grid Margin="16">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -66,9 +67,8 @@
         </StackPanel>
 
         <StackPanel Grid.Row="4" Orientation="Vertical" Margin="0,0,0,12">
-            <Button x:Name="ApplyButton" Width="140" Padding="8,6" Content="Apply Changes" />
-            <TextBlock TextWrapping="Wrap" Foreground="Gray" Margin="0,8,0,0" FontSize="11" LineHeight="14">
-                💾 Settings auto-save. Use <Bold>Apply</Bold> to reload the running instance.
+            <TextBlock TextWrapping="Wrap" Foreground="Gray" Margin="0,0,0,0" FontSize="11" LineHeight="14">
+                💾 Settings auto-save — changes apply immediately to the running instance.
             </TextBlock>
         </StackPanel>
 
@@ -92,4 +92,5 @@
             </ScrollViewer>
         </GroupBox>
     </Grid>
+    </ScrollViewer>
 </Window>

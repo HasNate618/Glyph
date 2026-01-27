@@ -15,7 +15,6 @@ public partial class SettingsWindow : Window
     public SettingsWindow()
     {
         InitializeComponent();
-        ApplyButton.Click += (_, _) => ApplyConfig();
 
         OpenThemesFolderButton.Click += (_, _) =>
         {
@@ -32,7 +31,14 @@ public partial class SettingsWindow : Window
         RecordButton.Click += (_, _) => ToggleRecording();
 
         Loaded += (_, _) => LoadToUi();
+
+        // Live-apply when the user changes theme or breadcrumbs
+        ThemeCombo.SelectionChanged += ThemeCombo_SelectionChanged;
+        BreadcrumbsModeCheckBox.Checked += BreadcrumbsModeCheckChanged;
+        BreadcrumbsModeCheckBox.Unchecked += BreadcrumbsModeCheckChanged;
     }
+
+    private bool _suppressUiEvents = false;
 
     private static string GetConfigDir()
     {
@@ -64,6 +70,7 @@ public partial class SettingsWindow : Window
     {
         try
         {
+            _suppressUiEvents = true;
             // Display version
             var version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
             VersionText.Text = $"Version {version?.Major}.{version?.Minor}.{version?.Build}";
@@ -76,10 +83,48 @@ public partial class SettingsWindow : Window
 
             LoadThemesIntoCombo(cfg.BaseTheme);
             BreadcrumbsModeCheckBox.IsChecked = cfg.BreadcrumbsMode;
+            _suppressUiEvents = false;
         }
         catch (Exception ex)
         {
             Logger.Error("Failed to load settings to UI", ex);
+        }
+    }
+
+    private void ThemeCombo_SelectionChanged(object? sender, System.Windows.Controls.SelectionChangedEventArgs e)
+    {
+        if (_suppressUiEvents) return;
+        try
+        {
+            // Save selection and immediately apply to running instance
+            SaveConfigInternal(userInitiated: false);
+            var cfg = AppConfig.Load();
+            if (System.Windows.Application.Current is Glyph.App.App app)
+            {
+                app.ApplyConfig(cfg);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.Error("Failed to apply theme change live", ex);
+        }
+    }
+
+    private void BreadcrumbsModeCheckChanged(object? sender, RoutedEventArgs e)
+    {
+        if (_suppressUiEvents) return;
+        try
+        {
+            SaveConfigInternal(userInitiated: false);
+            var cfg = AppConfig.Load();
+            if (System.Windows.Application.Current is Glyph.App.App app)
+            {
+                app.ApplyConfig(cfg);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.Error("Failed to apply breadcrumbs change live", ex);
         }
     }
 
