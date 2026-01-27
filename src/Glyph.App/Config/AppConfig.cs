@@ -41,11 +41,13 @@ public sealed class AppConfig
             {
                 var cfg = new AppConfig
                 {
-                    Glyph = null,
-                    BaseTheme = null,
+                    // Default Glyph: Right Alt (VK_RMENU = 0xA5)
+                    Glyph = new GlyphKeyConfig { VkCode = 0xA5 },
+                    // Default visual theme
+                    BaseTheme = "Fluent",
                     BreadcrumbsMode = false,
-                    StartWithWindows = false
-                    ,HasShownInitialGui = false
+                    StartWithWindows = false,
+                    HasShownInitialGui = false
                 };
                 Save(cfg);
                 return cfg;

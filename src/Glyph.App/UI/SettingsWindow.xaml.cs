@@ -329,7 +329,8 @@ public partial class SettingsWindow : Window
 
         return new List<GlyphKeyConfig>
         {
-            new GlyphKeyConfig { Ctrl = false, Shift = false, Alt = false, Win = false, VkCode = 0x7B }
+            // Default glyph: Right Alt (VK_RMENU = 0xA5)
+            new GlyphKeyConfig { Ctrl = false, Shift = false, Alt = false, Win = false, VkCode = 0xA5 }
         };
     }
 
