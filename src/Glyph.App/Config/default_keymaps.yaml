@@ -31,6 +31,9 @@ bindings:
         label: VSCode
         exec: code
       - key: s
+        label: Settings
+        send: Win+I
+      - key: sp
         label: Spotify
         exec: '%APPDATA%\Spotify\Spotify.exe'
       - key: st
@@ -96,8 +99,8 @@ bindings:
       - key: t
         label: Alt+Tab
         send: Alt+Tab
-      - key: w
-        label: Close (Alt+F4)
+      - key: q
+        label: Close
         send: Alt+F4
       - key: v
         label: Task View
@@ -117,13 +120,13 @@ bindings:
           - key: down
             label: Snap Minimize
             send: Win+Down
-      - key: m
+      - key: v
         label: Move Between Monitors
         children:
-          - key: left
+          - key: h
             label: Move Left Monitor
             send: Win+Shift+Left
-          - key: right
+          - key: l
             label: Move Right Monitor
             send: Win+Shift+Right
 
