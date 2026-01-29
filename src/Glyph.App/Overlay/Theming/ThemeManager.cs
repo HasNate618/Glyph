@@ -158,7 +158,8 @@ public static class ThemeManager
 
         // Backdrop defaults
         // Supported values: Auto, None, DwmMain, DwmTransient, DwmTabbed, Acrylic, Blur, HostBackdrop
-        d["Glyph.Overlay.WindowBackdrop"] = "Auto";
+        // Default to None so only themes that explicitly request Acrylic will enable blur effects.
+        d["Glyph.Overlay.WindowBackdrop"] = "None";
         d["Glyph.Overlay.WindowAcrylicColor"] = "#991B1B1B";
         d["Glyph.Overlay.WindowCorners"] = "Round";
 
@@ -273,6 +274,7 @@ public static class ThemeManager
             merged.Insert(insertIndex, jsonDict);
             _baseDictionary = jsonDict;
             Logger.Info($"Theme applied (JSON): {themeId}");
+            try { RefreshAllOverlays(); } catch { }
             return;
         }
 
@@ -283,6 +285,7 @@ public static class ThemeManager
             merged.Insert(insertIndex, fluentDict);
             _baseDictionary = fluentDict;
             Logger.Info("Theme applied (JSON fallback): Fluent");
+            try { RefreshAllOverlays(); } catch { }
             return;
         }
 
@@ -336,6 +339,30 @@ public static class ThemeManager
         {
             Logger.Error("Failed to extract built-in themes", ex);
         }
+    }
+
+    private static void RefreshAllOverlays()
+    {
+        try
+        {
+            System.Windows.Application.Current?.Dispatcher?.BeginInvoke(new Action(() =>
+            {
+                try
+                {
+                    foreach (System.Windows.Window w in System.Windows.Application.Current.Windows)
+                    {
+                        try
+                        {
+                            var mi = w.GetType().GetMethod("RefreshVisualEffects");
+                            mi?.Invoke(w, null);
+                        }
+                        catch { }
+                    }
+                }
+                catch { }
+            }));
+        }
+        catch { }
     }
 
     private static bool TryLoadThemeJson(string themeId, bool breadcrumbsMode, out ResourceDictionary dictionary)

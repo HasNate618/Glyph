@@ -74,17 +74,78 @@ public partial class OverlayWindow : Window
         {
             return;
         }
-
         var backdrop = GetStringResource("Glyph.Overlay.WindowBackdrop") ?? "Auto";
         var acrylicColor = GetStringResource("Glyph.Overlay.WindowAcrylicColor") ?? "#991B1B1B";
         var corners = GetStringResource("Glyph.Overlay.WindowCorners") ?? "Round";
 
         WindowEffects.ApplyBackdrop(_hwnd, backdrop, acrylicColor);
 
+        // If the theme requests no backdrop, ensure the underlying window background
+        // is opaque and matches the panel color so square HWND corners do not show.
+        try
+        {
+            if (string.Equals(backdrop, "None", StringComparison.OrdinalIgnoreCase))
+            {
+                System.Windows.Media.SolidColorBrush? opaqueBrush = null;
+                try
+                {
+                    var val = System.Windows.Application.Current?.Resources["Glyph.Overlay.BackgroundBrush"];
+                    if (val is SolidColorBrush sb)
+                    {
+                        var c = sb.Color;
+                        opaqueBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(255, c.R, c.G, c.B));
+                        if (opaqueBrush.CanFreeze) opaqueBrush.Freeze();
+                    }
+                }
+                catch { }
+
+                if (opaqueBrush is null)
+                {
+                    try
+                    {
+                        var conv = System.Windows.Media.ColorConverter.ConvertFromString(acrylicColor);
+                        if (conv is System.Windows.Media.Color parsed)
+                        {
+                            opaqueBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(255, parsed.R, parsed.G, parsed.B));
+                            if (opaqueBrush.CanFreeze) opaqueBrush.Freeze();
+                        }
+                    }
+                    catch { }
+                }
+
+                if (opaqueBrush is not null)
+                {
+                    Background = opaqueBrush;
+                }
+                else
+                {
+                    Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 0x1B, 0x1B, 0x1B));
+                }
+            }
+            else
+            {
+                Background = System.Windows.Media.Brushes.Transparent;
+            }
+        }
+        catch
+        {
+            // best-effort
+        }
+
         if (!string.Equals(corners, "None", StringComparison.OrdinalIgnoreCase))
         {
             WindowEffects.TrySetRoundedCorners(_hwnd);
         }
+    }
+
+    // External callers can invoke this to force re-application of native backdrops / corners
+    public void RefreshVisualEffects()
+    {
+        try
+        {
+            ApplyVisualEffects();
+        }
+        catch { }
     }
 
     private void PositionFromTheme()

@@ -31,7 +31,7 @@
         <GroupBox Grid.Row="1" Header="About Glyph" Margin="0,0,0,12">
             <StackPanel Margin="8">
                 <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}" LineHeight="18">
-                    Glyph is a <Bold>leader-key overlay</Bold> for Windows. Press the <Bold>Glyph key</Bold> to open an overlay, then type short key sequences to trigger actions. Configure your keymaps in YAML, use themes to customize the appearance, and enable breadcrumbs mode to see hints as you type.
+                    Glyph is a <Bold>leader-key overlay</Bold> for Windows. Press the <Bold>Glyph key</Bold> to open an overlay, then type short key sequences to trigger actions. Configure your keymaps in YAML, and use themes to customize the appearance.
                 </TextBlock>
             </StackPanel>
         </GroupBox>
@@ -62,7 +62,7 @@
 
                     <CheckBox x:Name="BreadcrumbsModeCheckBox" Margin="0,4,0,6" Content="Enable breadcrumbs mode (show only inline breadcrumbs)" />
                     <TextBlock TextWrapping="Wrap" Foreground="Gray" FontSize="10" LineHeight="14">
-                        When enabled, the overlay shows only compact breadcrumbs/hints as you type — it does not display the full keymap list. Use this for a minimal, non-distracting overlay.
+                        When enabled, the overlay shows only compact breadcrumbs/hints as you type; not the full keymap list. Use this for a minimal, non-distracting overlay.
                     </TextBlock>
                 </StackPanel>
             </GroupBox>

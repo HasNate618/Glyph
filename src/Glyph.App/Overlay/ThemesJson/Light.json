@@ -37,6 +37,10 @@
     "Glyph.Overlay.PanelCornerRadius": 10,
     "Glyph.Overlay.KeycapCornerRadius": 6
   },
+  "strings": {
+    "Glyph.Overlay.WindowBackdrop": "None",
+    "Glyph.Overlay.WindowCorners": "Round"
+  },
   "numbers": {
     "Glyph.Overlay.SustainMs": 300
   }
