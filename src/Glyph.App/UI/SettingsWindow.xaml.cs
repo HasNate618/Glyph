@@ -79,7 +79,8 @@ public partial class SettingsWindow : Window
 
             var leaderSeq = NormalizeGlyphSequence(cfg);
             CurrentGlyphText.Text = DescribeGlyphSequence(leaderSeq);
-            RecordedGlyphText.Text = DescribeGlyphSequence(leaderSeq);
+            // By default the recorded-glyph UI shows recording state, not the effective glyph.
+            RecordedGlyphText.Text = "(not recording)";
 
             LoadThemesIntoCombo(cfg.BaseTheme);
             BreadcrumbsModeCheckBox.IsChecked = cfg.BreadcrumbsMode;
