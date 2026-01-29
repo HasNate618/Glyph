@@ -194,6 +194,25 @@ bindings:
           - key: p
             label: Phone
             type: '+1 (555) 123-4567'
+          
+          # Date/time insertions
+          # Use .NET DateTime format strings. Examples:
+          #  yyyy-MM-dd        -> 2026-01-28
+          #  HH:mm:ss          -> 14:30:05 (24-hour)
+          #  hh:mm tt          -> 02:30 PM (12-hour with AM/PM)
+          #  h:mm:ss tt        -> 2:30:05 PM (12-hour, no leading zero)
+          #  yyyy-MM-dd HH:mm  -> 2026-01-28 14:30
+          #  MMMM d, yyyy      -> April 9, 2019 (full month name, no leading zero)
+          # Token syntax: {{now:<format>}} for local time, {{utcnow:<format>}} for UTC.
+          - key: d
+            label: Insert Date
+            type: '{{now:MMMM d, yyyy}}'
+          - key: t
+            label: Insert Time
+            type: '{{now:h:mm:ss tt}}'
+          - key: dt
+            label: Insert Date & Time
+            type: '{{now:MMMM d, yyyy h:mm:ss tt}}'
 
   - key: ","
     label: Glyph Settings
@@ -352,10 +371,14 @@ apps:
         send: Ctrl+, 
       - key: p
         label: Switch to Powershell
-        type: powershell
+        steps:
+          - type: powershell
+          - send: Enter
       - key: c
         label: Switch to Command Prompt
-        type: cmd
+        steps:
+          - type: cmd
+          - send: Enter
       - key: 1
         label: Tab 1
         send: Ctrl+Alt+1

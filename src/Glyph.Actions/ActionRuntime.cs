@@ -67,7 +67,9 @@ public sealed class ActionRuntime
         // Handle TypeText first, then SendSpec (for chaining)
         if (!string.IsNullOrWhiteSpace(request.TypeText))
         {
-            await TypeTextAsync(request.TypeText, cancellationToken);
+            // Resolve built-in placeholders (e.g. {{now:yyyy-MM-dd}}) at trigger time.
+            var resolved = Glyph.Actions.Builtins.ResolveBuiltins(request.TypeText);
+            await TypeTextAsync(resolved, cancellationToken);
         }
 
         if (!string.IsNullOrWhiteSpace(request.SendSpec))
