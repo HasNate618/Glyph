@@ -208,9 +208,13 @@ public static class ThemeManager
                 items.Add((id, name));
             }
 
-            return items
+            var ordered = items
                 .OrderBy(t => t.Name, StringComparer.OrdinalIgnoreCase)
                 .ToList();
+
+            // Insert a System selection at the top, which maps to Light or Dark depending on OS setting.
+            ordered.Insert(0, ("System", "Use System Setting"));
+            return ordered;
         }
         catch
         {
@@ -222,7 +226,7 @@ public static class ThemeManager
     {
         try
         {
-            var themeId = "Fluent";
+            var themeId = "System";
             var breadcrumbsMode = false;
 
             try
@@ -238,6 +242,29 @@ public static class ThemeManager
             catch
             {
                 // best-effort; fall back to Fluent
+            }
+
+            // If the special "System" theme is selected, map to Light or Dark based on OS setting
+            if (string.Equals(themeId, "System", StringComparison.OrdinalIgnoreCase))
+            {
+                try
+                {
+                    using var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey("Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize", false);
+                    var val = key?.GetValue("AppsUseLightTheme");
+                    if (val is int intVal)
+                    {
+                        themeId = intVal == 1 ? "Light" : "Dark";
+                    }
+                    else
+                    {
+                        // default to Light if missing
+                        themeId = "Light";
+                    }
+                }
+                catch
+                {
+                    themeId = "Light";
+                }
             }
 
             ApplyTheme(themeId, breadcrumbsMode);

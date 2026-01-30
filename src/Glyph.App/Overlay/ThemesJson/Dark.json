@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "id": "Dark",
+  "name": "Dark",
+  "description": "Simple dark theme (system dark variant)",
+  "inherits": null,
+  "brushes": {
+    "Glyph.Overlay.BackgroundBrush": "#BF111111",
+    "Glyph.Overlay.SequenceForeground": "#FFECECEC",
+    "Glyph.Overlay.OptionForeground": "#FFAAAAAA",
+
+    "Glyph.Overlay.KeycapBackground": "#FF2E2E2E",
+    "Glyph.Overlay.KeycapForeground": "#FFFFFFFF",
+
+    "Glyph.Overlay.KeycapBackgroundAction": "#FF2E2E2E",
+    "Glyph.Overlay.KeycapForegroundAction": "#FFFFFFFF",
+    "Glyph.Overlay.KeycapBorderAction": "#FF49B3EA",
+
+    "Glyph.Overlay.KeycapBackgroundLayer": "#FF393939",
+    "Glyph.Overlay.KeycapForegroundLayer": "#FF49B3EA"
+  },
+  "fonts": {
+    "Glyph.Overlay.FontFamily": "Segoe UI Variable, Segoe UI, Arial"
+  },
+  "cornerRadii": {
+    "Glyph.Overlay.PanelCornerRadius": 12,
+    "Glyph.Overlay.KeycapCornerRadius": 8
+  },
+  "strings": {
+    "Glyph.Overlay.WindowBackdrop": "None",
+    "Glyph.Overlay.WindowCorners": "Round"
+  },
+  "numbers": {
+    "Glyph.Overlay.SustainMs": 300
+  }
+}

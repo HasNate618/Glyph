@@ -44,7 +44,7 @@ public sealed class AppConfig
                     // Default Glyph: Right Alt (VK_RMENU = 0xA5)
                     Glyph = new GlyphKeyConfig { VkCode = 0xA5 },
                     // Default visual theme
-                    BaseTheme = "Fluent",
+                    BaseTheme = "System",
                     BreadcrumbsMode = false,
                     StartWithWindows = false,
                     HasShownInitialGui = false

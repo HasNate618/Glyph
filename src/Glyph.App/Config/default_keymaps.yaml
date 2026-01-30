@@ -253,12 +253,15 @@ bindings:
           - key: n
             label: Nord
             setTheme: 'nord'
-          - key: d
+          - key: u
             label: Darcula
             setTheme: 'darcula'
           - key: r
             label: RosePine
             setTheme: 'rosePine'
+          - key: d
+            label: Dark
+            setTheme: 'dark'
           - key: t
             label: Tokyo Night
             setTheme: 'tokyoNight'
