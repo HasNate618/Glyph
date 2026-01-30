@@ -5,22 +5,14 @@
   "description": "RosePine-inspired dark theme",
   "breadcrumbs": {
     "strings": {
-      "Glyph.Overlay.ScreenAnchor": "BottomLeft"
+      "Glyph.Overlay.ScreenAnchor": "Center"
     },
     "thickness": {
-      "Glyph.Overlay.PanelPadding": "12,8,12,8"
+      "Glyph.Overlay.PanelPadding": "10,6,10,2"
     },
     "numbers": {
-      "Glyph.Overlay.SustainMs": 300
-    },
-    "brushes": {
-      "Glyph.Overlay.SequenceForeground": "#FFE0DEF4",
-      "Glyph.Overlay.OptionForeground": "#FF6E6A86",
-      "Glyph.Overlay.KeycapForeground": "#FFFFFFFF",
-      "Glyph.Overlay.KeycapBackground": "#FF26233C",
-      "Glyph.Overlay.KeycapBackgroundAction": "#FFEB6F92",
-      "Glyph.Overlay.KeycapForegroundAction": "#FFFFFFFF",
-      "Glyph.Overlay.KeycapBorderAction": "#FF31748F"
+      "Glyph.Overlay.SustainMs": 300,
+      "Glyph.Overlay.OffsetY": 420
     }
   },
   "inherits": null,

@@ -5,13 +5,14 @@
   "description": "Light theme",
   "breadcrumbs": {
     "strings": {
-      "Glyph.Overlay.ScreenAnchor": "BottomLeft"
+      "Glyph.Overlay.ScreenAnchor": "Center"
     },
     "thickness": {
-      "Glyph.Overlay.PanelPadding": "12,8,12,8"
+      "Glyph.Overlay.PanelPadding": "10,6,10,2"
     },
     "numbers": {
-      "Glyph.Overlay.SustainMs": 300
+      "Glyph.Overlay.SustainMs": 300,
+      "Glyph.Overlay.OffsetY": 420
     }
   },
   "inherits": null,

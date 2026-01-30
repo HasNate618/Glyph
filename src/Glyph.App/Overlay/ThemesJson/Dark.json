@@ -3,6 +3,18 @@
   "id": "Dark",
   "name": "Dark",
   "description": "Simple dark theme (system dark variant)",
+  "breadcrumbs": {
+    "strings": {
+      "Glyph.Overlay.ScreenAnchor": "Center"
+    },
+    "thickness": {
+      "Glyph.Overlay.PanelPadding": "10,6,10,2"
+    },
+    "numbers": {
+      "Glyph.Overlay.SustainMs": 300,
+      "Glyph.Overlay.OffsetY": 420
+    }
+  },
   "inherits": null,
   "brushes": {
     "Glyph.Overlay.BackgroundBrush": "#BF111111",
