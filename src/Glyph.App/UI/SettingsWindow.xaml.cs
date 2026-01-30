@@ -4,6 +4,7 @@ using System.Windows;
 using Glyph.App.Overlay.Theming;
 using Glyph.Core.Logging;
 using Glyph.App.Config;
+using Glyph.App.Startup;
 using System.Linq;
 using System.Windows.Input;
 using System.Windows.Threading;
@@ -36,6 +37,8 @@ public partial class SettingsWindow : Window
         ThemeCombo.SelectionChanged += ThemeCombo_SelectionChanged;
         BreadcrumbsModeCheckBox.Checked += BreadcrumbsModeCheckChanged;
         BreadcrumbsModeCheckBox.Unchecked += BreadcrumbsModeCheckChanged;
+        StartWithWindowsCheckBox.Checked += StartWithWindowsCheckChanged;
+        StartWithWindowsCheckBox.Unchecked += StartWithWindowsCheckChanged;
     }
 
     private bool _suppressUiEvents = false;
@@ -84,6 +87,7 @@ public partial class SettingsWindow : Window
 
             LoadThemesIntoCombo(cfg.BaseTheme);
             BreadcrumbsModeCheckBox.IsChecked = cfg.BreadcrumbsMode;
+            StartWithWindowsCheckBox.IsChecked = cfg.StartWithWindows;
             _suppressUiEvents = false;
         }
         catch (Exception ex)
@@ -126,6 +130,25 @@ public partial class SettingsWindow : Window
         catch (Exception ex)
         {
             Logger.Error("Failed to apply breadcrumbs change live", ex);
+        }
+    }
+
+    private void StartWithWindowsCheckChanged(object? sender, RoutedEventArgs e)
+    {
+        if (_suppressUiEvents) return;
+        try
+        {
+            SaveConfigInternal(userInitiated: false);
+            var cfg = AppConfig.Load();
+            // StartupManager already called inside SaveConfigInternal, but ensure app config applied if needed
+            if (System.Windows.Application.Current is Glyph.App.App app)
+            {
+                app.ApplyConfig(cfg);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.Error("Failed to apply start-with-windows change live", ex);
         }
     }
 
@@ -206,10 +229,21 @@ public partial class SettingsWindow : Window
             }
 
             cfg.BreadcrumbsMode = BreadcrumbsModeCheckBox.IsChecked == true;
+            cfg.StartWithWindows = StartWithWindowsCheckBox.IsChecked == true;
 
             AppConfig.Save(cfg);
             // Apply immediately
             ThemeManager.Reload();
+
+            // Apply startup registration if needed (best-effort)
+            try
+            {
+                StartupManager.SetEnabled(cfg.StartWithWindows);
+            }
+            catch
+            {
+                // Best-effort
+            }
 
             var leaderSeq = NormalizeGlyphSequence(cfg);
             CurrentGlyphText.Text = DescribeGlyphSequence(leaderSeq);

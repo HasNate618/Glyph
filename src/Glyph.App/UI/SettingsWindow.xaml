@@ -64,6 +64,10 @@
                     <TextBlock TextWrapping="Wrap" Foreground="Gray" FontSize="10" LineHeight="14">
                         When enabled, the overlay shows only compact breadcrumbs/hints as you type; not the full keymap list. Use this for a minimal, non-distracting overlay.
                     </TextBlock>
+                    <CheckBox x:Name="StartWithWindowsCheckBox" Margin="0,8,0,6" Content="Open Glyph at Windows sign-in" />
+                    <TextBlock TextWrapping="Wrap" Foreground="Gray" FontSize="10" LineHeight="14">
+                        When enabled, Glyph will start automatically when you sign in to Windows (per-user). Uses the current installation path.
+                    </TextBlock>
                 </StackPanel>
             </GroupBox>
         </StackPanel>

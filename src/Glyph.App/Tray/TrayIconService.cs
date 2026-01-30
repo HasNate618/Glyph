@@ -6,6 +6,8 @@ using System.Windows;
 
 using Glyph.App.Overlay.Theming;
 using Glyph.App.UI;
+using Glyph.App.Startup;
+using Glyph.App.Config;
 using Glyph.Core.Logging;
 using Glyph.App;
 
@@ -55,6 +57,26 @@ public sealed class TrayIconService : IDisposable
         var openGui = new System.Windows.Forms.ToolStripMenuItem("Open GUI");
         openGui.Click += (_, _) => OpenGui();
 
+        var startOnStartup = new System.Windows.Forms.ToolStripMenuItem("Open on startup")
+        {
+            CheckOnClick = true,
+            Checked = AppConfig.Load().StartWithWindows
+        };
+        startOnStartup.CheckedChanged += (_, _) =>
+        {
+            try
+            {
+                var enabled = startOnStartup.Checked;
+                StartupManager.SetEnabled(enabled);
+                var cfg = AppConfig.Load();
+                cfg.StartWithWindows = enabled;
+                AppConfig.Save(cfg);
+            }
+            catch
+            {
+            }
+        };
+
         var openConfig = new System.Windows.Forms.ToolStripMenuItem("Open Config Folder");
         openConfig.Click += (_, _) => OpenConfigFolder();
 
@@ -65,6 +87,7 @@ public sealed class TrayIconService : IDisposable
         exit.Click += (_, _) => Exit();
 
         menu.Items.Add(openGui);
+        menu.Items.Add(startOnStartup);
         menu.Items.Add(new System.Windows.Forms.ToolStripSeparator());
         menu.Items.Add(openConfig);
         menu.Items.Add(openLogs);

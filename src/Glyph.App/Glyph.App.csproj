@@ -17,6 +17,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
+    <Version>0.2.1</Version>
   </PropertyGroup>
 
   <PropertyGroup>
