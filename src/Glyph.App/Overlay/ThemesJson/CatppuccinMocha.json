@@ -17,7 +17,7 @@
   },
   "inherits": null,
   "brushes": {
-    "Glyph.Overlay.BackgroundBrush": "#BF1E1E2E",
+    "Glyph.Overlay.BackgroundBrush": "#FF1E1E2E",
     "Glyph.Overlay.PanelBorderBrush": "#FF45475A",
     "Glyph.Overlay.SequenceForeground": "#FFCDD6F4",
     "Glyph.Overlay.OptionForeground": "#FFA6ADC8",
