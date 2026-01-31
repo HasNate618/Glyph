@@ -80,52 +80,11 @@ public partial class OverlayWindow : Window
 
         WindowEffects.ApplyBackdrop(_hwnd, backdrop, acrylicColor);
 
-        // If the theme requests no backdrop, ensure the underlying window background
-        // is opaque and matches the panel color so square HWND corners do not show.
+        // Always keep the Window background transparent so the Border's rounded corners show correctly.
+        // The Border element in XAML handles the background fill with proper CornerRadius clipping.
         try
         {
-            if (string.Equals(backdrop, "None", StringComparison.OrdinalIgnoreCase))
-            {
-                System.Windows.Media.SolidColorBrush? opaqueBrush = null;
-                try
-                {
-                    var val = System.Windows.Application.Current?.Resources["Glyph.Overlay.BackgroundBrush"];
-                    if (val is SolidColorBrush sb)
-                    {
-                        var c = sb.Color;
-                        opaqueBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(255, c.R, c.G, c.B));
-                        if (opaqueBrush.CanFreeze) opaqueBrush.Freeze();
-                    }
-                }
-                catch { }
-
-                if (opaqueBrush is null)
-                {
-                    try
-                    {
-                        var conv = System.Windows.Media.ColorConverter.ConvertFromString(acrylicColor);
-                        if (conv is System.Windows.Media.Color parsed)
-                        {
-                            opaqueBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(255, parsed.R, parsed.G, parsed.B));
-                            if (opaqueBrush.CanFreeze) opaqueBrush.Freeze();
-                        }
-                    }
-                    catch { }
-                }
-
-                if (opaqueBrush is not null)
-                {
-                    Background = opaqueBrush;
-                }
-                else
-                {
-                    Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 0x1B, 0x1B, 0x1B));
-                }
-            }
-            else
-            {
-                Background = System.Windows.Media.Brushes.Transparent;
-            }
+            Background = System.Windows.Media.Brushes.Transparent;
         }
         catch
         {

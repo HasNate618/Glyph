@@ -134,6 +134,15 @@ public static class ThemeManager
         d["Glyph.Overlay.PanelPadding"] = new Thickness(20, 14, 20, 14);
         d["Glyph.Overlay.PanelMinWidth"] = 300.0;
         d["Glyph.Overlay.PanelMaxWidth"] = 420.0;
+        d["Glyph.Overlay.PanelCornerRadius"] = new CornerRadius(12);
+        d["Glyph.Overlay.PanelBorderBrush"] = new SolidColorBrush(System.Windows.Media.Color.FromArgb(0x33, 0xFF, 0xFF, 0xFF));
+        d["Glyph.Overlay.PanelBorderThickness"] = new Thickness(1);
+
+        // Visual defaults (colors, fonts)
+        d["Glyph.Overlay.BackgroundBrush"] = new SolidColorBrush(System.Windows.Media.Color.FromArgb(0xBF, 0x1B, 0x1B, 0x1B));
+        d["Glyph.Overlay.SequenceForeground"] = new SolidColorBrush(System.Windows.Media.Color.FromArgb(0xFF, 0xF2, 0xF2, 0xF2));
+        d["Glyph.Overlay.OptionForeground"] = new SolidColorBrush(System.Windows.Media.Color.FromArgb(0xFF, 0xAA, 0xAA, 0xAA));
+        d["Glyph.Overlay.FontFamily"] = new System.Windows.Media.FontFamily("Segoe UI Variable, Segoe UI, Arial");
 
         d["Glyph.Overlay.SequenceFontSize"] = 14.0;
         d["Glyph.Overlay.SequenceMargin"] = new Thickness(0, 0, 0, 8);
@@ -148,7 +157,15 @@ public static class ThemeManager
         d["Glyph.Overlay.KeycapPadding"] = new Thickness(6, 0, 6, 0);
         d["Glyph.Overlay.KeycapMargin"] = new Thickness(0, 0, 4, 0);
         d["Glyph.Overlay.KeycapFontSize"] = 13.0;
+        d["Glyph.Overlay.KeycapCornerRadius"] = new CornerRadius(8);
         d["Glyph.Overlay.KeycapBorderThickness"] = new Thickness(2);
+        d["Glyph.Overlay.KeycapBackground"] = new SolidColorBrush(System.Windows.Media.Color.FromArgb(0xFF, 0x3A, 0x3A, 0x3A));
+        d["Glyph.Overlay.KeycapForeground"] = new SolidColorBrush(Colors.White);
+        d["Glyph.Overlay.KeycapBackgroundAction"] = new SolidColorBrush(System.Windows.Media.Color.FromArgb(0xFF, 0x3A, 0x3A, 0x3A));
+        d["Glyph.Overlay.KeycapForegroundAction"] = new SolidColorBrush(Colors.White);
+        d["Glyph.Overlay.KeycapBorderAction"] = new SolidColorBrush(System.Windows.Media.Color.FromArgb(0xFF, 0x4D, 0xA6, 0xC6));
+        d["Glyph.Overlay.KeycapBackgroundLayer"] = new SolidColorBrush(System.Windows.Media.Color.FromArgb(0xFF, 0x42, 0x42, 0x42));
+        d["Glyph.Overlay.KeycapForegroundLayer"] = new SolidColorBrush(System.Windows.Media.Color.FromArgb(0xFF, 0xF5, 0xF5, 0xF5));
 
         // Placement defaults (match current bottom-right logic)
         d["Glyph.Overlay.ScreenAnchor"] = "BottomRight";

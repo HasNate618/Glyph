@@ -18,6 +18,7 @@
   "inherits": null,
   "brushes": {
     "Glyph.Overlay.BackgroundBrush": "#BF2E3440",
+    "Glyph.Overlay.PanelBorderBrush": "#FF4C566A",
     "Glyph.Overlay.SequenceForeground": "#FFD8DEE9",
     "Glyph.Overlay.OptionForeground": "#FFA1ADB8",
 
@@ -44,5 +45,8 @@
   },
   "numbers": {
     "Glyph.Overlay.SustainMs": 300
+  },
+  "thickness": {
+    "Glyph.Overlay.PanelBorderThickness": "1"
   }
 }

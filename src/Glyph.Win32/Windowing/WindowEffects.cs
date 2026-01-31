@@ -63,6 +63,8 @@ public static class WindowEffects
             if (string.Equals(m, "None", StringComparison.OrdinalIgnoreCase))
             {
                 try { Glyph.Core.Logging.Logger.Info("Backdrop mode: None"); } catch {}
+                // Clear any previously applied backdrop effects
+                TryClearBackdropEffects(hwnd);
                 return;
             }
 
@@ -139,6 +141,37 @@ public static class WindowEffects
         catch
         {
             // best-effort
+        }
+    }
+
+    private static void TryClearBackdropEffects(IntPtr hwnd)
+    {
+        try
+        {
+            // Reset DWMWA_SYSTEMBACKDROP_TYPE to None (1)
+            const int DWMWA_SYSTEMBACKDROP_TYPE = 38;
+            int value = 1; // None
+            DwmSetWindowAttribute(hwnd, DWMWA_SYSTEMBACKDROP_TYPE, ref value, Marshal.SizeOf<int>());
+
+            // Reset accent policy to disabled
+            var accent = new ACCENT_POLICY
+            {
+                AccentState = ACCENT_STATE.ACCENT_DISABLED,
+                AccentFlags = 0,
+                GradientColor = 0,
+                AnimationId = 0
+            };
+            ApplyAccent(hwnd, accent);
+
+            // Reset DWM frame margins to zero (don't extend into client area)
+            var margins = new MARGINS { cxLeftWidth = 0, cxRightWidth = 0, cyTopHeight = 0, cyBottomHeight = 0 };
+            DwmExtendFrameIntoClientArea(hwnd, ref margins);
+
+            try { Glyph.Core.Logging.Logger.Info("Cleared backdrop effects"); } catch {}
+        }
+        catch (Exception ex)
+        {
+            try { Glyph.Core.Logging.Logger.Error("Failed to clear backdrop effects", ex); } catch {}
         }
     }
 
