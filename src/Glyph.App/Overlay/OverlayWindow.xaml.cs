@@ -32,6 +32,11 @@ public partial class OverlayWindow : Window
         {
             if (IsVisible)
             {
+                // Re-apply topmost flag when window becomes visible to ensure it appears above elevated processes.
+                if (_hwnd != IntPtr.Zero)
+                {
+                    WindowManager.SetWindowTopmost(_hwnd);
+                }
                 ApplyVisualEffects();
                 PositionFromTheme();
             }
@@ -44,6 +49,10 @@ public partial class OverlayWindow : Window
                 _hwnd = new WindowInteropHelper(this).Handle;
                 if (_hwnd != IntPtr.Zero)
                 {
+                    // Force window to appear on top of all windows, including elevated processes.
+                    // This uses native Win32 SetWindowPos to override UIPI restrictions that prevent WPF Topmost from working.
+                    WindowManager.SetWindowTopmost(_hwnd);
+
                     // Ensure the underlying HWND surface is transparent so DWM backdrops can show.
                     try
                     {

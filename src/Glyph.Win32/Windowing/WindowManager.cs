@@ -52,6 +52,22 @@ public static class WindowManager
         SetWindowPos(hwnd, new IntPtr(HWND_TOPMOST), 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
     }
 
+    /// <summary>
+    /// Forces a window to appear on top of all other windows, including elevated processes.
+    /// Uses native Win32 SetWindowPos to override UIPI restrictions that prevent WPF Topmost from working.
+    /// </summary>
+    public static void SetWindowTopmost(IntPtr hwnd)
+    {
+        if (hwnd == IntPtr.Zero) return;
+
+        const uint SWP_NOSIZE = 0x0001;
+        const uint SWP_NOMOVE = 0x0002;
+        const uint SWP_NOACTIVATE = 0x0010;
+        const int HWND_TOPMOST = -1;
+
+        SetWindowPos(hwnd, new IntPtr(HWND_TOPMOST), 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+    }
+
     private const int WM_SYSCOMMAND = 0x0112;
     private const int SC_MINIMIZE = 0xF020;
     private const int SC_MAXIMIZE = 0xF030;
