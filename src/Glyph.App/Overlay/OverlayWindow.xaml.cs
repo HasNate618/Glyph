@@ -4,7 +4,6 @@ using System.Windows.Media;
 
 using Glyph.Core.Overlay;
 using Glyph.Win32.Windowing;
-using Glyph.Win32.Interop;
 
 namespace Glyph.App;
 
@@ -109,14 +108,13 @@ public partial class OverlayWindow : Window
 
     private void PositionFromTheme()
     {
-        // Determine the work area for the monitor that contains the foreground window.
+        // Determine the work area for the monitor that contains the cursor.
         // Fall back to the primary monitor / SystemParameters if detection fails.
         var workArea = SystemParameters.WorkArea;
         try
         {
-            // Determine the foreground window handle and its containing monitor
-            var hwndForeground = NativeMethods.GetForegroundWindow();
-            var hMonitor = Glyph.Win32.Windowing.MonitorHelper.GetMonitorForWindow(hwndForeground);
+            // Determine the monitor containing the current cursor position
+            var hMonitor = Glyph.Win32.Windowing.MonitorHelper.GetMonitorForCursor();
             if (hMonitor != IntPtr.Zero)
             {
                 var monitorWorkArea = Glyph.Win32.Windowing.MonitorHelper.GetMonitorWorkArea(hMonitor);

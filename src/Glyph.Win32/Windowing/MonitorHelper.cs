@@ -26,10 +26,24 @@ public static class MonitorHelper
         public int Height => Bottom - Top;
     }
 
+    [StructLayout(LayoutKind.Sequential)]
+    public struct POINT
+    {
+        public int X;
+        public int Y;
+    }
+
     private const uint MONITOR_DEFAULTTOPRIMARY = 1;
 
     [DllImport("user32.dll", SetLastError = true)]
     private static extern IntPtr MonitorFromWindow(IntPtr hwnd, uint dwFlags);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern IntPtr MonitorFromPoint(POINT pt, uint dwFlags);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool GetCursorPos(out POINT lpPoint);
 
     [DllImport("user32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
@@ -48,6 +62,27 @@ public static class MonitorHelper
 
         var hMonitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTOPRIMARY);
         return hMonitor != IntPtr.Zero ? hMonitor : GetPrimaryMonitor();
+    }
+
+    /// <summary>
+    /// Gets the monitor handle that contains the current cursor position.
+    /// Falls back to primary monitor if cursor position cannot be determined.
+    /// </summary>
+    public static IntPtr GetMonitorForCursor()
+    {
+        try
+        {
+            if (GetCursorPos(out var pt))
+            {
+                var hMonitor = MonitorFromPoint(pt, MONITOR_DEFAULTTOPRIMARY);
+                return hMonitor != IntPtr.Zero ? hMonitor : GetPrimaryMonitor();
+            }
+        }
+        catch
+        {
+        }
+
+        return GetPrimaryMonitor();
     }
 
     /// <summary>
