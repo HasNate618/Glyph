@@ -14,6 +14,11 @@ public partial class App : System.Windows.Application
     private GlyphHost? _host;
     private TrayIconService? _tray;
 
+    public void ReloadKeymaps()
+    {
+        _host?.ReloadKeymaps();
+    }
+
     public void ApplyConfig(Glyph.App.Config.AppConfig cfg)
     {
         try

@@ -41,6 +41,20 @@ public partial class SettingsWindow : Window
         StartWithWindowsCheckBox.Unchecked += StartWithWindowsCheckChanged;
     }
 
+    private void OpenKeymapEditorButton_Click(object? sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var editor = new KeymapEditorWindow();
+            editor.Show();
+        }
+        catch (Exception ex)
+        {
+            Logger.Error("Failed to open keymap editor", ex);
+            System.Windows.MessageBox.Show($"Failed to open keymap editor:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
     private bool _suppressUiEvents = false;
 
     private static string GetConfigDir()

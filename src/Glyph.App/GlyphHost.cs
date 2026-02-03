@@ -493,6 +493,15 @@ public sealed class GlyphHost : IDisposable
         Logger.Info($"Glyph updated from settings (len={_glyphSequence.Count})");
     }
 
+    public void ReloadKeymaps()
+    {
+        lock (_engineSync)
+        {
+            _keymapProvider.ApplyToEngine(_engine);
+        }
+        Logger.Info("Keymaps reloaded from YAML");
+    }
+
     private static List<Glyph.App.Config.GlyphKeyConfig> NormalizeGlyph(Glyph.App.Config.AppConfig cfg)
     {
         if (cfg.GlyphSequence is { Count: > 0 })

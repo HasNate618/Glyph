@@ -1,0 +1,102 @@
+<UserControl x:Class="Glyph.App.UI.KeymapBindingEditor"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Margin="0,0,0,8">
+    <Border BorderBrush="#E0E0E0" BorderThickness="1" Padding="12" Background="#FAFAFA">
+        <StackPanel>
+            <!-- Header Row: Key, Label, Delete -->
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                <TextBlock Text="Key:" VerticalAlignment="Center" Width="60" />
+                <TextBox x:Name="KeyTextBox" Width="100" VerticalAlignment="Center" Margin="0,0,8,0" TextChanged="KeyTextBox_TextChanged" />
+                <Button x:Name="RecordKeyButton" Content="Record" Padding="6,2" Margin="0,0,8,0" Click="RecordKeyButton_Click" />
+                <TextBlock x:Name="KeyTokensLabel" Text="Tokens:" VerticalAlignment="Center" Width="60" Visibility="Collapsed" />
+                <ComboBox x:Name="KeyTokensCombo" Width="200" VerticalAlignment="Center" Margin="0,0,8,0" Visibility="Collapsed" IsEditable="True" SelectionChanged="KeyTokensCombo_SelectionChanged" LostFocus="KeyTokensCombo_LostFocus" />
+                <Button x:Name="UseTokensButton" Content="Use Tokens" Padding="6,2" Margin="0,0,8,0" Visibility="Collapsed" Click="UseTokensButton_Click" />
+                <Button x:Name="UseKeyButton" Content="Use Key" Padding="6,2" Margin="0,0,8,0" Visibility="Collapsed" Click="UseKeyButton_Click" />
+                
+                <TextBlock Text="Label:" VerticalAlignment="Center" Width="60" Margin="8,0,0,0" />
+                <TextBox x:Name="LabelTextBox" Width="200" VerticalAlignment="Center" Margin="0,0,8,0" TextChanged="LabelTextBox_TextChanged" />
+                
+                <Button x:Name="DeleteButton" Content="🗑️" Padding="4" Width="30" Height="30" VerticalAlignment="Center" Click="DeleteButton_Click" />
+            </StackPanel>
+
+            <!-- Action Type Selection -->
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                <TextBlock Text="Action Type:" VerticalAlignment="Center" Width="100" />
+                <ComboBox x:Name="ActionTypeCombo" Width="200" VerticalAlignment="Center" SelectionChanged="ActionTypeCombo_SelectionChanged">
+                    <ComboBoxItem Content="action" Tag="action" />
+                    <ComboBoxItem Content="send" Tag="send" />
+                    <ComboBoxItem Content="type" Tag="type" />
+                    <ComboBoxItem Content="exec" Tag="exec" />
+                    <ComboBoxItem Content="steps" Tag="steps" />
+                    <ComboBoxItem Content="children (layer)" Tag="children" />
+                    <ComboBoxItem Content="setTheme" Tag="setTheme" />
+                </ComboBox>
+            </StackPanel>
+
+            <!-- Action-specific inputs -->
+            <StackPanel x:Name="ActionInputsPanel" Margin="20,0,0,8">
+                <!-- Action ID input -->
+                <StackPanel x:Name="ActionIdPanel" Orientation="Horizontal" Margin="0,0,0,8" Visibility="Collapsed">
+                    <TextBlock Text="Action ID:" VerticalAlignment="Center" Width="100" />
+                    <ComboBox x:Name="ActionIdCombo" Width="250" VerticalAlignment="Center" IsEditable="True" SelectionChanged="ActionIdCombo_SelectionChanged" />
+                </StackPanel>
+
+                <!-- Send spec input -->
+                <StackPanel x:Name="SendPanel" Orientation="Horizontal" Margin="0,0,0,8" Visibility="Collapsed">
+                    <TextBlock Text="Key Chord:" VerticalAlignment="Center" Width="100" />
+                    <TextBox x:Name="SendTextBox" Width="300" VerticalAlignment="Center" TextChanged="SendTextBox_TextChanged" />
+                    <TextBlock Text="(e.g., Ctrl+C, Win+L)" Foreground="Gray" VerticalAlignment="Center" Margin="8,0,0,0" FontSize="10" />
+                </StackPanel>
+
+                <!-- Type text input -->
+                <StackPanel x:Name="TypePanel" Orientation="Horizontal" Margin="0,0,0,8" Visibility="Collapsed">
+                    <TextBlock Text="Text:" VerticalAlignment="Center" Width="100" />
+                    <TextBox x:Name="TypeTextBox" Width="400" VerticalAlignment="Center" TextChanged="TypeTextBox_TextChanged" TextWrapping="Wrap" AcceptsReturn="True" MinHeight="60" />
+                </StackPanel>
+
+                <!-- Exec inputs -->
+                <StackPanel x:Name="ExecPanel" Visibility="Collapsed">
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                        <TextBlock Text="Exec Path:" VerticalAlignment="Center" Width="100" />
+                        <TextBox x:Name="ExecPathTextBox" Width="350" VerticalAlignment="Center" Margin="0,0,8,0" TextChanged="ExecPathTextBox_TextChanged" />
+                        <Button Content="Browse..." Padding="6,2" Click="BrowseExecPath_Click" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                        <TextBlock Text="Exec Args:" VerticalAlignment="Center" Width="100" />
+                        <TextBox x:Name="ExecArgsTextBox" Width="400" VerticalAlignment="Center" TextChanged="ExecArgsTextBox_TextChanged" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                        <TextBlock Text="Exec Cwd:" VerticalAlignment="Center" Width="100" />
+                        <TextBox x:Name="ExecCwdTextBox" Width="350" VerticalAlignment="Center" Margin="0,0,8,0" TextChanged="ExecCwdTextBox_TextChanged" />
+                        <Button Content="Browse..." Padding="6,2" Click="BrowseExecCwd_Click" />
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- Steps panel -->
+                <StackPanel x:Name="StepsPanel" Visibility="Collapsed">
+                    <TextBlock Text="Steps (chained actions):" FontWeight="SemiBold" Margin="0,0,0,8" />
+                    <StackPanel x:Name="StepsContainer" Margin="20,0,0,8">
+                        <!-- Steps will be added here dynamically -->
+                    </StackPanel>
+                    <Button x:Name="AddStepButton" Content="+ Add Step" Padding="6,2" HorizontalAlignment="Left" Margin="20,0,0,0" Click="AddStepButton_Click" />
+                </StackPanel>
+
+                <!-- SetTheme input -->
+                <StackPanel x:Name="SetThemePanel" Orientation="Horizontal" Margin="0,0,0,8" Visibility="Collapsed">
+                    <TextBlock Text="Theme ID:" VerticalAlignment="Center" Width="100" />
+                    <ComboBox x:Name="ThemeIdCombo" Width="250" VerticalAlignment="Center" IsEditable="True" SelectionChanged="ThemeIdCombo_SelectionChanged" />
+                </StackPanel>
+            </StackPanel>
+
+            <!-- Children (Layer) panel -->
+            <StackPanel x:Name="ChildrenPanel" Margin="20,0,0,8" Visibility="Collapsed">
+                <TextBlock Text="Nested Bindings (Layer):" FontWeight="SemiBold" Margin="0,0,0,8" />
+                <StackPanel x:Name="ChildrenContainer" Margin="20,0,0,8">
+                    <!-- Children bindings will be added here dynamically -->
+                </StackPanel>
+                <Button x:Name="AddChildButton" Content="+ Add Binding" Padding="6,2" HorizontalAlignment="Left" Margin="20,0,0,0" Click="AddChildButton_Click" />
+            </StackPanel>
+        </StackPanel>
+    </Border>
+</UserControl>
