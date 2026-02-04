@@ -50,7 +50,10 @@ public partial class KeymapEditorWindow : Window
                 {
                     var newBinding = new KeymapYamlNode { Key = "", Label = "New Group", Children = new List<KeymapYamlNode>() };
                     var editor = CreateBindingEditor(newBinding, GlobalBindingsPanel, true);
-                    GlobalBindingsPanel.Children.Insert(GlobalBindingsPanel.Children.Count - 1, editor);
+                    if (GlobalBindingsPanel.Children.Count > 0)
+                        GlobalBindingsPanel.Children.Insert(GlobalBindingsPanel.Children.Count - 1, editor);
+                    else
+                        GlobalBindingsPanel.Children.Add(editor);
                     MarkUnsaved();
                 };
                 GlobalBindingsPanel.Children.Add(addGlobalButton);
@@ -91,7 +94,10 @@ public partial class KeymapEditorWindow : Window
             {
                 var newBinding = new KeymapYamlNode { Key = "", Label = "New Group", Children = new List<KeymapYamlNode>() };
                 var editor = CreateBindingEditor(newBinding, GlobalBindingsPanel, true);
-                GlobalBindingsPanel.Children.Insert(GlobalBindingsPanel.Children.Count - 1, editor);
+                if (GlobalBindingsPanel.Children.Count > 0)
+                    GlobalBindingsPanel.Children.Insert(GlobalBindingsPanel.Children.Count - 1, editor);
+                else
+                    GlobalBindingsPanel.Children.Add(editor);
                 MarkUnsaved();
             };
             GlobalBindingsPanel.Children.Add(addGlobalButton2);
@@ -102,7 +108,7 @@ public partial class KeymapEditorWindow : Window
                 foreach (var app in root.Apps)
                 {
                     var appEditor = CreateAppEditor(app);
-                    AppBindingsPanel.Children.Insert(AppBindingsPanel.Children.Count - 1, appEditor);
+                    AppBindingsPanel.Children.Add(appEditor);
                 }
             }
 
@@ -112,7 +118,7 @@ public partial class KeymapEditorWindow : Window
                 foreach (var group in root.Groups)
                 {
                     var groupEditor = CreateGroupEditor(group);
-                    AppGroupsPanel.Children.Insert(AppGroupsPanel.Children.Count - 1, groupEditor);
+                    AppGroupsPanel.Children.Add(groupEditor);
                 }
             }
 
@@ -185,7 +191,10 @@ public partial class KeymapEditorWindow : Window
         {
             var newBinding = new KeymapYamlNode { Key = "", Label = "New Binding" };
             var editor = CreateBindingEditor(newBinding, bindingsPanel, false);
-            bindingsPanel.Children.Insert(bindingsPanel.Children.Count - 1, editor);
+            if (bindingsPanel.Children.Count > 0)
+                bindingsPanel.Children.Insert(bindingsPanel.Children.Count - 1, editor);
+            else
+                bindingsPanel.Children.Add(editor);
             MarkUnsaved();
         };
 
@@ -266,7 +275,10 @@ public partial class KeymapEditorWindow : Window
         {
             var newBinding = new KeymapYamlNode { Key = "", Label = "New Binding" };
             var editor = CreateBindingEditor(newBinding, bindingsPanel, false);
-            bindingsPanel.Children.Insert(bindingsPanel.Children.Count - 1, editor);
+            if (bindingsPanel.Children.Count > 0)
+                bindingsPanel.Children.Insert(bindingsPanel.Children.Count - 1, editor);
+            else
+                bindingsPanel.Children.Add(editor);
             MarkUnsaved();
         };
 
@@ -281,7 +293,7 @@ public partial class KeymapEditorWindow : Window
     {
         var newApp = new KeymapYamlApp { Process = "", Bindings = new List<KeymapYamlNode>() };
         var editor = CreateAppEditor(newApp);
-        AppBindingsPanel.Children.Insert(AppBindingsPanel.Children.Count - 1, editor);
+        AppBindingsPanel.Children.Add(editor);
         MarkUnsaved();
     }
 
@@ -289,7 +301,7 @@ public partial class KeymapEditorWindow : Window
     {
         var newGroup = new KeymapYamlGroup { Name = "", Processes = new List<string>(), Bindings = new List<KeymapYamlNode>() };
         var editor = CreateGroupEditor(newGroup);
-        AppGroupsPanel.Children.Insert(AppGroupsPanel.Children.Count - 1, editor);
+        AppGroupsPanel.Children.Add(editor);
         MarkUnsaved();
     }
 
