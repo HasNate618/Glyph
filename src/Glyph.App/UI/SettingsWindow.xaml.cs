@@ -11,11 +11,14 @@ using System.Windows.Threading;
 
 namespace Glyph.App.UI;
 
-public partial class SettingsWindow : Window
+public partial class SettingsWindow : Wpf.Ui.Controls.FluentWindow
 {
     public SettingsWindow()
     {
         InitializeComponent();
+
+        // Apply system theme to this window
+        Wpf.Ui.Appearance.SystemThemeWatcher.Watch(this);
 
         OpenThemesFolderButton.Click += (_, _) =>
         {

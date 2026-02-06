@@ -21,6 +21,7 @@ public partial class KeymapBindingEditor : WpfControls.UserControl
     private readonly KeymapEditorWindow _parentWindow;
     private readonly bool _isTopLevel;
     private bool _isRecording = false;
+    private bool _isExpanded = false;
     private KeyboardHook? _keyboardHook;
     private readonly List<char> _recordedKeys = new();
 
@@ -28,7 +29,7 @@ public partial class KeymapBindingEditor : WpfControls.UserControl
     {
         InitializeComponent();
         Unloaded += KeymapBindingEditor_Unloaded;
-        InitializeComponent();
+
         _node = node;
         _parentPanel = parentPanel;
         _parentWindow = parentWindow;
@@ -37,12 +38,61 @@ public partial class KeymapBindingEditor : WpfControls.UserControl
         LoadKnownActions();
         LoadThemes();
         LoadFromNode();
+        UpdateHeaderSummary();
+    }
+
+    /// <summary>
+    /// Toggle expand/collapse when the header row is clicked.
+    /// </summary>
+    private void HeaderGrid_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
+    {
+        _isExpanded = !_isExpanded;
+        DetailPanel.Visibility = _isExpanded ? Visibility.Visible : Visibility.Collapsed;
+        ExpandChevron.Symbol = _isExpanded
+            ? Wpf.Ui.Controls.SymbolRegular.ChevronDown24
+            : Wpf.Ui.Controls.SymbolRegular.ChevronRight24;
+    }
+
+    /// <summary>
+    /// Update the compact header row with current key/label/action-type info.
+    /// </summary>
+    internal void UpdateHeaderSummary()
+    {
+        // Key display
+        var keyDisplay = _node.Key;
+        if (string.IsNullOrEmpty(keyDisplay) && _node.KeyTokens is { Count: > 0 })
+            keyDisplay = string.Join(" ", _node.KeyTokens);
+        HeaderKeyText.Text = string.IsNullOrEmpty(keyDisplay) ? "?" : keyDisplay;
+
+        // Label
+        HeaderLabelText.Text = _node.Label ?? "";
+
+        // Action type badge
+        var actionType = DetermineActionType();
+        HeaderActionTypeText.Text = actionType;
+    }
+
+    private string DetermineActionType()
+    {
+        if (_node.Children is { Count: > 0 }) return "layer";
+        if (!string.IsNullOrEmpty(_node.Action))
+        {
+            if (_node.Action.StartsWith("setTheme:", StringComparison.OrdinalIgnoreCase))
+                return "setTheme";
+            return "action";
+        }
+        if (!string.IsNullOrEmpty(_node.Send)) return "send";
+        if (!string.IsNullOrEmpty(_node.Type)) return "type";
+        if (!string.IsNullOrEmpty(_node.Exec)) return "exec";
+        if (_node.Steps is { Count: > 0 }) return "steps";
+        return "";
     }
 
     private void LoadKnownActions()
     {
         ActionIdCombo.Items.Clear();
-        foreach (var actionId in ActionRuntime.KnownActionIds.OrderBy(a => a))
+        // Use cached list from parent window to avoid per-editor iteration
+        foreach (var actionId in _parentWindow.CachedActionIds)
         {
             ActionIdCombo.Items.Add(actionId);
         }
@@ -51,17 +101,10 @@ public partial class KeymapBindingEditor : WpfControls.UserControl
     private void LoadThemes()
     {
         ThemeIdCombo.Items.Clear();
-        try
+        // Use cached list from parent window to avoid per-editor disk I/O
+        foreach (var (id, name) in _parentWindow.CachedThemes)
         {
-            var themes = ThemeManager.ListAvailableThemes();
-            foreach (var (id, name) in themes)
-            {
-                ThemeIdCombo.Items.Add($"{id} ({name})");
-            }
-        }
-        catch (Exception ex)
-        {
-            Logger.Error("Failed to load themes for combo", ex);
+            ThemeIdCombo.Items.Add($"{id} ({name})");
         }
     }
 
@@ -382,6 +425,7 @@ public partial class KeymapBindingEditor : WpfControls.UserControl
             _node.Key = KeyTextBox.Text;
             _node.KeyTokens = null;
             _parentWindow.MarkUnsaved();
+            UpdateHeaderSummary();
         }
     }
 
@@ -409,8 +453,7 @@ public partial class KeymapBindingEditor : WpfControls.UserControl
 
     private void ShowKeyTokensMode()
     {
-        KeyTokensCombo.Visibility = Visibility.Visible;
-        KeyTokensLabel.Visibility = Visibility.Visible;
+        KeyTokensRow.Visibility = Visibility.Visible;
         KeyTextBox.Visibility = Visibility.Collapsed;
         UseTokensButton.Visibility = Visibility.Collapsed;
         UseKeyButton.Visibility = Visibility.Visible;
@@ -418,8 +461,7 @@ public partial class KeymapBindingEditor : WpfControls.UserControl
 
     private void ShowKeyMode()
     {
-        KeyTokensCombo.Visibility = Visibility.Collapsed;
-        KeyTokensLabel.Visibility = Visibility.Collapsed;
+        KeyTokensRow.Visibility = Visibility.Collapsed;
         KeyTextBox.Visibility = Visibility.Visible;
         UseTokensButton.Visibility = Visibility.Visible;
         UseKeyButton.Visibility = Visibility.Collapsed;
@@ -460,6 +502,7 @@ public partial class KeymapBindingEditor : WpfControls.UserControl
             _node.KeyTokens = KeyTokensCombo.Text.Split(' ', StringSplitOptions.RemoveEmptyEntries).ToList();
             _node.Key = null;
             _parentWindow.MarkUnsaved();
+            UpdateHeaderSummary();
         }
     }
 
@@ -469,6 +512,7 @@ public partial class KeymapBindingEditor : WpfControls.UserControl
         {
             _node.Label = LabelTextBox.Text;
             _parentWindow.MarkUnsaved();
+            UpdateHeaderSummary();
         }
     }
 
@@ -476,6 +520,7 @@ public partial class KeymapBindingEditor : WpfControls.UserControl
     {
         UpdateActionInputsVisibility();
         _parentWindow.MarkUnsaved();
+        UpdateHeaderSummary();
     }
 
     private void UpdateActionInputsVisibility()

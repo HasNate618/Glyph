@@ -6,6 +6,7 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Threading;
 
 using Glyph.App.Config;
 using Glyph.Core.Logging;
@@ -14,22 +15,52 @@ using YamlDotNet.Serialization.NamingConventions;
 
 namespace Glyph.App.UI;
 
-public partial class KeymapEditorWindow : Window
+public partial class KeymapEditorWindow : Wpf.Ui.Controls.FluentWindow
 {
     private readonly string _keymapsPath;
     private bool _hasUnsavedChanges = false;
+
+    // Shared caches so each KeymapBindingEditor doesn't re-query disk/data
+    internal List<string> CachedActionIds { get; private set; } = new();
+    internal List<(string Id, string Name)> CachedThemes { get; private set; } = new();
 
     public KeymapEditorWindow()
     {
         InitializeComponent();
         _keymapsPath = KeymapYamlLoader.KeymapsPath;
-        Loaded += (_, _) => LoadKeymaps();
+
+        // Apply system theme to this window
+        Wpf.Ui.Appearance.SystemThemeWatcher.Watch(this);
+
+        Loaded += (_, _) =>
+        {
+            // Defer heavy work so the window renders instantly
+            Dispatcher.InvokeAsync(LoadKeymaps, DispatcherPriority.Background);
+        };
+    }
+
+    private void PreloadCaches()
+    {
+        try
+        {
+            CachedActionIds = Glyph.Actions.ActionRuntime.KnownActionIds.OrderBy(a => a).ToList();
+        }
+        catch { CachedActionIds = new(); }
+
+        try
+        {
+            CachedThemes = Glyph.App.Overlay.Theming.ThemeManager.ListAvailableThemes().ToList();
+        }
+        catch { CachedThemes = new(); }
     }
 
     private void LoadKeymaps()
     {
         try
         {
+            // Preload shared caches once (avoids per-editor disk I/O)
+            PreloadCaches();
+
             // Clear existing UI
             GlobalBindingsPanel.Children.Clear();
             AppBindingsPanel.Children.Clear();
@@ -38,11 +69,11 @@ public partial class KeymapEditorWindow : Window
             if (!File.Exists(_keymapsPath))
             {
                 StatusText.Text = "No keymaps file found. Create bindings and save to create one.";
-                // Add "Add Group" System.Windows.Controls.Button so user can start creating bindings
-                var addGlobalButton = new System.Windows.Controls.Button
+                var addGlobalButton = new Wpf.Ui.Controls.Button
                 {
                     Content = "+ Add Group",
-                    Padding = new Thickness(8, 4, 8, 4),
+                    Appearance = Wpf.Ui.Controls.ControlAppearance.Secondary,
+                    Padding = new Thickness(12, 6, 12, 6),
                     HorizontalAlignment = System.Windows.HorizontalAlignment.Left,
                     Margin = new Thickness(0, 8, 0, 0)
                 };
@@ -82,11 +113,12 @@ public partial class KeymapEditorWindow : Window
                 }
             }
 
-            // Add "Add Group" System.Windows.Controls.Button for global bindings
-            var addGlobalButton2 = new System.Windows.Controls.Button
+            // Add "Add Group" button for global bindings
+            var addGlobalButton2 = new Wpf.Ui.Controls.Button
             {
                 Content = "+ Add Group",
-                Padding = new Thickness(8, 4, 8, 4),
+                Appearance = Wpf.Ui.Controls.ControlAppearance.Secondary,
+                Padding = new Thickness(12, 6, 12, 6),
                 HorizontalAlignment = System.Windows.HorizontalAlignment.Left,
                 Margin = new Thickness(0, 8, 0, 0)
             };
@@ -152,12 +184,13 @@ public partial class KeymapEditorWindow : Window
         };
         processBox.TextChanged += (_, _) => { app.Process = processBox.Text; MarkUnsaved(); };
 
-        var deleteButton = new System.Windows.Controls.Button
+        var deleteButton = new Wpf.Ui.Controls.Button
         {
             Content = "🗑️",
+            Appearance = Wpf.Ui.Controls.ControlAppearance.Danger,
             Padding = new Thickness(4),
-            Width = 30,
-            Height = 30,
+            Width = 32,
+            Height = 32,
             VerticalAlignment = VerticalAlignment.Center
         };
         deleteButton.Click += (_, _) =>
@@ -180,10 +213,11 @@ public partial class KeymapEditorWindow : Window
             }
         }
 
-        var addBindingButton = new System.Windows.Controls.Button
+        var addBindingButton = new Wpf.Ui.Controls.Button
         {
             Content = "+ Add Binding",
-            Padding = new Thickness(8, 4, 8, 4),
+            Appearance = Wpf.Ui.Controls.ControlAppearance.Secondary,
+            Padding = new Thickness(12, 6, 12, 6),
             HorizontalAlignment = System.Windows.HorizontalAlignment.Left,
             Margin = new Thickness(20, 8, 0, 0)
         };
@@ -234,12 +268,13 @@ public partial class KeymapEditorWindow : Window
             MarkUnsaved();
         };
 
-        var deleteButton = new System.Windows.Controls.Button
+        var deleteButton = new Wpf.Ui.Controls.Button
         {
             Content = "🗑️",
+            Appearance = Wpf.Ui.Controls.ControlAppearance.Danger,
             Padding = new Thickness(4),
-            Width = 30,
-            Height = 30,
+            Width = 32,
+            Height = 32,
             VerticalAlignment = VerticalAlignment.Center
         };
         deleteButton.Click += (_, _) =>
@@ -264,10 +299,11 @@ public partial class KeymapEditorWindow : Window
             }
         }
 
-        var addBindingButton = new System.Windows.Controls.Button
+        var addBindingButton = new Wpf.Ui.Controls.Button
         {
             Content = "+ Add Binding",
-            Padding = new Thickness(8, 4, 8, 4),
+            Appearance = Wpf.Ui.Controls.ControlAppearance.Secondary,
+            Padding = new Thickness(12, 6, 12, 6),
             HorizontalAlignment = System.Windows.HorizontalAlignment.Left,
             Margin = new Thickness(20, 8, 0, 0)
         };
