@@ -8,6 +8,7 @@ using Glyph.App.Config;
 using Glyph.App.Startup;
 using System.Linq;
 using System.Windows.Input;
+using System.Windows.Navigation;
 using System.Windows.Threading;
 
 namespace Glyph.App.UI;
@@ -121,6 +122,23 @@ public partial class SettingsWindow : Wpf.Ui.Controls.FluentWindow
         }
     }
 
+    private void Hyperlink_RequestNavigate(object? sender, RequestNavigateEventArgs e)
+    {
+        try
+        {
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = e.Uri.AbsoluteUri,
+                UseShellExecute = true,
+            });
+        }
+        catch (Exception ex)
+        {
+            Logger.Error("Failed to launch help link", ex);
+        }
+        e.Handled = true;
+    }
+
     private void LoadToUi()
     {
         try
@@ -135,7 +153,6 @@ public partial class SettingsWindow : Wpf.Ui.Controls.FluentWindow
             var leaderSeq = NormalizeGlyphSequence(cfg);
             CurrentGlyphText.Text = DescribeGlyphSequence(leaderSeq);
             // By default the recorded-glyph UI shows recording state, not the effective glyph.
-            RecordedGlyphText.Text = "(not recording)";
 
             LoadThemesIntoCombo(cfg.BaseTheme);
             BreadcrumbsModeCheckBox.IsChecked = cfg.BreadcrumbsMode;
@@ -337,7 +354,6 @@ public partial class SettingsWindow : Wpf.Ui.Controls.FluentWindow
         {
             RecordButton.Content = "Stop Recording";
             _recordedGlyphSequence.Clear();
-            RecordedGlyphText.Text = "Recording: 0";
             this.PreviewKeyDown += SettingsWindow_PreviewKeyDown;
             this.Focus();
         }
@@ -347,11 +363,7 @@ public partial class SettingsWindow : Wpf.Ui.Controls.FluentWindow
             this.PreviewKeyDown -= SettingsWindow_PreviewKeyDown;
             if (_recordedGlyphSequence.Count > 0)
             {
-                RecordedGlyphText.Text = DescribeGlyphSequence(_recordedGlyphSequence);
-            }
-            else
-            {
-                RecordedGlyphText.Text = "(not recording)";
+                CurrentGlyphText.Text = DescribeGlyphSequence(_recordedGlyphSequence);
             }
             // Persist and apply the new glyph sequence immediately when recording stops.
             try
@@ -390,7 +402,6 @@ public partial class SettingsWindow : Wpf.Ui.Controls.FluentWindow
             if (step.VkCode != 0)
             {
                 _recordedGlyphSequence.Add(step);
-                RecordedGlyphText.Text = $"Recording: {_recordedGlyphSequence.Count}";
                 CurrentGlyphText.Text = DescribeGlyphSequence(_recordedGlyphSequence);
             }
         }
@@ -425,7 +436,7 @@ public partial class SettingsWindow : Wpf.Ui.Controls.FluentWindow
     {
         if (seq.Count == 0)
         {
-            return "Glyph: Default (Ctrl+Shift+NumPad *)";
+            return "Glyph Key: Default (Ctrl+Shift+NumPad *)";
         }
 
         static string StepToString(GlyphKeyConfig s)
@@ -462,6 +473,6 @@ public partial class SettingsWindow : Wpf.Ui.Controls.FluentWindow
         }
 
         var rendered = string.Join(", ", seq.Select(StepToString));
-        return $"Glyph: {rendered}";
+        return $"Glyph Key: {rendered}";
     }
 }

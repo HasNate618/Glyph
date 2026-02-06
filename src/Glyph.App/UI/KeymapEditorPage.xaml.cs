@@ -6,6 +6,8 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Markup;
+using System.Windows.Media;
 using System.Windows.Threading;
 
 using Glyph.App.Config;
@@ -19,6 +21,8 @@ public partial class KeymapEditorPage : System.Windows.Controls.UserControl, IKe
 {
     private readonly string _keymapsPath;
     private bool _hasUnsavedChanges = false;
+    private bool _hasLoadedKeymaps = false;
+    private bool _isLoadingKeymaps = false;
 
     // Shared caches so each KeymapBindingEditor doesn't re-query disk/data
     public List<string> CachedActionIds { get; private set; } = new();
@@ -29,13 +33,38 @@ public partial class KeymapEditorPage : System.Windows.Controls.UserControl, IKe
         InitializeComponent();
         _keymapsPath = KeymapYamlLoader.KeymapsPath;
 
-        Loaded += (_, _) =>
+        Loaded += (_, _) => EnsureKeymapsLoaded();
+    }
+
+    private void EnsureKeymapsLoaded(bool force = false)
+    {
+        if (_isLoadingKeymaps)
         {
-            // Defer heavy work so the page renders instantly
-            StatusText.Text = "Loading keymaps...";
-            LoadingPanel.Visibility = Visibility.Visible;
-            Dispatcher.InvokeAsync(LoadKeymaps, DispatcherPriority.Background);
-        };
+            return;
+        }
+
+        if (_hasLoadedKeymaps && !force)
+        {
+            return;
+        }
+
+        _hasLoadedKeymaps = true;
+        _isLoadingKeymaps = true;
+
+        StatusText.Text = "Loading keymaps...";
+        LoadingPanel.Visibility = Visibility.Visible;
+
+        Dispatcher.InvokeAsync(() =>
+        {
+            try
+            {
+                LoadKeymaps();
+            }
+            finally
+            {
+                _isLoadingKeymaps = false;
+            }
+        }, DispatcherPriority.Background);
     }
 
     private void PreloadCaches()
@@ -66,6 +95,12 @@ public partial class KeymapEditorPage : System.Windows.Controls.UserControl, IKe
             GlobalBindingsPanel.Children.Clear();
             AppBindingsPanel.Children.Clear();
             AppGroupsPanel.Children.Clear();
+
+            AppBindingsPanel.Children.Add(AppBindingsDescription);
+            AppBindingsPanel.Children.Add(AddAppButton);
+
+            AppGroupsPanel.Children.Add(AppGroupsDescription);
+            AppGroupsPanel.Children.Add(AddGroupButton);
 
             if (!File.Exists(_keymapsPath))
             {
@@ -141,7 +176,7 @@ public partial class KeymapEditorPage : System.Windows.Controls.UserControl, IKe
                 foreach (var app in root.Apps)
                 {
                     var appEditor = CreateAppEditor(app);
-                    AppBindingsPanel.Children.Add(appEditor);
+                    InsertBeforeFooter(AppBindingsPanel, AddAppButton, appEditor);
                 }
             }
 
@@ -151,7 +186,7 @@ public partial class KeymapEditorPage : System.Windows.Controls.UserControl, IKe
                 foreach (var group in root.Groups)
                 {
                     var groupEditor = CreateGroupEditor(group);
-                    AppGroupsPanel.Children.Add(groupEditor);
+                    InsertBeforeFooter(AppGroupsPanel, AddGroupButton, groupEditor);
                 }
             }
 
@@ -172,6 +207,29 @@ public partial class KeymapEditorPage : System.Windows.Controls.UserControl, IKe
         return new KeymapBindingEditor(node, parent, this, isTopLevel);
     }
 
+    private static Wpf.Ui.Controls.Button CreateDeleteButton()
+    {
+        const string buttonXaml =
+            "<ui:Button xmlns:ui=\"http://schemas.lepo.co/wpfui/2022/xaml\" Appearance=\"Secondary\" Padding=\"4\" Width=\"28\" Height=\"28\" VerticalAlignment=\"Center\" Background=\"#C42B1C\" BorderBrush=\"#C42B1C\" Foreground=\"White\">" +
+            "  <ui:SymbolIcon Symbol=\"Delete24\" FontSize=\"14\" Foreground=\"White\" />" +
+            "</ui:Button>";
+
+        return (Wpf.Ui.Controls.Button)System.Windows.Markup.XamlReader.Parse(buttonXaml);
+    }
+
+    private static void InsertBeforeFooter(System.Windows.Controls.Panel panel, UIElement footerElement, UIElement element)
+    {
+        var footerIndex = panel.Children.IndexOf(footerElement);
+        if (footerIndex >= 0)
+        {
+            panel.Children.Insert(footerIndex, element);
+        }
+        else
+        {
+            panel.Children.Add(element);
+        }
+    }
+
     private UIElement CreateAppEditor(KeymapYamlApp app)
     {
         var bindingsPanel = new StackPanel { Margin = new Thickness(20, 0, 0, 0) };
@@ -184,7 +242,7 @@ public partial class KeymapEditorPage : System.Windows.Controls.UserControl, IKe
             }
         }
 
-        var header = new Grid { Margin = new Thickness(12, 8, 12, 8), Cursor = System.Windows.Input.Cursors.Hand };
+        var header = new Grid { Margin = new Thickness(12, 8, 12, 8), Cursor = System.Windows.Input.Cursors.Hand, HorizontalAlignment = System.Windows.HorizontalAlignment.Stretch };
         header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
@@ -219,9 +277,10 @@ public partial class KeymapEditorPage : System.Windows.Controls.UserControl, IKe
         headerBadge.Child = headerProcessText;
         Grid.SetColumn(headerBadge, 1);
 
+        var bindingCount = bindingsPanel.Children.OfType<KeymapBindingEditor>().Count();
         var headerLabel = new TextBlock
         {
-            Text = $"Bindings · {bindingsPanel.Children.OfType<KeymapBindingEditor>().Count()}",
+            Text = $"({bindingCount} binding{(bindingCount == 1 ? "" : "s")})",
             VerticalAlignment = VerticalAlignment.Center,
             Foreground = (System.Windows.Media.Brush)System.Windows.Application.Current.FindResource("TextFillColorSecondaryBrush"),
             Margin = new Thickness(0, 0, 8, 0)
@@ -245,10 +304,11 @@ public partial class KeymapEditorPage : System.Windows.Controls.UserControl, IKe
             else
                 bindingsPanel.Children.Add(editor);
             MarkUnsaved();
-            headerLabel.Text = $"Bindings · {bindingsPanel.Children.OfType<KeymapBindingEditor>().Count()}";
+            var count = bindingsPanel.Children.OfType<KeymapBindingEditor>().Count();
+            headerLabel.Text = $"({count} binding{(count == 1 ? "" : "s")})";
         };
 
-        var content = new StackPanel();
+        var content = new StackPanel { Margin = new Thickness(12, 0, 12, 12) };
         var processEditorRow = new StackPanel { Orientation = System.Windows.Controls.Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 8) };
         var processLabel = new TextBlock { Text = "Process:", VerticalAlignment = VerticalAlignment.Center, Width = 80 };
         var processBox = new System.Windows.Controls.TextBox
@@ -281,24 +341,11 @@ public partial class KeymapEditorPage : System.Windows.Controls.UserControl, IKe
             VerticalAlignment = VerticalAlignment.Center,
             Visibility = Visibility.Collapsed
         };
-        Grid.SetColumn(actionBadge, 3);
+        Grid.SetColumn(actionBadge, 4);
 
-        var deleteButton = new Wpf.Ui.Controls.Button
-        {
-            Appearance = Wpf.Ui.Controls.ControlAppearance.Secondary,
-            Padding = new Thickness(4),
-            Width = 28,
-            Height = 28,
-            VerticalAlignment = VerticalAlignment.Center,
-            Content = new Wpf.Ui.Controls.SymbolIcon
-            {
-                Symbol = Wpf.Ui.Controls.SymbolRegular.Delete24,
-                FontSize = 14,
-                Foreground = System.Windows.Media.Brushes.White
-            }
-        };
+        var deleteButton = CreateDeleteButton();
 
-        Grid.SetColumn(deleteButton, 4);
+        Grid.SetColumn(deleteButton, 5);
 
         var container = new Border
         {
@@ -316,6 +363,8 @@ public partial class KeymapEditorPage : System.Windows.Controls.UserControl, IKe
             Content = content,
             IsExpanded = false
         };
+
+        expander.Style = (Style)Resources["PlainExpanderStyle"];
 
         expander.Expanded += (_, _) =>
         {
@@ -369,7 +418,7 @@ public partial class KeymapEditorPage : System.Windows.Controls.UserControl, IKe
             }
         }
 
-        var header = new Grid { Margin = new Thickness(12, 8, 12, 8), Cursor = System.Windows.Input.Cursors.Hand };
+        var header = new Grid { Margin = new Thickness(12, 8, 12, 8), Cursor = System.Windows.Input.Cursors.Hand, HorizontalAlignment = System.Windows.HorizontalAlignment.Stretch };
         header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
@@ -404,9 +453,10 @@ public partial class KeymapEditorPage : System.Windows.Controls.UserControl, IKe
         headerBadge.Child = headerGroupText;
         Grid.SetColumn(headerBadge, 1);
 
+        var groupBindingCount = bindingsPanel.Children.OfType<KeymapBindingEditor>().Count();
         var headerGroupDetail = new TextBlock
         {
-            Text = $"Bindings · {bindingsPanel.Children.OfType<KeymapBindingEditor>().Count()}",
+            Text = $"({groupBindingCount} binding{(groupBindingCount == 1 ? "" : "s")})",
             VerticalAlignment = VerticalAlignment.Center,
             Foreground = (System.Windows.Media.Brush)System.Windows.Application.Current.FindResource("TextFillColorSecondaryBrush"),
             Margin = new Thickness(0, 0, 8, 0)
@@ -430,10 +480,11 @@ public partial class KeymapEditorPage : System.Windows.Controls.UserControl, IKe
             else
                 bindingsPanel.Children.Add(editor);
             MarkUnsaved();
-            headerGroupDetail.Text = $"Bindings · {bindingsPanel.Children.OfType<KeymapBindingEditor>().Count()}";
+            var gcount = bindingsPanel.Children.OfType<KeymapBindingEditor>().Count();
+            headerGroupDetail.Text = $"({gcount} binding{(gcount == 1 ? "" : "s")})";
         };
 
-        var content = new StackPanel();
+        var content = new StackPanel { Margin = new Thickness(12, 0, 12, 12) };
         var groupEditorRow = new StackPanel { Orientation = System.Windows.Controls.Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 8) };
         var nameLabel = new TextBlock { Text = "Group Name:", VerticalAlignment = VerticalAlignment.Center, Width = 100 };
         var nameBox = new System.Windows.Controls.TextBox
@@ -481,24 +532,11 @@ public partial class KeymapEditorPage : System.Windows.Controls.UserControl, IKe
             VerticalAlignment = VerticalAlignment.Center,
             Visibility = Visibility.Collapsed
         };
-        Grid.SetColumn(actionBadge, 3);
+        Grid.SetColumn(actionBadge, 4);
 
-        var deleteButton = new Wpf.Ui.Controls.Button
-        {
-            Appearance = Wpf.Ui.Controls.ControlAppearance.Secondary,
-            Padding = new Thickness(4),
-            Width = 28,
-            Height = 28,
-            VerticalAlignment = VerticalAlignment.Center,
-            Content = new Wpf.Ui.Controls.SymbolIcon
-            {
-                Symbol = Wpf.Ui.Controls.SymbolRegular.Delete24,
-                FontSize = 14,
-                Foreground = System.Windows.Media.Brushes.White
-            }
-        };
+        var deleteButton = CreateDeleteButton();
 
-        Grid.SetColumn(deleteButton, 4);
+        Grid.SetColumn(deleteButton, 5);
 
         var container = new Border
         {
@@ -516,6 +554,8 @@ public partial class KeymapEditorPage : System.Windows.Controls.UserControl, IKe
             Content = content,
             IsExpanded = false
         };
+
+        expander.Style = (Style)Resources["PlainExpanderStyle"];
 
         expander.Expanded += (_, _) =>
         {
@@ -561,7 +601,7 @@ public partial class KeymapEditorPage : System.Windows.Controls.UserControl, IKe
     {
         var newApp = new KeymapYamlApp { Process = "", Bindings = new List<KeymapYamlNode>() };
         var editor = CreateAppEditor(newApp);
-        AppBindingsPanel.Children.Add(editor);
+        InsertBeforeFooter(AppBindingsPanel, AddAppButton, editor);
         MarkUnsaved();
     }
 
@@ -569,7 +609,7 @@ public partial class KeymapEditorPage : System.Windows.Controls.UserControl, IKe
     {
         var newGroup = new KeymapYamlGroup { Name = "", Processes = new List<string>(), Bindings = new List<KeymapYamlNode>() };
         var editor = CreateGroupEditor(newGroup);
-        AppGroupsPanel.Children.Add(editor);
+        InsertBeforeFooter(AppGroupsPanel, AddGroupButton, editor);
         MarkUnsaved();
     }
 
@@ -648,7 +688,7 @@ public partial class KeymapEditorPage : System.Windows.Controls.UserControl, IKe
             }
         }
 
-        LoadKeymaps();
+        EnsureKeymapsLoaded(force: true);
     }
 
     private void RevealButton_Click(object sender, RoutedEventArgs e)
@@ -699,7 +739,13 @@ public partial class KeymapEditorPage : System.Windows.Controls.UserControl, IKe
         var apps = new List<KeymapYamlApp>();
         foreach (var child in AppBindingsPanel.Children)
         {
-            if (child is System.Windows.Controls.Expander expander && expander.Content is StackPanel content)
+            var expander = child as System.Windows.Controls.Expander;
+            if (expander == null && child is Border border && border.Child is StackPanel borderContent)
+            {
+                expander = borderContent.Children.OfType<System.Windows.Controls.Expander>().FirstOrDefault();
+            }
+
+            if (expander != null && expander.Content is StackPanel content)
             {
                 var processRow = content.Children.OfType<StackPanel>().FirstOrDefault();
                 var processBox = processRow?.Children.OfType<System.Windows.Controls.TextBox>().FirstOrDefault();
@@ -740,7 +786,13 @@ public partial class KeymapEditorPage : System.Windows.Controls.UserControl, IKe
         var groups = new List<KeymapYamlGroup>();
         foreach (var child in AppGroupsPanel.Children)
         {
-            if (child is System.Windows.Controls.Expander expander && expander.Content is StackPanel content)
+            var expander = child as System.Windows.Controls.Expander;
+            if (expander == null && child is Border border && border.Child is StackPanel borderContent)
+            {
+                expander = borderContent.Children.OfType<System.Windows.Controls.Expander>().FirstOrDefault();
+            }
+
+            if (expander != null && expander.Content is StackPanel content)
             {
                 var groupRow = content.Children.OfType<StackPanel>().FirstOrDefault();
                 var nameBox = groupRow?.Children.OfType<System.Windows.Controls.TextBox>().FirstOrDefault();

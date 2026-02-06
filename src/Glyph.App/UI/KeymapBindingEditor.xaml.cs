@@ -70,14 +70,10 @@ public partial class KeymapBindingEditor : WpfControls.UserControl
         // Action type badge + child count
         var actionType = DetermineActionType();
         var childCount = ChildrenContainer?.Children.Count ?? _node.Children?.Count ?? 0;
-        if (actionType == "layer" && childCount > 1)
-        {
-            HeaderActionTypeText.Text = $"{actionType} · {childCount}";
-        }
-        else
-        {
-            HeaderActionTypeText.Text = actionType;
-        }
+        var childSuffix = childCount == 1 ? "child" : "children";
+        var childInfo = childCount > 0 ? $" ({childCount} {childSuffix})" : string.Empty;
+        var actionText = string.IsNullOrWhiteSpace(actionType) ? string.Empty : actionType;
+        HeaderActionTypeText.Text = (actionText + childInfo).Trim();
     }
 
     private string DetermineActionType()

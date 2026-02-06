@@ -2,6 +2,40 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
+    <UserControl.Resources>
+        <Style x:Key="PlainExpanderStyle" TargetType="Expander">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Expander">
+                        <StackPanel>
+                            <ToggleButton x:Name="HeaderSite"
+                                          Background="Transparent"
+                                          BorderThickness="0"
+                                          Padding="0"
+                                          Focusable="False"
+                                          HorizontalAlignment="Stretch"
+                                          HorizontalContentAlignment="Stretch"
+                                          VerticalContentAlignment="Center"
+                                          Content="{TemplateBinding Header}"
+                                          ContentTemplate="{TemplateBinding HeaderTemplate}"
+                                          ContentStringFormat="{TemplateBinding HeaderStringFormat}"
+                                          IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}}" />
+                            <ContentPresenter x:Name="ExpandSite"
+                                              Content="{TemplateBinding Content}"
+                                              ContentTemplate="{TemplateBinding ContentTemplate}"
+                                              ContentStringFormat="{TemplateBinding ContentStringFormat}"
+                                              Visibility="Collapsed" />
+                        </StackPanel>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsExpanded" Value="True">
+                                <Setter TargetName="ExpandSite" Property="Visibility" Value="Visible" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>
@@ -29,7 +63,7 @@
                 <!-- Per-App Bindings Section -->
                 <Expander Header="Per-App Bindings" IsExpanded="True" Margin="0,0,0,8">
                     <StackPanel x:Name="AppBindingsPanel" Margin="4,8,4,4">
-                        <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" Margin="0,0,0,8">
+                        <TextBlock x:Name="AppBindingsDescription" TextWrapping="Wrap" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" Margin="0,0,0,8">
                             Configure keymaps that apply only when specific applications are focused.
                         </TextBlock>
                         <!-- App bindings will be added here dynamically -->
@@ -40,7 +74,7 @@
                 <!-- App Groups Section -->
                 <Expander Header="App Groups" IsExpanded="True" Margin="0,0,0,8">
                     <StackPanel x:Name="AppGroupsPanel" Margin="4,8,4,4">
-                        <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" Margin="0,0,0,8">
+                        <TextBlock x:Name="AppGroupsDescription" TextWrapping="Wrap" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" Margin="0,0,0,8">
                             Create groups of applications that share the same keymaps.
                         </TextBlock>
                         <!-- App groups will be added here dynamically -->
