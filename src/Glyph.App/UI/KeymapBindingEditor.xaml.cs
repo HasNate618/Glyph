@@ -18,14 +18,14 @@ public partial class KeymapBindingEditor : WpfControls.UserControl
 {
     private readonly KeymapYamlNode _node;
     private readonly WpfControls.Panel _parentPanel;
-    private readonly KeymapEditorWindow _parentWindow;
+    private readonly IKeymapEditorParent _parentWindow;
     private readonly bool _isTopLevel;
     private bool _isRecording = false;
     private bool _isExpanded = false;
     private KeyboardHook? _keyboardHook;
     private readonly List<char> _recordedKeys = new();
 
-    public KeymapBindingEditor(KeymapYamlNode node, WpfControls.Panel parentPanel, KeymapEditorWindow parentWindow, bool isTopLevel)
+    public KeymapBindingEditor(KeymapYamlNode node, WpfControls.Panel parentPanel, IKeymapEditorParent parentWindow, bool isTopLevel)
     {
         InitializeComponent();
         Unloaded += KeymapBindingEditor_Unloaded;
@@ -714,17 +714,20 @@ public partial class KeymapBindingEditor : WpfControls.UserControl
 
     private void DeleteButton_Click(object sender, RoutedEventArgs e)
     {
+        var message = "Are you sure you want to delete this keymap?";
         if (_node.Children != null && _node.Children.Count > 0)
         {
-            var result = System.Windows.MessageBox.Show(
-                "This binding has nested children. Delete anyway?",
-                "Confirm Delete",
-                MessageBoxButton.YesNo,
-                MessageBoxImage.Warning);
-            if (result != MessageBoxResult.Yes)
-            {
-                return;
-            }
+            message = $"This binding has {_node.Children.Count} nested children. Delete anyway?";
+        }
+
+        var result = System.Windows.MessageBox.Show(
+            message,
+            "Confirm Delete",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Warning);
+        if (result != MessageBoxResult.Yes)
+        {
+            return;
         }
 
         _parentPanel.Children.Remove(this);

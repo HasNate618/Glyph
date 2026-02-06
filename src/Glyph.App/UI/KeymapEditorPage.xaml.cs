@@ -15,7 +15,7 @@ using YamlDotNet.Serialization.NamingConventions;
 
 namespace Glyph.App.UI;
 
-public partial class KeymapEditorWindow : Wpf.Ui.Controls.FluentWindow, IKeymapEditorParent
+public partial class KeymapEditorPage : System.Windows.Controls.UserControl, IKeymapEditorParent
 {
     private readonly string _keymapsPath;
     private bool _hasUnsavedChanges = false;
@@ -24,17 +24,14 @@ public partial class KeymapEditorWindow : Wpf.Ui.Controls.FluentWindow, IKeymapE
     public List<string> CachedActionIds { get; private set; } = new();
     public List<(string Id, string Name)> CachedThemes { get; private set; } = new();
 
-    public KeymapEditorWindow()
+    public KeymapEditorPage()
     {
         InitializeComponent();
         _keymapsPath = KeymapYamlLoader.KeymapsPath;
 
-        // Apply system theme to this window
-        Wpf.Ui.Appearance.SystemThemeWatcher.Watch(this);
-
         Loaded += (_, _) =>
         {
-            // Defer heavy work so the window renders instantly
+            // Defer heavy work so the page renders instantly
             StatusText.Text = "Loading keymaps...";
             LoadingPanel.Visibility = Visibility.Visible;
             Dispatcher.InvokeAsync(LoadKeymaps, DispatcherPriority.Background);
@@ -187,11 +184,23 @@ public partial class KeymapEditorWindow : Wpf.Ui.Controls.FluentWindow, IKeymapE
             }
         }
 
-        var header = new Grid { Margin = new Thickness(0, 4, 0, 4) };
+        var header = new Grid { Margin = new Thickness(12, 8, 12, 8), Cursor = System.Windows.Input.Cursors.Hand };
+        header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         header.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+        // Expand/Collapse chevron on the left
+        var expandChevron = new Wpf.Ui.Controls.SymbolIcon
+        {
+            Symbol = Wpf.Ui.Controls.SymbolRegular.ChevronRight24,
+            FontSize = 14,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(0, 0, 8, 0)
+        };
+        Grid.SetColumn(expandChevron, 0);
 
         var headerBadge = new Border
         {
@@ -208,15 +217,16 @@ public partial class KeymapEditorWindow : Wpf.Ui.Controls.FluentWindow, IKeymapE
             FontSize = 13
         };
         headerBadge.Child = headerProcessText;
-        Grid.SetColumn(headerBadge, 0);
+        Grid.SetColumn(headerBadge, 1);
 
         var headerLabel = new TextBlock
         {
             Text = $"Bindings · {bindingsPanel.Children.OfType<KeymapBindingEditor>().Count()}",
             VerticalAlignment = VerticalAlignment.Center,
-            Foreground = (System.Windows.Media.Brush)System.Windows.Application.Current.FindResource("TextFillColorSecondaryBrush")
+            Foreground = (System.Windows.Media.Brush)System.Windows.Application.Current.FindResource("TextFillColorSecondaryBrush"),
+            Margin = new Thickness(0, 0, 8, 0)
         };
-        Grid.SetColumn(headerLabel, 1);
+        Grid.SetColumn(headerLabel, 2);
 
         var addBindingButton = new Wpf.Ui.Controls.Button
         {
@@ -261,38 +271,87 @@ public partial class KeymapEditorWindow : Wpf.Ui.Controls.FluentWindow, IKeymapE
         content.Children.Add(addBindingButton);
         bindingsPanel.Tag = headerLabel;
 
+        // Action type badge (empty for apps, but keeping structure consistent)
+        var actionBadge = new Border
+        {
+            Background = (System.Windows.Media.Brush)System.Windows.Application.Current.FindResource("SubtleFillColorSecondaryBrush"),
+            CornerRadius = new CornerRadius(4),
+            Padding = new Thickness(6, 2, 6, 2),
+            Margin = new Thickness(8, 0, 8, 0),
+            VerticalAlignment = VerticalAlignment.Center,
+            Visibility = Visibility.Collapsed
+        };
+        Grid.SetColumn(actionBadge, 3);
+
         var deleteButton = new Wpf.Ui.Controls.Button
         {
-            Appearance = Wpf.Ui.Controls.ControlAppearance.Danger,
+            Appearance = Wpf.Ui.Controls.ControlAppearance.Secondary,
             Padding = new Thickness(4),
-            Width = 32,
-            Height = 32,
+            Width = 28,
+            Height = 28,
             VerticalAlignment = VerticalAlignment.Center,
             Content = new Wpf.Ui.Controls.SymbolIcon
             {
                 Symbol = Wpf.Ui.Controls.SymbolRegular.Delete24,
-                FontSize = 14
+                FontSize = 14,
+                Foreground = System.Windows.Media.Brushes.White
             }
         };
 
-        Grid.SetColumn(deleteButton, 3);
+        Grid.SetColumn(deleteButton, 4);
 
-        var container = new System.Windows.Controls.Expander
+        var container = new Border
+        {
+            CornerRadius = new CornerRadius(4),
+            Background = (System.Windows.Media.Brush)System.Windows.Application.Current.FindResource("CardBackgroundFillColorDefaultBrush"),
+            BorderBrush = (System.Windows.Media.Brush)System.Windows.Application.Current.FindResource("ControlStrokeColorDefaultBrush"),
+            BorderThickness = new Thickness(1),
+            Margin = new Thickness(0, 0, 0, 4),
+            Padding = new Thickness(0)
+        };
+
+        var expander = new System.Windows.Controls.Expander
         {
             Header = header,
             Content = content,
-            IsExpanded = false,
-            Margin = new Thickness(0, 0, 0, 8)
+            IsExpanded = false
         };
 
-        deleteButton.Click += (_, _) =>
+        expander.Expanded += (_, _) =>
         {
-            AppBindingsPanel.Children.Remove(container);
-            MarkUnsaved();
+            expandChevron.Symbol = Wpf.Ui.Controls.SymbolRegular.ChevronDown24;
+        };
+        expander.Collapsed += (_, _) =>
+        {
+            expandChevron.Symbol = Wpf.Ui.Controls.SymbolRegular.ChevronRight24;
         };
 
+        deleteButton.Click += (_, e) =>
+        {
+            if (e is RoutedEventArgs routedArgs)
+            {
+                routedArgs.Handled = true; // Prevent expander from toggling when clicking delete
+            }
+            var result = System.Windows.MessageBox.Show(
+                $"Are you sure you want to delete the keymaps for '{app.Process}'?",
+                "Confirm Delete",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Warning);
+            if (result == MessageBoxResult.Yes)
+            {
+                AppBindingsPanel.Children.Remove(container);
+                MarkUnsaved();
+            }
+        };
+
+        var containerContent = new StackPanel();
+        containerContent.Children.Add(expander);
+        container.Child = containerContent;
+
+        header.Children.Add(expandChevron);
         header.Children.Add(headerBadge);
         header.Children.Add(headerLabel);
+        header.Children.Add(actionBadge);
         header.Children.Add(deleteButton);
 
         return container;
@@ -310,11 +369,23 @@ public partial class KeymapEditorWindow : Wpf.Ui.Controls.FluentWindow, IKeymapE
             }
         }
 
-        var header = new Grid { Margin = new Thickness(0, 4, 0, 4) };
+        var header = new Grid { Margin = new Thickness(12, 8, 12, 8), Cursor = System.Windows.Input.Cursors.Hand };
+        header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         header.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+        // Expand/Collapse chevron on the left
+        var expandChevron = new Wpf.Ui.Controls.SymbolIcon
+        {
+            Symbol = Wpf.Ui.Controls.SymbolRegular.ChevronRight24,
+            FontSize = 14,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(0, 0, 8, 0)
+        };
+        Grid.SetColumn(expandChevron, 0);
 
         var headerBadge = new Border
         {
@@ -331,15 +402,16 @@ public partial class KeymapEditorWindow : Wpf.Ui.Controls.FluentWindow, IKeymapE
             FontSize = 13
         };
         headerBadge.Child = headerGroupText;
-        Grid.SetColumn(headerBadge, 0);
+        Grid.SetColumn(headerBadge, 1);
 
         var headerGroupDetail = new TextBlock
         {
             Text = $"Bindings · {bindingsPanel.Children.OfType<KeymapBindingEditor>().Count()}",
             VerticalAlignment = VerticalAlignment.Center,
-            Foreground = (System.Windows.Media.Brush)System.Windows.Application.Current.FindResource("TextFillColorSecondaryBrush")
+            Foreground = (System.Windows.Media.Brush)System.Windows.Application.Current.FindResource("TextFillColorSecondaryBrush"),
+            Margin = new Thickness(0, 0, 8, 0)
         };
-        Grid.SetColumn(headerGroupDetail, 1);
+        Grid.SetColumn(headerGroupDetail, 2);
 
         var addBindingButton = new Wpf.Ui.Controls.Button
         {
@@ -388,7 +460,6 @@ public partial class KeymapEditorWindow : Wpf.Ui.Controls.FluentWindow, IKeymapE
         processesBox.TextChanged += (_, _) =>
         {
             group.Processes = processesBox.Text.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
-            headerGroupDetail.Text = group.Processes.Count == 0 ? "No processes" : $"{group.Processes.Count} processes";
             MarkUnsaved();
         };
         groupEditorRow.Children.Add(nameLabel);
@@ -400,38 +471,87 @@ public partial class KeymapEditorWindow : Wpf.Ui.Controls.FluentWindow, IKeymapE
         content.Children.Add(addBindingButton);
         bindingsPanel.Tag = headerGroupDetail;
 
+        // Action type badge (empty for groups, but keeping structure consistent)
+        var actionBadge = new Border
+        {
+            Background = (System.Windows.Media.Brush)System.Windows.Application.Current.FindResource("SubtleFillColorSecondaryBrush"),
+            CornerRadius = new CornerRadius(4),
+            Padding = new Thickness(6, 2, 6, 2),
+            Margin = new Thickness(8, 0, 8, 0),
+            VerticalAlignment = VerticalAlignment.Center,
+            Visibility = Visibility.Collapsed
+        };
+        Grid.SetColumn(actionBadge, 3);
+
         var deleteButton = new Wpf.Ui.Controls.Button
         {
-            Appearance = Wpf.Ui.Controls.ControlAppearance.Danger,
+            Appearance = Wpf.Ui.Controls.ControlAppearance.Secondary,
             Padding = new Thickness(4),
-            Width = 32,
-            Height = 32,
+            Width = 28,
+            Height = 28,
             VerticalAlignment = VerticalAlignment.Center,
             Content = new Wpf.Ui.Controls.SymbolIcon
             {
                 Symbol = Wpf.Ui.Controls.SymbolRegular.Delete24,
-                FontSize = 14
+                FontSize = 14,
+                Foreground = System.Windows.Media.Brushes.White
             }
         };
 
-        Grid.SetColumn(deleteButton, 3);
+        Grid.SetColumn(deleteButton, 4);
 
-        var container = new System.Windows.Controls.Expander
+        var container = new Border
+        {
+            CornerRadius = new CornerRadius(4),
+            Background = (System.Windows.Media.Brush)System.Windows.Application.Current.FindResource("CardBackgroundFillColorDefaultBrush"),
+            BorderBrush = (System.Windows.Media.Brush)System.Windows.Application.Current.FindResource("ControlStrokeColorDefaultBrush"),
+            BorderThickness = new Thickness(1),
+            Margin = new Thickness(0, 0, 0, 4),
+            Padding = new Thickness(0)
+        };
+
+        var expander = new System.Windows.Controls.Expander
         {
             Header = header,
             Content = content,
-            IsExpanded = false,
-            Margin = new Thickness(0, 0, 0, 8)
+            IsExpanded = false
         };
 
-        deleteButton.Click += (_, _) =>
+        expander.Expanded += (_, _) =>
         {
-            AppGroupsPanel.Children.Remove(container);
-            MarkUnsaved();
+            expandChevron.Symbol = Wpf.Ui.Controls.SymbolRegular.ChevronDown24;
+        };
+        expander.Collapsed += (_, _) =>
+        {
+            expandChevron.Symbol = Wpf.Ui.Controls.SymbolRegular.ChevronRight24;
         };
 
+        deleteButton.Click += (_, e) =>
+        {
+            if (e is RoutedEventArgs routedArgs)
+            {
+                routedArgs.Handled = true; // Prevent expander from toggling when clicking delete
+            }
+            var result = System.Windows.MessageBox.Show(
+                $"Are you sure you want to delete the group '{group.Name}'?",
+                "Confirm Delete",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Warning);
+            if (result == MessageBoxResult.Yes)
+            {
+                AppGroupsPanel.Children.Remove(container);
+                MarkUnsaved();
+            }
+        };
+
+        var containerContent = new StackPanel();
+        containerContent.Children.Add(expander);
+        container.Child = containerContent;
+
+        header.Children.Add(expandChevron);
         header.Children.Add(headerBadge);
         header.Children.Add(headerGroupDetail);
+        header.Children.Add(actionBadge);
         header.Children.Add(deleteButton);
 
         return container;

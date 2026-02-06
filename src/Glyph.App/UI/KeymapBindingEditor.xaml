@@ -36,8 +36,8 @@
                 </Border>
 
                 <!-- Delete button -->
-                <ui:Button x:Name="DeleteButton" Grid.Column="4" Appearance="Danger" Padding="4" Width="28" Height="28" VerticalAlignment="Center" Click="DeleteButton_Click" ToolTip="Delete binding">
-                    <ui:SymbolIcon Symbol="Delete24" FontSize="14" />
+                <ui:Button x:Name="DeleteButton" Grid.Column="4" Appearance="Secondary" Padding="4" Width="28" Height="28" VerticalAlignment="Center" Click="DeleteButton_Click" ToolTip="Delete binding">
+                    <ui:SymbolIcon Symbol="Delete24" FontSize="14" Foreground="White" />
                 </ui:Button>
             </Grid>
 

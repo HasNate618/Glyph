@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Windows;
+using System.Windows.Controls;
 
 using Glyph.App.Overlay.Theming;
 using Glyph.Core.Logging;
@@ -44,18 +45,52 @@ public partial class SettingsWindow : Wpf.Ui.Controls.FluentWindow
         StartWithWindowsCheckBox.Unchecked += StartWithWindowsCheckChanged;
     }
 
+    private KeymapEditorPage? _keymapEditorPage;
+    private ScrollViewer? _generalSettingsView;
+
     private void OpenKeymapEditorButton_Click(object? sender, RoutedEventArgs e)
     {
         try
         {
-            var editor = new KeymapEditorWindow();
-            editor.Show();
+            NavigateToKeymapEditor();
         }
         catch (Exception ex)
         {
             Logger.Error("Failed to open keymap editor", ex);
             System.Windows.MessageBox.Show($"Failed to open keymap editor:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
+    }
+
+    private void BackButton_Click(object? sender, RoutedEventArgs e)
+    {
+        NavigateToGeneralSettings();
+    }
+
+    private void NavigateToKeymapEditor()
+    {
+        // Store reference to general settings view if not already stored
+        if (_generalSettingsView == null)
+        {
+            _generalSettingsView = ContentArea.Content as ScrollViewer;
+        }
+
+        if (_keymapEditorPage == null)
+        {
+            _keymapEditorPage = new KeymapEditorPage();
+        }
+        ContentArea.Content = _keymapEditorPage;
+        BackButton.Visibility = Visibility.Visible;
+        Title = "Keymap Editor";
+    }
+
+    private void NavigateToGeneralSettings()
+    {
+        if (_generalSettingsView != null)
+        {
+            ContentArea.Content = _generalSettingsView;
+        }
+        BackButton.Visibility = Visibility.Collapsed;
+        Title = "Glyph Settings";
     }
 
     private bool _suppressUiEvents = false;

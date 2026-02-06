@@ -1,0 +1,33 @@
+<Window x:Class="Glyph.App.Tray.TrayMenuWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    Title="Glyph Tray Menu"
+    WindowStyle="None"
+    AllowsTransparency="False"
+    Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+    ResizeMode="NoResize"
+    ShowInTaskbar="False"
+    Topmost="True"
+    SizeToContent="WidthAndHeight">
+    <Border CornerRadius="10"
+        Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+        BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}"
+        BorderThickness="1"
+        Padding="8">
+        <StackPanel>
+            <ui:Button x:Name="OpenGuiButton" Content="Open GUI" Icon="{ui:SymbolIcon Settings24}" Appearance="Secondary" Margin="0,0,0,4" Click="OpenGuiButton_Click" />
+
+            <CheckBox x:Name="StartOnStartupCheckBox" Content="Open on startup" Margin="6,4,0,6" Checked="StartOnStartupCheckBox_Checked" Unchecked="StartOnStartupCheckBox_Unchecked" />
+
+            <Separator Margin="0,4" />
+
+            <ui:Button x:Name="OpenConfigButton" Content="Open Config Folder" Icon="{ui:SymbolIcon FolderOpen24}" Appearance="Secondary" Margin="0,0,0,4" Click="OpenConfigButton_Click" />
+            <ui:Button x:Name="OpenLogsButton" Content="Open Logs Folder" Icon="{ui:SymbolIcon FolderOpen24}" Appearance="Secondary" Margin="0,0,0,4" Click="OpenLogsButton_Click" />
+
+            <Separator Margin="0,4" />
+
+            <ui:Button x:Name="ExitButton" Content="Exit" Icon="{ui:SymbolIcon Dismiss24}" Appearance="Danger" Click="ExitButton_Click" />
+        </StackPanel>
+    </Border>
+</Window>
