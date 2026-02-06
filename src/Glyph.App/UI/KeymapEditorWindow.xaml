@@ -21,6 +21,10 @@
             <StackPanel Margin="0,8,0,16">
                 <!-- Header -->
                 <TextBlock FontSize="28" FontWeight="SemiBold" Text="Keymap Editor" Margin="0,0,0,4" />
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,8" x:Name="LoadingPanel" Visibility="Collapsed">
+                    <ui:ProgressRing Width="16" Height="16" IsIndeterminate="True" Margin="0,0,8,0" />
+                    <TextBlock FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="Loading keymaps..." />
+                </StackPanel>
                 <TextBlock x:Name="StatusText" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,16" Text="Ready" />
 
                 <!-- Global Bindings Section -->
@@ -31,7 +35,7 @@
                 </Expander>
 
                 <!-- Per-App Bindings Section -->
-                <Expander Header="Per-App Bindings" IsExpanded="False" Margin="0,0,0,8">
+                <Expander Header="Per-App Bindings" IsExpanded="True" Margin="0,0,0,8">
                     <StackPanel x:Name="AppBindingsPanel" Margin="4,8,4,4">
                         <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" Margin="0,0,0,8">
                             Configure keymaps that apply only when specific applications are focused.
@@ -42,7 +46,7 @@
                 </Expander>
 
                 <!-- App Groups Section -->
-                <Expander Header="App Groups" IsExpanded="False" Margin="0,0,0,8">
+                <Expander Header="App Groups" IsExpanded="True" Margin="0,0,0,8">
                     <StackPanel x:Name="AppGroupsPanel" Margin="4,8,4,4">
                         <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" Margin="0,0,0,8">
                             Create groups of applications that share the same keymaps.

@@ -63,7 +63,7 @@
                 <!-- Key tokens row (hidden by default) -->
                 <StackPanel x:Name="KeyTokensRow" Orientation="Horizontal" Margin="0,0,0,8" Visibility="Collapsed">
                     <TextBlock Text="Tokens:" VerticalAlignment="Center" Width="80" />
-                    <ComboBox x:Name="KeyTokensCombo" Width="200" VerticalAlignment="Center" Margin="0,0,8,0" IsEditable="True" SelectionChanged="KeyTokensCombo_SelectionChanged" LostFocus="KeyTokensCombo_LostFocus" />
+                    <ComboBox x:Name="KeyTokensCombo" Width="200" VerticalAlignment="Center" Margin="0,0,8,0" IsEditable="True" SelectionChanged="KeyTokensCombo_SelectionChanged" LostFocus="KeyTokensCombo_LostFocus" PreviewMouseLeftButtonDown="ComboBox_PreviewMouseLeftButtonDown" />
                 </StackPanel>
 
                 <!-- Label row -->
@@ -83,7 +83,7 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
                     <TextBlock Text="Action:" VerticalAlignment="Center" Grid.Column="0" />
-                    <ComboBox x:Name="ActionTypeCombo" Width="200" VerticalAlignment="Center" Grid.Column="1" SelectionChanged="ActionTypeCombo_SelectionChanged">
+                    <ComboBox x:Name="ActionTypeCombo" Width="200" VerticalAlignment="Center" Grid.Column="1" SelectionChanged="ActionTypeCombo_SelectionChanged" PreviewMouseLeftButtonDown="ComboBox_PreviewMouseLeftButtonDown">
                         <ComboBoxItem Content="action" Tag="action" />
                         <ComboBoxItem Content="send" Tag="send" />
                         <ComboBoxItem Content="type" Tag="type" />
@@ -103,7 +103,7 @@
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock Text="Action ID:" VerticalAlignment="Center" Grid.Column="0" />
-                        <ComboBox x:Name="ActionIdCombo" Width="250" VerticalAlignment="Center" Grid.Column="1" IsEditable="True" SelectionChanged="ActionIdCombo_SelectionChanged" />
+                        <ComboBox x:Name="ActionIdCombo" Width="250" VerticalAlignment="Center" Grid.Column="1" IsEditable="True" SelectionChanged="ActionIdCombo_SelectionChanged" PreviewMouseLeftButtonDown="ComboBox_PreviewMouseLeftButtonDown" />
                     </Grid>
 
                     <!-- Send spec input -->
@@ -176,7 +176,7 @@
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock Text="Theme:" VerticalAlignment="Center" Grid.Column="0" />
-                        <ComboBox x:Name="ThemeIdCombo" Width="250" VerticalAlignment="Center" Grid.Column="1" IsEditable="True" SelectionChanged="ThemeIdCombo_SelectionChanged" />
+                        <ComboBox x:Name="ThemeIdCombo" Width="250" VerticalAlignment="Center" Grid.Column="1" IsEditable="True" SelectionChanged="ThemeIdCombo_SelectionChanged" PreviewMouseLeftButtonDown="ComboBox_PreviewMouseLeftButtonDown" />
                     </Grid>
                 </StackPanel>
 

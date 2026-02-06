@@ -67,9 +67,17 @@ public partial class KeymapBindingEditor : WpfControls.UserControl
         // Label
         HeaderLabelText.Text = _node.Label ?? "";
 
-        // Action type badge
+        // Action type badge + child count
         var actionType = DetermineActionType();
-        HeaderActionTypeText.Text = actionType;
+        var childCount = ChildrenContainer?.Children.Count ?? _node.Children?.Count ?? 0;
+        if (actionType == "layer" && childCount > 1)
+        {
+            HeaderActionTypeText.Text = $"{actionType} · {childCount}";
+        }
+        else
+        {
+            HeaderActionTypeText.Text = actionType;
+        }
     }
 
     private string DetermineActionType()
@@ -81,6 +89,7 @@ public partial class KeymapBindingEditor : WpfControls.UserControl
                 return "setTheme";
             return "action";
         }
+        if (!string.IsNullOrEmpty(_node.SetTheme)) return "setTheme";
         if (!string.IsNullOrEmpty(_node.Send)) return "send";
         if (!string.IsNullOrEmpty(_node.Type)) return "type";
         if (!string.IsNullOrEmpty(_node.Exec)) return "exec";
@@ -143,6 +152,11 @@ public partial class KeymapBindingEditor : WpfControls.UserControl
                 actionType = "action";
                 ActionIdCombo.Text = _node.Action;
             }
+        }
+        else if (!string.IsNullOrEmpty(_node.SetTheme))
+        {
+            actionType = "setTheme";
+            ThemeIdCombo.Text = _node.SetTheme;
         }
         else if (!string.IsNullOrEmpty(_node.Send))
         {
@@ -216,6 +230,7 @@ public partial class KeymapBindingEditor : WpfControls.UserControl
 
         var typeLabel = new WpfControls.TextBlock { Text = "Type:", VerticalAlignment = VerticalAlignment.Center, Width = 60 };
         var typeCombo = new WpfControls.ComboBox { Width = 120, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 0) };
+        typeCombo.PreviewMouseLeftButtonDown += ComboBox_PreviewMouseLeftButtonDown;
         typeCombo.Items.Add("action");
         typeCombo.Items.Add("send");
         typeCombo.Items.Add("type");
@@ -241,6 +256,7 @@ public partial class KeymapBindingEditor : WpfControls.UserControl
 
         var inputPanel = new WpfControls.StackPanel { Orientation = WpfControls.Orientation.Horizontal, Margin = new Thickness(0, 0, 8, 0) };
         var actionInput = new WpfControls.ComboBox { Width = 200, IsEditable = true };
+        actionInput.PreviewMouseLeftButtonDown += ComboBox_PreviewMouseLeftButtonDown;
         // Populate action IDs
         foreach (var actionId in ActionRuntime.KnownActionIds.OrderBy(a => a))
         {
@@ -337,6 +353,18 @@ public partial class KeymapBindingEditor : WpfControls.UserControl
         return container;
     }
 
+    private void ComboBox_PreviewMouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+    {
+        if (sender is WpfControls.ComboBox combo)
+        {
+            if (!combo.IsDropDownOpen)
+            {
+                combo.IsDropDownOpen = true;
+                e.Handled = true;
+            }
+        }
+    }
+
     private void RecordKeyButton_Click(object sender, RoutedEventArgs e)
     {
         if (_isRecording)
@@ -422,7 +450,7 @@ public partial class KeymapBindingEditor : WpfControls.UserControl
     {
         if (KeyTextBox.IsFocused)
         {
-            _node.Key = KeyTextBox.Text;
+            _node.Key = string.IsNullOrWhiteSpace(KeyTextBox.Text) ? null : KeyTextBox.Text;
             _node.KeyTokens = null;
             _parentWindow.MarkUnsaved();
             UpdateHeaderSummary();
@@ -501,16 +529,21 @@ public partial class KeymapBindingEditor : WpfControls.UserControl
         {
             _node.KeyTokens = KeyTokensCombo.Text.Split(' ', StringSplitOptions.RemoveEmptyEntries).ToList();
             _node.Key = null;
-            _parentWindow.MarkUnsaved();
-            UpdateHeaderSummary();
         }
+        else
+        {
+            _node.KeyTokens = null;
+        }
+
+        _parentWindow.MarkUnsaved();
+        UpdateHeaderSummary();
     }
 
     private void LabelTextBox_TextChanged(object? sender, WpfControls.TextChangedEventArgs e)
     {
         if (LabelTextBox.IsFocused)
         {
-            _node.Label = LabelTextBox.Text;
+            _node.Label = string.IsNullOrWhiteSpace(LabelTextBox.Text) ? null : LabelTextBox.Text;
             _parentWindow.MarkUnsaved();
             UpdateHeaderSummary();
         }
@@ -554,7 +587,7 @@ public partial class KeymapBindingEditor : WpfControls.UserControl
     {
         if (ActionIdCombo.IsFocused)
         {
-            _node.Action = ActionIdCombo.Text;
+            _node.Action = string.IsNullOrWhiteSpace(ActionIdCombo.Text) ? null : ActionIdCombo.Text;
             _parentWindow.MarkUnsaved();
         }
     }
@@ -563,7 +596,7 @@ public partial class KeymapBindingEditor : WpfControls.UserControl
     {
         if (SendTextBox.IsFocused)
         {
-            _node.Send = SendTextBox.Text;
+            _node.Send = string.IsNullOrWhiteSpace(SendTextBox.Text) ? null : SendTextBox.Text;
             _parentWindow.MarkUnsaved();
         }
     }
@@ -572,7 +605,7 @@ public partial class KeymapBindingEditor : WpfControls.UserControl
     {
         if (TypeTextBox.IsFocused)
         {
-            _node.Type = TypeTextBox.Text;
+            _node.Type = string.IsNullOrWhiteSpace(TypeTextBox.Text) ? null : TypeTextBox.Text;
             _parentWindow.MarkUnsaved();
         }
     }
@@ -581,7 +614,7 @@ public partial class KeymapBindingEditor : WpfControls.UserControl
     {
         if (ExecPathTextBox.IsFocused)
         {
-            _node.Exec = ExecPathTextBox.Text;
+            _node.Exec = string.IsNullOrWhiteSpace(ExecPathTextBox.Text) ? null : ExecPathTextBox.Text;
             _parentWindow.MarkUnsaved();
         }
     }
@@ -590,7 +623,7 @@ public partial class KeymapBindingEditor : WpfControls.UserControl
     {
         if (ExecArgsTextBox.IsFocused)
         {
-            _node.ExecArgs = ExecArgsTextBox.Text;
+            _node.ExecArgs = string.IsNullOrWhiteSpace(ExecArgsTextBox.Text) ? null : ExecArgsTextBox.Text;
             _parentWindow.MarkUnsaved();
         }
     }
@@ -599,7 +632,7 @@ public partial class KeymapBindingEditor : WpfControls.UserControl
     {
         if (ExecCwdTextBox.IsFocused)
         {
-            _node.ExecCwd = ExecCwdTextBox.Text;
+            _node.ExecCwd = string.IsNullOrWhiteSpace(ExecCwdTextBox.Text) ? null : ExecCwdTextBox.Text;
             _parentWindow.MarkUnsaved();
         }
     }
@@ -609,8 +642,16 @@ public partial class KeymapBindingEditor : WpfControls.UserControl
         if (ThemeIdCombo.IsFocused && !string.IsNullOrEmpty(ThemeIdCombo.Text))
         {
             var themeId = ThemeIdCombo.Text.Split(' ')[0]; // Extract ID from "ID (Name)" format
-            _node.Action = $"setTheme:{themeId}";
-            _node.SetTheme = themeId;
+            if (!string.IsNullOrWhiteSpace(themeId))
+            {
+                _node.Action = $"setTheme:{themeId}";
+                _node.SetTheme = themeId;
+            }
+            else
+            {
+                _node.Action = null;
+                _node.SetTheme = null;
+            }
             _parentWindow.MarkUnsaved();
         }
     }
@@ -668,6 +709,7 @@ public partial class KeymapBindingEditor : WpfControls.UserControl
         var childEditor = new KeymapBindingEditor(newChild, ChildrenContainer, _parentWindow, false);
         ChildrenContainer.Children.Add(childEditor);
         _parentWindow.MarkUnsaved();
+        UpdateHeaderSummary();
     }
 
     private void DeleteButton_Click(object sender, RoutedEventArgs e)
@@ -687,6 +729,11 @@ public partial class KeymapBindingEditor : WpfControls.UserControl
 
         _parentPanel.Children.Remove(this);
         _parentWindow.MarkUnsaved();
+        if (_parentPanel.Tag is WpfControls.TextBlock countLabel)
+        {
+            countLabel.Text = $"Bindings · {_parentPanel.Children.OfType<KeymapBindingEditor>().Count()}";
+        }
+        TryUpdateParentHeaderSummary();
     }
 
     public KeymapYamlNode? GetNode()
@@ -706,21 +753,21 @@ public partial class KeymapBindingEditor : WpfControls.UserControl
                     var type = stepData.TypeCombo.SelectedItem?.ToString();
                     if (type == "action")
                     {
-                        step.Action = stepData.ActionInput.Text;
+                        step.Action = string.IsNullOrWhiteSpace(stepData.ActionInput.Text) ? null : stepData.ActionInput.Text;
                     }
                     else if (type == "send")
                     {
-                        step.Send = stepData.SendInput.Text;
+                        step.Send = string.IsNullOrWhiteSpace(stepData.SendInput.Text) ? null : stepData.SendInput.Text;
                     }
                     else if (type == "type")
                     {
-                        step.Type = stepData.TypeInput.Text;
+                        step.Type = string.IsNullOrWhiteSpace(stepData.TypeInput.Text) ? null : stepData.TypeInput.Text;
                     }
                     else if (type == "exec")
                     {
-                        step.Exec = stepData.ExecInput.Text;
-                        step.ExecArgs = stepData.ExecArgsInput.Text;
-                        step.ExecCwd = stepData.ExecCwdInput.Text;
+                        step.Exec = string.IsNullOrWhiteSpace(stepData.ExecInput.Text) ? null : stepData.ExecInput.Text;
+                        step.ExecArgs = string.IsNullOrWhiteSpace(stepData.ExecArgsInput.Text) ? null : stepData.ExecArgsInput.Text;
+                        step.ExecCwd = string.IsNullOrWhiteSpace(stepData.ExecCwdInput.Text) ? null : stepData.ExecCwdInput.Text;
                     }
                     if (!string.IsNullOrEmpty(step.Action) || !string.IsNullOrEmpty(step.Send) || 
                         !string.IsNullOrEmpty(step.Type) || !string.IsNullOrEmpty(step.Exec))
@@ -770,44 +817,54 @@ public partial class KeymapBindingEditor : WpfControls.UserControl
         // Update key/keyTokens
         if (KeyTextBox.Visibility == Visibility.Visible)
         {
-            _node.Key = KeyTextBox.Text;
+            _node.Key = string.IsNullOrWhiteSpace(KeyTextBox.Text) ? null : KeyTextBox.Text;
             _node.KeyTokens = null;
         }
         else if (KeyTokensCombo.Visibility == Visibility.Visible)
         {
-            _node.KeyTokens = KeyTokensCombo.Text.Split(' ', StringSplitOptions.RemoveEmptyEntries).ToList();
+            _node.KeyTokens = string.IsNullOrWhiteSpace(KeyTokensCombo.Text)
+                ? null
+                : KeyTokensCombo.Text.Split(' ', StringSplitOptions.RemoveEmptyEntries).ToList();
             _node.Key = null;
         }
 
         // Update label
-        _node.Label = LabelTextBox.Text;
+        _node.Label = string.IsNullOrWhiteSpace(LabelTextBox.Text) ? null : LabelTextBox.Text;
 
         // Update action type specific fields
         var selectedType = (ActionTypeCombo.SelectedItem as WpfControls.ComboBoxItem)?.Tag?.ToString() ?? "";
         if (selectedType == "action")
         {
-            _node.Action = ActionIdCombo.Text;
+            _node.Action = string.IsNullOrWhiteSpace(ActionIdCombo.Text) ? null : ActionIdCombo.Text;
         }
         else if (selectedType == "send")
         {
-            _node.Send = SendTextBox.Text;
+            _node.Send = string.IsNullOrWhiteSpace(SendTextBox.Text) ? null : SendTextBox.Text;
         }
         else if (selectedType == "type")
         {
-            _node.Type = TypeTextBox.Text;
+            _node.Type = string.IsNullOrWhiteSpace(TypeTextBox.Text) ? null : TypeTextBox.Text;
         }
         else if (selectedType == "exec")
         {
-            _node.Exec = ExecPathTextBox.Text;
-            _node.ExecArgs = ExecArgsTextBox.Text;
-            _node.ExecCwd = ExecCwdTextBox.Text;
+            _node.Exec = string.IsNullOrWhiteSpace(ExecPathTextBox.Text) ? null : ExecPathTextBox.Text;
+            _node.ExecArgs = string.IsNullOrWhiteSpace(ExecArgsTextBox.Text) ? null : ExecArgsTextBox.Text;
+            _node.ExecCwd = string.IsNullOrWhiteSpace(ExecCwdTextBox.Text) ? null : ExecCwdTextBox.Text;
         }
         else if (selectedType == "setTheme")
         {
             var themeText = ThemeIdCombo.Text;
             var themeId = themeText.Split(' ')[0]; // Extract ID from "ID (Name)" format
-            _node.Action = $"setTheme:{themeId}";
-            _node.SetTheme = themeId;
+            if (!string.IsNullOrWhiteSpace(themeId))
+            {
+                _node.Action = $"setTheme:{themeId}";
+                _node.SetTheme = themeId;
+            }
+            else
+            {
+                _node.Action = null;
+                _node.SetTheme = null;
+            }
         }
     }
 
@@ -818,6 +875,28 @@ public partial class KeymapBindingEditor : WpfControls.UserControl
         {
             _keyboardHook.Dispose();
             _keyboardHook = null;
+        }
+    }
+
+    private void TryUpdateParentHeaderSummary()
+    {
+        try
+        {
+            var parent = System.Windows.Media.VisualTreeHelper.GetParent(this);
+            while (parent != null)
+            {
+                if (parent is KeymapBindingEditor editor)
+                {
+                    editor.UpdateHeaderSummary();
+                    break;
+                }
+
+                parent = System.Windows.Media.VisualTreeHelper.GetParent(parent);
+            }
+        }
+        catch
+        {
+            // best-effort
         }
     }
 

@@ -35,6 +35,8 @@ public partial class KeymapEditorWindow : Wpf.Ui.Controls.FluentWindow
         Loaded += (_, _) =>
         {
             // Defer heavy work so the window renders instantly
+            StatusText.Text = "Loading keymaps...";
+            LoadingPanel.Visibility = Visibility.Visible;
             Dispatcher.InvokeAsync(LoadKeymaps, DispatcherPriority.Background);
         };
     }
@@ -58,6 +60,8 @@ public partial class KeymapEditorWindow : Wpf.Ui.Controls.FluentWindow
     {
         try
         {
+            LoadingPanel.Visibility = Visibility.Visible;
+            StatusText.Text = "Loading keymaps...";
             // Preload shared caches once (avoids per-editor disk I/O)
             PreloadCaches();
 
@@ -155,12 +159,14 @@ public partial class KeymapEditorWindow : Wpf.Ui.Controls.FluentWindow
             }
 
             StatusText.Text = "Keymaps loaded successfully.";
+            LoadingPanel.Visibility = Visibility.Collapsed;
             _hasUnsavedChanges = false;
         }
         catch (Exception ex)
         {
             Logger.Error("Failed to load keymaps", ex);
             StatusText.Text = $"Error loading keymaps: {ex.Message}";
+            LoadingPanel.Visibility = Visibility.Collapsed;
         }
     }
 
@@ -171,38 +177,6 @@ public partial class KeymapEditorWindow : Wpf.Ui.Controls.FluentWindow
 
     private UIElement CreateAppEditor(KeymapYamlApp app)
     {
-        var container = new StackPanel { Margin = new Thickness(0, 0, 0, 12) };
-        var header = new StackPanel { Orientation = System.Windows.Controls.Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 8) };
-
-        var processLabel = new TextBlock { Text = "Process:", VerticalAlignment = VerticalAlignment.Center, Width = 80 };
-        var processBox = new System.Windows.Controls.TextBox
-        {
-            Text = app.Process ?? "",
-            Width = 200,
-            VerticalAlignment = VerticalAlignment.Center,
-            Margin = new Thickness(8, 0, 8, 0)
-        };
-        processBox.TextChanged += (_, _) => { app.Process = processBox.Text; MarkUnsaved(); };
-
-        var deleteButton = new Wpf.Ui.Controls.Button
-        {
-            Content = "🗑️",
-            Appearance = Wpf.Ui.Controls.ControlAppearance.Danger,
-            Padding = new Thickness(4),
-            Width = 32,
-            Height = 32,
-            VerticalAlignment = VerticalAlignment.Center
-        };
-        deleteButton.Click += (_, _) =>
-        {
-            AppBindingsPanel.Children.Remove(container);
-            MarkUnsaved();
-        };
-
-        header.Children.Add(processLabel);
-        header.Children.Add(processBox);
-        header.Children.Add(deleteButton);
-
         var bindingsPanel = new StackPanel { Margin = new Thickness(20, 0, 0, 0) };
         if (app.Bindings != null)
         {
@@ -213,6 +187,37 @@ public partial class KeymapEditorWindow : Wpf.Ui.Controls.FluentWindow
             }
         }
 
+        var header = new Grid { Margin = new Thickness(0, 4, 0, 4) };
+        header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        header.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+        var headerBadge = new Border
+        {
+            Background = (System.Windows.Media.Brush)System.Windows.Application.Current.FindResource("ControlFillColorDefaultBrush"),
+            CornerRadius = new CornerRadius(4),
+            Padding = new Thickness(8, 3, 8, 3),
+            Margin = new Thickness(0, 0, 8, 0),
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        var headerProcessText = new TextBlock
+        {
+            Text = string.IsNullOrWhiteSpace(app.Process) ? "(unnamed app)" : app.Process,
+            FontWeight = FontWeights.SemiBold,
+            FontSize = 13
+        };
+        headerBadge.Child = headerProcessText;
+        Grid.SetColumn(headerBadge, 0);
+
+        var headerLabel = new TextBlock
+        {
+            Text = $"Bindings · {bindingsPanel.Children.OfType<KeymapBindingEditor>().Count()}",
+            VerticalAlignment = VerticalAlignment.Center,
+            Foreground = (System.Windows.Media.Brush)System.Windows.Application.Current.FindResource("TextFillColorSecondaryBrush")
+        };
+        Grid.SetColumn(headerLabel, 1);
+
         var addBindingButton = new Wpf.Ui.Controls.Button
         {
             Content = "+ Add Binding",
@@ -230,65 +235,71 @@ public partial class KeymapEditorWindow : Wpf.Ui.Controls.FluentWindow
             else
                 bindingsPanel.Children.Add(editor);
             MarkUnsaved();
+            headerLabel.Text = $"Bindings · {bindingsPanel.Children.OfType<KeymapBindingEditor>().Count()}";
         };
 
-        container.Children.Add(header);
-        container.Children.Add(bindingsPanel);
-        container.Children.Add(addBindingButton);
+        var content = new StackPanel();
+        var processEditorRow = new StackPanel { Orientation = System.Windows.Controls.Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 8) };
+        var processLabel = new TextBlock { Text = "Process:", VerticalAlignment = VerticalAlignment.Center, Width = 80 };
+        var processBox = new System.Windows.Controls.TextBox
+        {
+            Text = app.Process ?? "",
+            Width = 220,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(8, 0, 0, 0)
+        };
+        processBox.TextChanged += (_, _) =>
+        {
+            app.Process = processBox.Text;
+            headerProcessText.Text = string.IsNullOrWhiteSpace(app.Process) ? "(unnamed app)" : app.Process;
+            MarkUnsaved();
+        };
+        processEditorRow.Children.Add(processLabel);
+        processEditorRow.Children.Add(processBox);
+        content.Children.Add(processEditorRow);
+        content.Children.Add(bindingsPanel);
+        content.Children.Add(addBindingButton);
+        bindingsPanel.Tag = headerLabel;
+
+        var deleteButton = new Wpf.Ui.Controls.Button
+        {
+            Appearance = Wpf.Ui.Controls.ControlAppearance.Danger,
+            Padding = new Thickness(4),
+            Width = 32,
+            Height = 32,
+            VerticalAlignment = VerticalAlignment.Center,
+            Content = new Wpf.Ui.Controls.SymbolIcon
+            {
+                Symbol = Wpf.Ui.Controls.SymbolRegular.Delete24,
+                FontSize = 14
+            }
+        };
+
+        Grid.SetColumn(deleteButton, 3);
+
+        var container = new System.Windows.Controls.Expander
+        {
+            Header = header,
+            Content = content,
+            IsExpanded = false,
+            Margin = new Thickness(0, 0, 0, 8)
+        };
+
+        deleteButton.Click += (_, _) =>
+        {
+            AppBindingsPanel.Children.Remove(container);
+            MarkUnsaved();
+        };
+
+        header.Children.Add(headerBadge);
+        header.Children.Add(headerLabel);
+        header.Children.Add(deleteButton);
 
         return container;
     }
 
     private UIElement CreateGroupEditor(KeymapYamlGroup group)
     {
-        var container = new StackPanel { Margin = new Thickness(0, 0, 0, 12) };
-        var header = new StackPanel { Orientation = System.Windows.Controls.Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 8) };
-
-        var nameLabel = new TextBlock { Text = "Group Name:", VerticalAlignment = VerticalAlignment.Center, Width = 100 };
-        var nameBox = new System.Windows.Controls.TextBox
-        {
-            Text = group.Name ?? "",
-            Width = 200,
-            VerticalAlignment = VerticalAlignment.Center,
-            Margin = new Thickness(8, 0, 8, 0)
-        };
-        nameBox.TextChanged += (_, _) => { group.Name = nameBox.Text; MarkUnsaved(); };
-
-        var processesLabel = new TextBlock { Text = "Processes:", VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 0, 0) };
-        var processesBox = new System.Windows.Controls.TextBox
-        {
-            Text = group.Processes != null ? string.Join(", ", group.Processes) : "",
-            Width = 300,
-            VerticalAlignment = VerticalAlignment.Center,
-            Margin = new Thickness(8, 0, 8, 0)
-        };
-        processesBox.TextChanged += (_, _) =>
-        {
-            group.Processes = processesBox.Text.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
-            MarkUnsaved();
-        };
-
-        var deleteButton = new Wpf.Ui.Controls.Button
-        {
-            Content = "🗑️",
-            Appearance = Wpf.Ui.Controls.ControlAppearance.Danger,
-            Padding = new Thickness(4),
-            Width = 32,
-            Height = 32,
-            VerticalAlignment = VerticalAlignment.Center
-        };
-        deleteButton.Click += (_, _) =>
-        {
-            AppGroupsPanel.Children.Remove(container);
-            MarkUnsaved();
-        };
-
-        header.Children.Add(nameLabel);
-        header.Children.Add(nameBox);
-        header.Children.Add(processesLabel);
-        header.Children.Add(processesBox);
-        header.Children.Add(deleteButton);
-
         var bindingsPanel = new StackPanel { Margin = new Thickness(20, 0, 0, 0) };
         if (group.Bindings != null)
         {
@@ -299,6 +310,37 @@ public partial class KeymapEditorWindow : Wpf.Ui.Controls.FluentWindow
             }
         }
 
+        var header = new Grid { Margin = new Thickness(0, 4, 0, 4) };
+        header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        header.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+        var headerBadge = new Border
+        {
+            Background = (System.Windows.Media.Brush)System.Windows.Application.Current.FindResource("ControlFillColorDefaultBrush"),
+            CornerRadius = new CornerRadius(4),
+            Padding = new Thickness(8, 3, 8, 3),
+            Margin = new Thickness(0, 0, 8, 0),
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        var headerGroupText = new TextBlock
+        {
+            Text = string.IsNullOrWhiteSpace(group.Name) ? "(unnamed group)" : group.Name,
+            FontWeight = FontWeights.SemiBold,
+            FontSize = 13
+        };
+        headerBadge.Child = headerGroupText;
+        Grid.SetColumn(headerBadge, 0);
+
+        var headerGroupDetail = new TextBlock
+        {
+            Text = $"Bindings · {bindingsPanel.Children.OfType<KeymapBindingEditor>().Count()}",
+            VerticalAlignment = VerticalAlignment.Center,
+            Foreground = (System.Windows.Media.Brush)System.Windows.Application.Current.FindResource("TextFillColorSecondaryBrush")
+        };
+        Grid.SetColumn(headerGroupDetail, 1);
+
         var addBindingButton = new Wpf.Ui.Controls.Button
         {
             Content = "+ Add Binding",
@@ -316,11 +358,81 @@ public partial class KeymapEditorWindow : Wpf.Ui.Controls.FluentWindow
             else
                 bindingsPanel.Children.Add(editor);
             MarkUnsaved();
+            headerGroupDetail.Text = $"Bindings · {bindingsPanel.Children.OfType<KeymapBindingEditor>().Count()}";
         };
 
-        container.Children.Add(header);
-        container.Children.Add(bindingsPanel);
-        container.Children.Add(addBindingButton);
+        var content = new StackPanel();
+        var groupEditorRow = new StackPanel { Orientation = System.Windows.Controls.Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 8) };
+        var nameLabel = new TextBlock { Text = "Group Name:", VerticalAlignment = VerticalAlignment.Center, Width = 100 };
+        var nameBox = new System.Windows.Controls.TextBox
+        {
+            Text = group.Name ?? "",
+            Width = 200,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(8, 0, 8, 0)
+        };
+        nameBox.TextChanged += (_, _) =>
+        {
+            group.Name = nameBox.Text;
+            headerGroupText.Text = string.IsNullOrWhiteSpace(group.Name) ? "(unnamed group)" : group.Name;
+            MarkUnsaved();
+        };
+        var processesLabel = new TextBlock { Text = "Processes:", VerticalAlignment = VerticalAlignment.Center };
+        var processesBox = new System.Windows.Controls.TextBox
+        {
+            Text = group.Processes != null ? string.Join(", ", group.Processes) : "",
+            Width = 300,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(8, 0, 0, 0)
+        };
+        processesBox.TextChanged += (_, _) =>
+        {
+            group.Processes = processesBox.Text.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
+            headerGroupDetail.Text = group.Processes.Count == 0 ? "No processes" : $"{group.Processes.Count} processes";
+            MarkUnsaved();
+        };
+        groupEditorRow.Children.Add(nameLabel);
+        groupEditorRow.Children.Add(nameBox);
+        groupEditorRow.Children.Add(processesLabel);
+        groupEditorRow.Children.Add(processesBox);
+        content.Children.Add(groupEditorRow);
+        content.Children.Add(bindingsPanel);
+        content.Children.Add(addBindingButton);
+        bindingsPanel.Tag = headerGroupDetail;
+
+        var deleteButton = new Wpf.Ui.Controls.Button
+        {
+            Appearance = Wpf.Ui.Controls.ControlAppearance.Danger,
+            Padding = new Thickness(4),
+            Width = 32,
+            Height = 32,
+            VerticalAlignment = VerticalAlignment.Center,
+            Content = new Wpf.Ui.Controls.SymbolIcon
+            {
+                Symbol = Wpf.Ui.Controls.SymbolRegular.Delete24,
+                FontSize = 14
+            }
+        };
+
+        Grid.SetColumn(deleteButton, 3);
+
+        var container = new System.Windows.Controls.Expander
+        {
+            Header = header,
+            Content = content,
+            IsExpanded = false,
+            Margin = new Thickness(0, 0, 0, 8)
+        };
+
+        deleteButton.Click += (_, _) =>
+        {
+            AppGroupsPanel.Children.Remove(container);
+            MarkUnsaved();
+        };
+
+        header.Children.Add(headerBadge);
+        header.Children.Add(headerGroupDetail);
+        header.Children.Add(deleteButton);
 
         return container;
     }
@@ -366,6 +478,7 @@ public partial class KeymapEditorWindow : Wpf.Ui.Controls.FluentWindow
 
             var serializer = new SerializerBuilder()
                 .WithNamingConvention(CamelCaseNamingConvention.Instance)
+                .ConfigureDefaultValuesHandling(DefaultValuesHandling.OmitNull)
                 .Build();
 
             var yaml = serializer.Serialize(root);
@@ -453,6 +566,7 @@ public partial class KeymapEditorWindow : Wpf.Ui.Controls.FluentWindow
                 var node = editor.GetNode();
                 if (node != null)
                 {
+                    NormalizeNode(node);
                     bindings.Add(node);
                 }
             }
@@ -465,31 +579,36 @@ public partial class KeymapEditorWindow : Wpf.Ui.Controls.FluentWindow
         var apps = new List<KeymapYamlApp>();
         foreach (var child in AppBindingsPanel.Children)
         {
-            if (child is StackPanel container && container.Children.Count > 0)
+            if (child is System.Windows.Controls.Expander expander && expander.Content is StackPanel content)
             {
-                var header = container.Children[0] as StackPanel;
-                if (header != null && header.Children.Count >= 2)
+                var processRow = content.Children.OfType<StackPanel>().FirstOrDefault();
+                var processBox = processRow?.Children.OfType<System.Windows.Controls.TextBox>().FirstOrDefault();
+                if (processBox == null || string.IsNullOrWhiteSpace(processBox.Text))
                 {
-                    var processBox = header.Children[1] as System.Windows.Controls.TextBox;
-                    if (processBox != null && !string.IsNullOrWhiteSpace(processBox.Text))
+                    continue;
+                }
+
+                var app = new KeymapYamlApp { Process = processBox.Text.Trim(), Bindings = new List<KeymapYamlNode>() };
+                var bindingsPanel = content.Children.OfType<StackPanel>().Skip(1).FirstOrDefault();
+                if (bindingsPanel != null)
+                {
+                    foreach (var bindingChild in bindingsPanel.Children)
                     {
-                        var app = new KeymapYamlApp { Process = processBox.Text, Bindings = new List<KeymapYamlNode>() };
-                        if (container.Children.Count > 1 && container.Children[1] is StackPanel bindingsPanel)
+                        if (bindingChild is KeymapBindingEditor editor)
                         {
-                            foreach (var bindingChild in bindingsPanel.Children)
+                            var node = editor.GetNode();
+                            if (node != null)
                             {
-                                if (bindingChild is KeymapBindingEditor editor)
-                                {
-                                    var node = editor.GetNode();
-                                    if (node != null)
-                                    {
-                                        app.Bindings.Add(node);
-                                    }
-                                }
+                                NormalizeNode(node);
+                                app.Bindings.Add(node);
                             }
                         }
-                        apps.Add(app);
                     }
+                }
+
+                if (app.Bindings.Count > 0)
+                {
+                    apps.Add(app);
                 }
             }
         }
@@ -501,41 +620,78 @@ public partial class KeymapEditorWindow : Wpf.Ui.Controls.FluentWindow
         var groups = new List<KeymapYamlGroup>();
         foreach (var child in AppGroupsPanel.Children)
         {
-            if (child is StackPanel container && container.Children.Count > 0)
+            if (child is System.Windows.Controls.Expander expander && expander.Content is StackPanel content)
             {
-                var header = container.Children[0] as StackPanel;
-                if (header != null && header.Children.Count >= 4)
+                var groupRow = content.Children.OfType<StackPanel>().FirstOrDefault();
+                var nameBox = groupRow?.Children.OfType<System.Windows.Controls.TextBox>().FirstOrDefault();
+                var processesBox = groupRow?.Children.OfType<System.Windows.Controls.TextBox>().Skip(1).FirstOrDefault();
+                if (nameBox == null || string.IsNullOrWhiteSpace(nameBox.Text))
                 {
-                    var nameBox = header.Children[1] as System.Windows.Controls.TextBox;
-                    var processesBox = header.Children[3] as System.Windows.Controls.TextBox;
-                    if (nameBox != null && !string.IsNullOrWhiteSpace(nameBox.Text))
+                    continue;
+                }
+
+                var group = new KeymapYamlGroup
+                {
+                    Name = nameBox.Text.Trim(),
+                    Processes = processesBox?.Text?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList() ?? new List<string>(),
+                    Bindings = new List<KeymapYamlNode>()
+                };
+
+                var bindingsPanel = content.Children.OfType<StackPanel>().Skip(1).FirstOrDefault();
+                if (bindingsPanel != null)
+                {
+                    foreach (var bindingChild in bindingsPanel.Children)
                     {
-                        var group = new KeymapYamlGroup
+                        if (bindingChild is KeymapBindingEditor editor)
                         {
-                            Name = nameBox.Text,
-                            Processes = processesBox?.Text?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList() ?? new List<string>(),
-                            Bindings = new List<KeymapYamlNode>()
-                        };
-                        if (container.Children.Count > 1 && container.Children[1] is StackPanel bindingsPanel)
-                        {
-                            foreach (var bindingChild in bindingsPanel.Children)
+                            var node = editor.GetNode();
+                            if (node != null)
                             {
-                                if (bindingChild is KeymapBindingEditor editor)
-                                {
-                                    var node = editor.GetNode();
-                                    if (node != null)
-                                    {
-                                        group.Bindings.Add(node);
-                                    }
-                                }
+                                NormalizeNode(node);
+                                group.Bindings.Add(node);
                             }
                         }
-                        groups.Add(group);
                     }
+                }
+
+                if (group.Bindings.Count > 0 && group.Processes.Count > 0)
+                {
+                    groups.Add(group);
                 }
             }
         }
         return groups;
+    }
+
+    private static void NormalizeNode(KeymapYamlNode node)
+    {
+        node.Key = string.IsNullOrWhiteSpace(node.Key) ? null : node.Key.Trim();
+        node.KeyTokens = node.KeyTokens is { Count: > 0 } ? node.KeyTokens : null;
+        node.Label = string.IsNullOrWhiteSpace(node.Label) ? null : node.Label.Trim();
+        node.Action = string.IsNullOrWhiteSpace(node.Action) ? null : node.Action.Trim();
+        node.SetTheme = string.IsNullOrWhiteSpace(node.SetTheme) ? null : node.SetTheme.Trim();
+        node.Type = string.IsNullOrWhiteSpace(node.Type) ? null : node.Type.Trim();
+        node.Send = string.IsNullOrWhiteSpace(node.Send) ? null : node.Send.Trim();
+        node.Then = string.IsNullOrWhiteSpace(node.Then) ? null : node.Then.Trim();
+        node.Exec = string.IsNullOrWhiteSpace(node.Exec) ? null : node.Exec.Trim();
+        node.ExecArgs = string.IsNullOrWhiteSpace(node.ExecArgs) ? null : node.ExecArgs.Trim();
+        node.ExecCwd = string.IsNullOrWhiteSpace(node.ExecCwd) ? null : node.ExecCwd.Trim();
+
+        if (node.Steps is { Count: > 0 })
+        {
+            foreach (var step in node.Steps)
+            {
+                step.Action = string.IsNullOrWhiteSpace(step.Action) ? null : step.Action.Trim();
+                step.Type = string.IsNullOrWhiteSpace(step.Type) ? null : step.Type.Trim();
+                step.Send = string.IsNullOrWhiteSpace(step.Send) ? null : step.Send.Trim();
+                step.Exec = string.IsNullOrWhiteSpace(step.Exec) ? null : step.Exec.Trim();
+                step.ExecArgs = string.IsNullOrWhiteSpace(step.ExecArgs) ? null : step.ExecArgs.Trim();
+                step.ExecCwd = string.IsNullOrWhiteSpace(step.ExecCwd) ? null : step.ExecCwd.Trim();
+            }
+        }
+
+        node.Steps = node.Steps is { Count: > 0 } ? node.Steps : null;
+        node.Children = node.Children is { Count: > 0 } ? node.Children : null;
     }
 
     public void MarkUnsaved()
