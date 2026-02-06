@@ -498,6 +498,13 @@ public sealed class GlyphHost : IDisposable
         lock (_engineSync)
         {
             _keymapProvider.ApplyToEngine(_engine);
+
+            if (_engine.IsSessionActive)
+            {
+                var activeProcess = ForegroundApp.TryGetProcessName();
+                var overlay = _engine.BuildOverlaySnapshot(activeProcess);
+                _overlayPresenter.Render(overlay, false, false);
+            }
         }
         Logger.Info("Keymaps reloaded from YAML");
     }

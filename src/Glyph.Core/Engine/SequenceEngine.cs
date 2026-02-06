@@ -51,6 +51,11 @@ public sealed class SequenceEngine
 
     public bool IsSessionActive => _active;
 
+    public OverlayModel BuildOverlaySnapshot(string? activeProcessName)
+    {
+        return BuildOverlay(activeProcessName);
+    }
+
     public void EndSession()
     {
         Reset();

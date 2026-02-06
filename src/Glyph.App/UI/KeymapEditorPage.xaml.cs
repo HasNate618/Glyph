@@ -9,6 +9,7 @@ using System.Windows.Input;
 using System.Windows.Markup;
 using System.Windows.Media;
 using System.Windows.Threading;
+using System.Threading.Tasks;
 
 using Glyph.App.Config;
 using Glyph.Core.Logging;
@@ -23,6 +24,7 @@ public partial class KeymapEditorPage : System.Windows.Controls.UserControl, IKe
     private bool _hasUnsavedChanges = false;
     private bool _hasLoadedKeymaps = false;
     private bool _isLoadingKeymaps = false;
+    private CancellationTokenSource? _saveFeedbackCts;
 
     // Shared caches so each KeymapBindingEditor doesn't re-query disk/data
     public List<string> CachedActionIds { get; private set; } = new();
@@ -613,7 +615,7 @@ public partial class KeymapEditorPage : System.Windows.Controls.UserControl, IKe
         MarkUnsaved();
     }
 
-    private void SaveButton_Click(object sender, RoutedEventArgs e)
+    private async void SaveButton_Click(object sender, RoutedEventArgs e)
     {
         try
         {
@@ -664,13 +666,51 @@ public partial class KeymapEditorPage : System.Windows.Controls.UserControl, IKe
             {
                 Logger.Error("Failed to reload keymaps in engine", ex);
             }
+
+            await ShowSaveFeedbackAsync(success: true);
         }
         catch (Exception ex)
         {
             Logger.Error("Failed to save keymaps", ex);
             StatusText.Text = $"Error saving keymaps: {ex.Message}";
             System.Windows.MessageBox.Show($"Failed to save keymaps:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            await ShowSaveFeedbackAsync(success: false);
         }
+    }
+
+    private async Task ShowSaveFeedbackAsync(bool success)
+    {
+        _saveFeedbackCts?.Cancel();
+        _saveFeedbackCts?.Dispose();
+        _saveFeedbackCts = new CancellationTokenSource();
+        var token = _saveFeedbackCts.Token;
+
+        var originalContent = SaveButton.Content;
+        var originalIcon = SaveButton.Icon;
+
+        SaveButton.Content = success ? "Saved" : "Save Failed";
+        SaveButton.Icon = new Wpf.Ui.Controls.SymbolIcon
+        {
+            Symbol = success ? Wpf.Ui.Controls.SymbolRegular.Checkmark24 : Wpf.Ui.Controls.SymbolRegular.DismissCircle24,
+            FontSize = 16
+        };
+
+        try
+        {
+            await Task.Delay(1200, token);
+        }
+        catch (TaskCanceledException)
+        {
+            return;
+        }
+
+        if (token.IsCancellationRequested)
+        {
+            return;
+        }
+
+        SaveButton.Content = originalContent;
+        SaveButton.Icon = originalIcon;
     }
 
     private void ReloadButton_Click(object sender, RoutedEventArgs e)

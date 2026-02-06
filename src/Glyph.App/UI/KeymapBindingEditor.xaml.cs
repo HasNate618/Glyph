@@ -24,6 +24,7 @@ public partial class KeymapBindingEditor : WpfControls.UserControl
     private bool _isExpanded = false;
     private KeyboardHook? _keyboardHook;
     private readonly List<char> _recordedKeys = new();
+        private string _selectedActionType = string.Empty;
 
     public KeymapBindingEditor(KeymapYamlNode node, WpfControls.Panel parentPanel, IKeymapEditorParent parentWindow, bool isTopLevel)
     {
@@ -90,7 +91,8 @@ public partial class KeymapBindingEditor : WpfControls.UserControl
         if (!string.IsNullOrEmpty(_node.Type)) return "type";
         if (!string.IsNullOrEmpty(_node.Exec)) return "exec";
         if (_node.Steps is { Count: > 0 }) return "steps";
-        return "";
+        if (!string.IsNullOrWhiteSpace(_selectedActionType)) return _selectedActionType;
+        return string.Empty;
     }
 
     private void LoadKnownActions()
@@ -183,6 +185,7 @@ public partial class KeymapBindingEditor : WpfControls.UserControl
         }
 
         // Set action type combo
+            _selectedActionType = actionType;
         foreach (WpfControls.ComboBoxItem item in ActionTypeCombo.Items)
         {
             if (item.Tag?.ToString() == actionType)
@@ -554,7 +557,8 @@ public partial class KeymapBindingEditor : WpfControls.UserControl
 
     private void UpdateActionInputsVisibility()
     {
-        var selectedType = (ActionTypeCombo.SelectedItem as WpfControls.ComboBoxItem)?.Tag?.ToString() ?? "";
+        var selectedType = (ActionTypeCombo.SelectedItem as WpfControls.ComboBoxItem)?.Tag?.ToString() ?? string.Empty;
+        _selectedActionType = selectedType;
 
         ActionIdPanel.Visibility = selectedType == "action" ? Visibility.Visible : Visibility.Collapsed;
         SendPanel.Visibility = selectedType == "send" ? Visibility.Visible : Visibility.Collapsed;
