@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
+using System.Windows.Media;
+using System.Windows.Media.Animation;
 using WpfControls = System.Windows.Controls;
 using System.Windows.Input;
 
@@ -44,10 +46,28 @@ public partial class KeymapBindingEditor : WpfControls.UserControl
     private void HeaderGrid_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
     {
         _isExpanded = !_isExpanded;
-        DetailPanel.Visibility = _isExpanded ? Visibility.Visible : Visibility.Collapsed;
         ExpandChevron.Symbol = _isExpanded
             ? Wpf.Ui.Controls.SymbolRegular.ChevronDown24
             : Wpf.Ui.Controls.SymbolRegular.ChevronRight24;
+
+        if (_isExpanded)
+        {
+            DetailPanel.Visibility = Visibility.Visible;
+            DetailPanel.Opacity = 0;
+            DetailPanel.RenderTransform = new TranslateTransform(0, -4);
+            var fadeIn = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(150));
+            var slideIn = new DoubleAnimation(-4, 0, TimeSpan.FromMilliseconds(150));
+            DetailPanel.BeginAnimation(UIElement.OpacityProperty, fadeIn);
+            ((TranslateTransform)DetailPanel.RenderTransform).BeginAnimation(TranslateTransform.YProperty, slideIn);
+        }
+        else
+        {
+            var fadeOut = new DoubleAnimation(1, 0, TimeSpan.FromMilliseconds(120));
+            fadeOut.Completed += (_, _) => DetailPanel.Visibility = Visibility.Collapsed;
+            DetailPanel.BeginAnimation(UIElement.OpacityProperty, fadeOut);
+            if (DetailPanel.RenderTransform is TranslateTransform tt)
+                tt.BeginAnimation(TranslateTransform.YProperty, new DoubleAnimation(0, -4, TimeSpan.FromMilliseconds(120)));
+        }
     }
 
     /// <summary>

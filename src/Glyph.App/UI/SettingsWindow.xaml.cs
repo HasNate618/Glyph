@@ -8,6 +8,7 @@ using Glyph.App.Config;
 using Glyph.App.Startup;
 using System.Linq;
 using System.Windows.Input;
+using System.Windows.Media.Animation;
 using System.Windows.Navigation;
 using System.Windows.Threading;
 
@@ -77,6 +78,9 @@ public partial class SettingsWindow : Wpf.Ui.Controls.FluentWindow
         EnsureKeymapEditorCreated();
         GeneralSettingsScrollViewer.Visibility = Visibility.Collapsed;
         KeymapEditorHost.Visibility = Visibility.Visible;
+        KeymapEditorHost.Opacity = 0;
+        var fadeIn = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(150));
+        KeymapEditorHost.BeginAnimation(OpacityProperty, fadeIn);
         BackButton.Visibility = Visibility.Visible;
         Title = "Keymap Editor";
     }
@@ -85,6 +89,9 @@ public partial class SettingsWindow : Wpf.Ui.Controls.FluentWindow
     {
         KeymapEditorHost.Visibility = Visibility.Collapsed;
         GeneralSettingsScrollViewer.Visibility = Visibility.Visible;
+        GeneralSettingsScrollViewer.Opacity = 0;
+        var fadeIn = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(150));
+        GeneralSettingsScrollViewer.BeginAnimation(OpacityProperty, fadeIn);
         BackButton.Visibility = Visibility.Collapsed;
         Title = "Glyph Settings";
     }
