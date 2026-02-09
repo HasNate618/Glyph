@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
         xmlns:svgc="clr-namespace:SharpVectors.Converters;assembly=SharpVectors.Converters.Wpf"
-        Title="Glyph Settings" Height="700" Width="680"
+        Title="Glyph Settings" Height="860" Width="820"
         WindowStartupLocation="CenterScreen"
         ExtendsContentIntoTitleBar="True">
 
@@ -35,10 +35,11 @@
             <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="24,0" x:Name="GeneralSettingsScrollViewer">
                 <StackPanel Margin="0,12,0,24" x:Name="GeneralSettingsPanel">
                     <!-- Header with SVG logo -->
-                    <svgc:SvgViewbox Source="pack://application:,,,/Glyph.App;component/Assets/LogoText.svg"
+                    <svgc:SvgViewbox x:Name="HeaderLogo"
+                                    Source="pack://application:,,,/Glyph.App;component/Assets/LogoTextBlack.svg"
                                     Height="98"
                                     Stretch="Uniform"
-                                    Margin="0,4,0,30" />
+                                    Margin="0,4,0,60" />
 
                     <!-- Glyph Key section -->
                     <Expander Header="Glyph Key" IsExpanded="True" Margin="0,0,0,8">

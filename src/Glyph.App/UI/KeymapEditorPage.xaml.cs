@@ -25,6 +25,8 @@ public partial class KeymapEditorPage : System.Windows.Controls.UserControl, IKe
     private bool _hasLoadedKeymaps = false;
     private bool _isLoadingKeymaps = false;
     private CancellationTokenSource? _saveFeedbackCts;
+    private object? _saveDefaultContent;
+    private Wpf.Ui.Controls.IconElement? _saveDefaultIcon;
 
     // Shared caches so each KeymapBindingEditor doesn't re-query disk/data
     public List<string> CachedActionIds { get; private set; } = new();
@@ -34,6 +36,9 @@ public partial class KeymapEditorPage : System.Windows.Controls.UserControl, IKe
     {
         InitializeComponent();
         _keymapsPath = KeymapYamlLoader.KeymapsPath;
+
+        _saveDefaultContent = SaveButton.Content;
+        _saveDefaultIcon = SaveButton.Icon;
 
         Loaded += (_, _) => EnsureKeymapsLoaded();
     }
@@ -685,8 +690,8 @@ public partial class KeymapEditorPage : System.Windows.Controls.UserControl, IKe
         _saveFeedbackCts = new CancellationTokenSource();
         var token = _saveFeedbackCts.Token;
 
-        var originalContent = SaveButton.Content;
-        var originalIcon = SaveButton.Icon;
+        var originalContent = _saveDefaultContent ?? SaveButton.Content;
+        var originalIcon = _saveDefaultIcon ?? SaveButton.Icon;
 
         SaveButton.Content = success ? "Saved" : "Save Failed";
         SaveButton.Icon = new Wpf.Ui.Controls.SymbolIcon

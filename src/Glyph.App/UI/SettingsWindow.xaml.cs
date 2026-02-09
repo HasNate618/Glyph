@@ -36,7 +36,11 @@ public partial class SettingsWindow : Wpf.Ui.Controls.FluentWindow
 
         RecordButton.Click += (_, _) => ToggleRecording();
 
-        Loaded += (_, _) => LoadToUi();
+        Loaded += (_, _) =>
+        {
+            LoadToUi();
+            UpdateHeaderLogoSource();
+        };
 
         // Live-apply when the user changes theme or breadcrumbs
         ThemeCombo.SelectionChanged += ThemeCombo_SelectionChanged;
@@ -95,6 +99,22 @@ public partial class SettingsWindow : Wpf.Ui.Controls.FluentWindow
     }
 
     private bool _suppressUiEvents = false;
+
+    private void UpdateHeaderLogoSource()
+    {
+        try
+        {
+            if (HeaderLogo == null) return;
+            var logo = WindowsThemeHelper.IsLightTheme()
+                ? "pack://application:,,,/Glyph.App;component/Assets/LogoTextBlack.svg"
+                : "pack://application:,,,/Glyph.App;component/Assets/LogoTextWhite.svg";
+            HeaderLogo.Source = new Uri(logo, UriKind.Absolute);
+        }
+        catch
+        {
+            // best-effort only
+        }
+    }
 
     private static string GetConfigDir()
     {
@@ -177,6 +197,7 @@ public partial class SettingsWindow : Wpf.Ui.Controls.FluentWindow
             {
                 app.ApplyConfig(cfg);
             }
+            UpdateHeaderLogoSource();
         }
         catch (Exception ex)
         {

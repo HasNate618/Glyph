@@ -19,7 +19,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
-    <Version>0.2.2</Version>
+    <Version>0.3.0</Version>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -35,7 +35,8 @@
     <None Include="..\..\assets\LogoWhite.ico">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <Resource Include="..\..\assets\LogoText.svg" Link="Assets\LogoText.svg" />
+    <Resource Include="..\..\assets\LogoTextWhite.svg" Link="Assets\LogoTextWhite.svg" />
+    <Resource Include="..\..\assets\LogoTextBlack.svg" Link="Assets\LogoTextBlack.svg" />
   </ItemGroup>
 
   <ItemGroup>

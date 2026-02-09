@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/LogoText.svg" alt="Glyph" />
+  <img src="assets\LogoTextWhite.svg" alt="Glyph" />
 </p>
 
 ---
@@ -15,7 +15,7 @@ It’s designed to be:
 - Discoverable: the overlay shows available next keys.
 - Fast: short, mnemonic sequences (leader-key style).
 - Context-aware: global bindings + per-application layers.
-- Customizable: everything is driven by YAML keymaps and JSON themes.
+- Customizable: edit keymaps in the GUI (YAML optional for power users) and switch JSON themes live.
 
 ## Features
 
@@ -39,27 +39,36 @@ dotnet build Glyph.sln -c Debug
 dotnet run --project src/Glyph.App/Glyph.App.csproj -c Debug
 ```
 
-## Install (recommended)
+## Install
 
-- Download a release zip (self-contained) from GitHub Releases.
+### Winget (recommended)
+
+```powershell
+winget install HasNate618.Glyph
+```
+
+Then run Glyph from the terminal using `glyph` if you installed via winget (requires admin).
+Otherwise run `Glyph.App.exe` from the terminal or launch it from the Start menu.
+
+### Manual install
+
+- Download a release zip (self-contained) from [GitHub Releases](https://github.com/HasNate618/Glyph/releases).
 - Unzip anywhere.
 - Run `Glyph.App.exe`.
 
 ## GUI & Tray
 
 - Glyph runs with a tray icon. Double-click opens the GUI; right-click shows actions (Open GUI, open config/log folders, reload theme, About, Exit).
-- The Settings GUI lets you change the theme and redefine the glyph key (default: F12). Settings are stored in `%APPDATA%\Glyph\config.json`.
+- The Settings GUI lets you change the theme, redefine the glyph key (default: F12), and open the Keymap Editor to manage bindings visually. Settings are stored in `%APPDATA%\Glyph\config.json`.
 
 ## Config files
 
 - Settings: `%APPDATA%\Glyph\config.json`
-- Keymaps (YAML): `%APPDATA%\Glyph\keymaps.yaml`
+- Keymaps (managed by the Keymap Editor): `%APPDATA%\Glyph\keymaps.yaml`
 - Themes directory: `%APPDATA%\Glyph\themes\` (`*.json`)
 - Theme selection: stored in `%APPDATA%\Glyph\config.json` (field `BaseTheme`)
 
 On first run, a default `%APPDATA%\Glyph\keymaps.yaml` is created. While developing from source, the template comes from `src/Glyph.App/Config/default_keymaps.yaml`.
-
-Important: the YAML loader parses the file before applying changes. If the YAML is malformed the loader will log a parse error and will not overwrite your live bindings — this prevents accidental loss of keymaps when editing.
 
 ### Themes
 
@@ -67,145 +76,23 @@ Important: the YAML loader parses the file before applying changes. If the YAML 
 - To add your own theme: drop a `*.json` file into `%APPDATA%\Glyph\themes\` and select it in the Settings GUI (selection is saved to `%APPDATA%\Glyph\config.json`).
 - For quick switching from keymaps, you can bind the action id `setTheme:<ThemeId>`.
 
-## Keymaps (YAML)
+## Keymaps
 
-Keymaps are a tree of bindings. Each node has a `key` and `label`, and then either:
+Open **Settings → Keymaps → Open Keymap Editor** to create and edit bindings visually. The editor writes to `%APPDATA%\Glyph\keymaps.yaml` for you, so you can focus on the structure instead of the file format.
 
-- `action`: built-in action id
-- `type`: text to type
-- `send`: key chord to send (e.g. `Ctrl+Shift+T`)
-- `exec` (+ optional `execArgs`, `execCwd`): launch a program
-- `steps`: chain multiple `action`/`type`/`send`/`exec` steps
-- `children`: nested bindings (multi-stroke sequences)
+In the editor you can:
 
-- `apps:`: program-specific bindings keyed by process name (applied when the foreground process matches)
-- `groups:`: named groups of processes that share the same bindings (useful for browsers, terminals, etc.)
+- Add new key sequences and nested layers.
+- Assign actions like `action`, `type`, `send`, `exec`, or multi-step `steps`.
+- Define per-application bindings and shared groups (for browsers, terminals, etc.).
+- Use named key tokens (Win, Enter, arrows, function keys) as single steps.
+- Reload keymaps at runtime (default binding: glyph → `,` → `r`).
 
-Reloading keymaps at runtime: the default keymap binds `reloadKeymaps` to glyph → `,` → `r`.
+### Notes
 
-### Backspace & Shift behavior
-
-- **Backspace (layer-back):** When the overlay is open, pressing Backspace will pop the last entered key from the current sequence (i.e. go up one layer). If you are at the root layer (no buffer), Backspace behaves like `Esc` and immediately hides the overlay. You can still reference Backspace in YAML using the named token `Backspace` (for example in `keyTokens` or `<Backspace>`), but the overlay will always treat it as a navigation key while open.
-
-- **Shift is a modifier (case-sensitive mapping):** `Shift`, `LShift`, and `RShift` are not treated as standalone bindable keys. Instead the engine uses the held Shift state to produce shifted characters in the input buffer:
-  - Letters become uppercase when Shift is held (e.g. `b` vs `B` are distinct steps).
-  - Numbers and punctuation produce their shifted symbols (for example `Shift+1` -> `!`, `Shift+=` -> `+`, `Shift+/` -> `?`).
-
-  In practice, write separate YAML bindings for lowercase and uppercase forms when you want different actions. Example:
-
-  ```yaml
-  bindings:
-    - key: b
-      label: Build
-      action: buildProject
-
-    - key: B
-      label: Build Debug
-      action: buildDebug
-  ```
-
-  Attempting to bind `Shift` (or `LShift`/`RShift`) as a standalone token (for example `Shift+b`) is rejected by the YAML loader; instead prefer `B` or the corresponding shifted symbol.
-
-### Examples
-
-Chain steps (preferred):
-
-```yaml
-bindings:
-  - key: ",g"
-    label: "Git commit"
-    steps:
-      - type: git commit ""
-      - send: Left
-```
-
-Vim-like `dd` (delete line):
-
-```yaml
-bindings:
-  - key: t
-    label: Text
-    children:
-      - key: dd
-        label: Delete Line
-        steps:
-          - send: Home
-          - send: Shift+End
-          - send: Delete
-```
-
-Per-app binding:
-
-```yaml
-apps:
-  - process: code
-    bindings:
-      - key: f
-        label: Format file
-        action: formatDocument
-```
-
-### Named key tokens
-
-Multi-letter named keys (for example `Win`, `Enter`, `Left`, or `F5`) can be represented as single logical key steps rather than sequences of characters.
-
-Two ways to declare a named token in a keymap:
-
-- `keyTokens`: an explicit list of token names for a binding (unambiguous).
-- Angle-bracket inline tokens inside `key:`: use `<Token>` to embed a named token inside a sequence (for example `p<Win>g`).
-
-Examples:
-
-```yaml
-bindings:
-  - keyTokens: ["Win"]
-    label: Win (single token)
-    action: openGlyphGui
-
-  - key: "p<Win>g"
-    label: P + Win + g
-    action: logForeground
-
-  - key: Win
-    label: bare Win convenience (single token)
-    action: openLogs
-```
-
-Display behavior:
-
-- Named tokens render as single keycaps in the overlay and are shown inline in the sequence text using angle brackets (for example: `<Win>`).
+- Named key tokens (Win, Enter, arrows, function keys) appear as single keycaps in the overlay.
+- Per-app bindings apply when a matching process is focused; shared groups let you reuse bindings across related apps.
 - For a practical test map, see: [src/Glyph.App/Config/example_keymaps_tokens.yaml](src/Glyph.App/Config/example_keymaps_tokens.yaml)
-
-Program-prefix (`p`) and overlay behaviour:
-
-- `p` is a reserved top-level prefix used for program-specific bindings. Program bindings should live under `apps:` (or `groups:`) and are applied when the foreground process matches the `process` name.
-- When you open the `p` prefix in the overlay, the UI shows one of three messages depending on context:
-  - `No Program Focused` — nothing has focus (desktop/overlay/other)
-  - `<ProcessName> Not Configured` — a program is focused but there are no `apps:`/`groups:` bindings for it
-  - the configured label (from `apps:`/`groups:`) — when the focused process has program-specific bindings
-
-Example `apps:` and `groups:` usage:
-
-```yaml
-bindings:
-  - key: p
-    label: Program
-
-apps:
-  - process: Spotify
-    bindings:
-      - key: p
-        label: Play / Pause
-        action: mediaPlayPause
-
-groups:
-  - name: Browser
-    processes: [ chrome, msedge, firefox ]
-    bindings:
-      - key: t
-        label: New Tab
-        send: Ctrl+T
-```
 
 ## Built-in actions
 
