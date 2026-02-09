@@ -10,7 +10,6 @@ using Glyph.App.Overlay.Theming;
 using Glyph.Actions;
 using Glyph.Core.Input;
 using Glyph.Core.Logging;
-using Glyph.Win32.Hooks;
 
 namespace Glyph.App.UI;
 
@@ -20,10 +19,7 @@ public partial class KeymapBindingEditor : WpfControls.UserControl
     private readonly WpfControls.Panel _parentPanel;
     private readonly IKeymapEditorParent _parentWindow;
     private readonly bool _isTopLevel;
-    private bool _isRecording = false;
     private bool _isExpanded = false;
-    private KeyboardHook? _keyboardHook;
-    private readonly List<char> _recordedKeys = new();
         private string _selectedActionType = string.Empty;
 
     public KeymapBindingEditor(KeymapYamlNode node, WpfControls.Panel parentPanel, IKeymapEditorParent parentWindow, bool isTopLevel)
@@ -364,86 +360,6 @@ public partial class KeymapBindingEditor : WpfControls.UserControl
         }
     }
 
-    private void RecordKeyButton_Click(object sender, RoutedEventArgs e)
-    {
-        if (_isRecording)
-        {
-            StopRecording();
-        }
-        else
-        {
-            StartRecording();
-        }
-    }
-
-    private void StartRecording()
-    {
-        _isRecording = true;
-        _recordedKeys.Clear();
-        RecordKeyButton.Content = "Stop Recording";
-        RecordKeyButton.Background = System.Windows.Media.Brushes.LightCoral;
-
-        try
-        {
-            _keyboardHook = new KeyboardHook();
-            _keyboardHook.KeyDown += KeyboardHook_KeyDown;
-            _keyboardHook.Start();
-        }
-        catch (Exception ex)
-        {
-            Logger.Error("Failed to start key recording", ex);
-            StopRecording();
-        }
-    }
-
-    private void StopRecording()
-    {
-        _isRecording = false;
-        RecordKeyButton.Content = "Record";
-        RecordKeyButton.Background = null;
-
-        if (_keyboardHook != null)
-        {
-            _keyboardHook.KeyDown -= KeyboardHook_KeyDown;
-            _keyboardHook.Dispose();
-            _keyboardHook = null;
-        }
-
-        if (_recordedKeys.Count > 0)
-        {
-            KeyTextBox.Text = new string(_recordedKeys.ToArray());
-            KeyTextBox_TextChanged(null, null);
-        }
-    }
-
-    private void KeyboardHook_KeyDown(object? sender, KeyboardHookEventArgs e)
-    {
-        // Convert VK code to character
-        var key = KeyInterop.KeyFromVirtualKey(e.VkCode);
-        
-        // Record letters (a-z)
-        if (key >= Key.A && key <= Key.Z)
-        {
-            var c = (char)('a' + (key - Key.A));
-            _recordedKeys.Add(c);
-            Dispatcher.Invoke(() =>
-            {
-                RecordKeyButton.Content = $"Recording: {_recordedKeys.Count}";
-            });
-        }
-        // Record numbers (0-9)
-        else if (key >= Key.D0 && key <= Key.D9)
-        {
-            var c = (char)('0' + (key - Key.D0));
-            _recordedKeys.Add(c);
-            Dispatcher.Invoke(() =>
-            {
-                RecordKeyButton.Content = $"Recording: {_recordedKeys.Count}";
-            });
-        }
-        // For other keys, we could add token support, but for now just record basic keys
-        // Multi-character sequences like "mx", "sp" are supported by recording multiple letters
-    }
 
     private void KeyTextBox_TextChanged(object? sender, WpfControls.TextChangedEventArgs e)
     {
@@ -482,7 +398,6 @@ public partial class KeymapBindingEditor : WpfControls.UserControl
     {
         KeyTokensRow.Visibility = Visibility.Visible;
         KeyTextBox.Visibility = Visibility.Collapsed;
-        UseTokensButton.Visibility = Visibility.Collapsed;
         UseKeyButton.Visibility = Visibility.Visible;
     }
 
@@ -490,7 +405,6 @@ public partial class KeymapBindingEditor : WpfControls.UserControl
     {
         KeyTokensRow.Visibility = Visibility.Collapsed;
         KeyTextBox.Visibility = Visibility.Visible;
-        UseTokensButton.Visibility = Visibility.Visible;
         UseKeyButton.Visibility = Visibility.Collapsed;
     }
 
@@ -873,12 +787,6 @@ public partial class KeymapBindingEditor : WpfControls.UserControl
 
     private void KeymapBindingEditor_Unloaded(object sender, RoutedEventArgs e)
     {
-        
-        if (_keyboardHook != null)
-        {
-            _keyboardHook.Dispose();
-            _keyboardHook = null;
-        }
     }
 
     private void TryUpdateParentHeaderSummary()

@@ -31,7 +31,7 @@
         </Grid>
 
         <!-- Content area - switches between general settings and keymap editor -->
-        <ContentControl x:Name="ContentArea" Grid.Row="1">
+        <Grid x:Name="ContentArea" Grid.Row="1">
             <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="24,0" x:Name="GeneralSettingsScrollViewer">
                 <StackPanel Margin="0,12,0,24" x:Name="GeneralSettingsPanel">
                     <!-- Header with SVG logo -->
@@ -113,6 +113,7 @@
                     <Border Height="4" />
                 </StackPanel>
             </ScrollViewer>
-        </ContentControl>
+            <ContentControl x:Name="KeymapEditorHost" Visibility="Collapsed" />
+        </Grid>
     </Grid>
 </ui:FluentWindow>

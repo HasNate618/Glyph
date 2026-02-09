@@ -10,37 +10,39 @@
             Padding="0">
         <StackPanel>
             <!-- Compact header row: always visible, click to expand -->
-            <Grid x:Name="HeaderGrid" Margin="12,8" Cursor="Hand" MouseLeftButtonUp="HeaderGrid_Click">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
+            <Border Background="Transparent" MouseLeftButtonUp="HeaderGrid_Click">
+                <Grid x:Name="HeaderGrid" Margin="12,8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
 
-                <!-- Expand/Collapse chevron -->
-                <ui:SymbolIcon x:Name="ExpandChevron" Grid.Column="0" Symbol="ChevronRight24" FontSize="14" VerticalAlignment="Center" Margin="0,0,8,0" />
+                    <!-- Expand/Collapse chevron -->
+                    <ui:SymbolIcon x:Name="ExpandChevron" Grid.Column="0" Symbol="ChevronRight24" FontSize="14" VerticalAlignment="Center" Margin="0,0,8,0" />
 
-                <!-- Key badge -->
-                <Border Grid.Column="1" Background="{DynamicResource ControlFillColorDefaultBrush}" CornerRadius="4" Padding="8,3" Margin="0,0,8,0" VerticalAlignment="Center">
-                    <TextBlock x:Name="HeaderKeyText" Text="?" FontWeight="SemiBold" FontSize="13" />
-                </Border>
+                    <!-- Key badge -->
+                    <Border Grid.Column="1" Background="{DynamicResource ControlFillColorDefaultBrush}" CornerRadius="4" Padding="8,3" Margin="0,0,8,0" VerticalAlignment="Center">
+                        <TextBlock x:Name="HeaderKeyText" Text="?" FontWeight="SemiBold" FontSize="13" />
+                    </Border>
 
-                <!-- Label -->
-                <TextBlock x:Name="HeaderLabelText" Grid.Column="2" Text="" FontSize="13" VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" TextTrimming="CharacterEllipsis" />
+                    <!-- Label -->
+                    <TextBlock x:Name="HeaderLabelText" Grid.Column="2" Text="" FontSize="13" VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" TextTrimming="CharacterEllipsis" />
 
-                <!-- Action type badge -->
-                <Border Grid.Column="3" Background="{DynamicResource SubtleFillColorSecondaryBrush}" CornerRadius="4" Padding="6,2" Margin="8,0" VerticalAlignment="Center">
-                    <TextBlock x:Name="HeaderActionTypeText" Text="" FontSize="11" Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
-                </Border>
+                    <!-- Action type badge -->
+                    <Border Grid.Column="3" Background="{DynamicResource SubtleFillColorSecondaryBrush}" CornerRadius="4" Padding="6,2" Margin="8,0" VerticalAlignment="Center">
+                        <TextBlock x:Name="HeaderActionTypeText" Text="" FontSize="11" Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
+                    </Border>
 
-                <!-- Delete button -->
-                <ui:Button x:Name="DeleteButton" Grid.Column="4" Appearance="Secondary" Padding="4" Width="28" Height="28" VerticalAlignment="Center" Click="DeleteButton_Click" ToolTip="Delete binding"
-                           Background="#C42B1C" BorderBrush="#C42B1C" Foreground="White">
-                    <ui:SymbolIcon Symbol="Delete24" FontSize="14" Foreground="White" />
-                </ui:Button>
-            </Grid>
+                    <!-- Delete button -->
+                    <ui:Button x:Name="DeleteButton" Grid.Column="4" Appearance="Secondary" Padding="4" Width="28" Height="28" VerticalAlignment="Center" Click="DeleteButton_Click" ToolTip="Delete binding"
+                               Background="#C42B1C" BorderBrush="#C42B1C" Foreground="White">
+                        <ui:SymbolIcon Symbol="Delete24" FontSize="14" Foreground="White" />
+                    </ui:Button>
+                </Grid>
+            </Border>
 
             <!-- Expandable detail panel -->
             <StackPanel x:Name="DetailPanel" Visibility="Collapsed" Margin="12,0,12,12">
@@ -52,13 +54,10 @@
                         <ColumnDefinition Width="80"/>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
                     <TextBlock Text="Key:" VerticalAlignment="Center" Grid.Column="0" />
                     <TextBox x:Name="KeyTextBox" Width="100" VerticalAlignment="Center" Margin="0,0,8,0" Grid.Column="1" TextChanged="KeyTextBox_TextChanged" />
-                    <Button x:Name="RecordKeyButton" Content="Record" Padding="8,4" Margin="0,0,8,0" Grid.Column="2" Click="RecordKeyButton_Click" />
-                    <Button x:Name="UseTokensButton" Content="Use Tokens" Padding="8,4" Grid.Column="3" Visibility="Visible" Click="UseTokensButton_Click" />
-                    <Button x:Name="UseKeyButton" Content="Use Key" Padding="8,4" Grid.Column="3" Visibility="Collapsed" Click="UseKeyButton_Click" />
+                    <Button x:Name="UseKeyButton" Content="Use Key" Padding="8,4" Grid.Column="2" Visibility="Collapsed" Click="UseKeyButton_Click" ToolTip="Switch back to character key input." />
                 </Grid>
 
                 <!-- Key tokens row (hidden by default) -->
@@ -84,14 +83,15 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
                     <TextBlock Text="Action:" VerticalAlignment="Center" Grid.Column="0" />
-                    <ComboBox x:Name="ActionTypeCombo" Width="200" VerticalAlignment="Center" Grid.Column="1" SelectionChanged="ActionTypeCombo_SelectionChanged" PreviewMouseLeftButtonDown="ComboBox_PreviewMouseLeftButtonDown">
-                        <ComboBoxItem Content="action" Tag="action" />
-                        <ComboBoxItem Content="send" Tag="send" />
-                        <ComboBoxItem Content="type" Tag="type" />
-                        <ComboBoxItem Content="exec" Tag="exec" />
-                        <ComboBoxItem Content="steps" Tag="steps" />
-                        <ComboBoxItem Content="children (layer)" Tag="children" />
-                        <ComboBoxItem Content="setTheme" Tag="setTheme" />
+                    <ComboBox x:Name="ActionTypeCombo" Width="200" VerticalAlignment="Center" Grid.Column="1" SelectionChanged="ActionTypeCombo_SelectionChanged" PreviewMouseLeftButtonDown="ComboBox_PreviewMouseLeftButtonDown"
+                              ToolTip="Choose how this binding triggers.">
+                        <ComboBoxItem Content="action" Tag="action" ToolTip="Run a built-in action id." />
+                        <ComboBoxItem Content="send" Tag="send" ToolTip="Send a key chord (e.g., Ctrl+C)." />
+                        <ComboBoxItem Content="type" Tag="type" ToolTip="Type literal text." />
+                        <ComboBoxItem Content="exec" Tag="exec" ToolTip="Launch a program with optional args and cwd." />
+                        <ComboBoxItem Content="steps" Tag="steps" ToolTip="Chain multiple actions together." />
+                        <ComboBoxItem Content="children (layer)" Tag="children" ToolTip="Create a nested layer of bindings." />
+                        <ComboBoxItem Content="setTheme" Tag="setTheme" ToolTip="Switch to a theme by id." />
                     </ComboBox>
                 </Grid>
 
@@ -104,7 +104,8 @@
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock Text="Action ID:" VerticalAlignment="Center" Grid.Column="0" />
-                        <ComboBox x:Name="ActionIdCombo" Width="250" VerticalAlignment="Center" Grid.Column="1" IsEditable="True" SelectionChanged="ActionIdCombo_SelectionChanged" PreviewMouseLeftButtonDown="ComboBox_PreviewMouseLeftButtonDown" />
+                        <ComboBox x:Name="ActionIdCombo" Width="250" VerticalAlignment="Center" Grid.Column="1" IsEditable="True" SelectionChanged="ActionIdCombo_SelectionChanged" PreviewMouseLeftButtonDown="ComboBox_PreviewMouseLeftButtonDown"
+                                  ToolTip="Built-in action id to run." />
                     </Grid>
 
                     <!-- Send spec input -->
@@ -115,7 +116,8 @@
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock Text="Key Chord:" VerticalAlignment="Center" Grid.Column="0" />
-                        <TextBox x:Name="SendTextBox" Width="300" VerticalAlignment="Center" Grid.Column="1" TextChanged="SendTextBox_TextChanged" />
+                        <TextBox x:Name="SendTextBox" Width="300" VerticalAlignment="Center" Grid.Column="1" TextChanged="SendTextBox_TextChanged"
+                                 ToolTip="Key chord to send (e.g., Ctrl+Shift+T)." />
                         <TextBlock Text="(e.g., Ctrl+C)" Foreground="{DynamicResource TextFillColorTertiaryBrush}" VerticalAlignment="Center" Margin="8,0,0,0" FontSize="11" Grid.Column="2" />
                     </Grid>
 
@@ -126,7 +128,8 @@
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock Text="Text:" VerticalAlignment="Top" Grid.Column="0" Margin="0,4,0,0" />
-                        <TextBox x:Name="TypeTextBox" Grid.Column="1" MaxWidth="400" HorizontalAlignment="Left" MinWidth="300" TextWrapping="Wrap" AcceptsReturn="True" MinHeight="60" TextChanged="TypeTextBox_TextChanged" />
+                        <TextBox x:Name="TypeTextBox" Grid.Column="1" MaxWidth="400" HorizontalAlignment="Left" MinWidth="300" TextWrapping="Wrap" AcceptsReturn="True" MinHeight="60" TextChanged="TypeTextBox_TextChanged"
+                                 ToolTip="Text to type when this binding triggers." />
                     </Grid>
 
                     <!-- Exec inputs -->
@@ -138,7 +141,8 @@
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <TextBlock Text="Path:" VerticalAlignment="Center" Grid.Column="0" />
-                            <TextBox x:Name="ExecPathTextBox" Grid.Column="1" MaxWidth="350" HorizontalAlignment="Left" MinWidth="250" VerticalAlignment="Center" Margin="0,0,8,0" TextChanged="ExecPathTextBox_TextChanged" />
+                            <TextBox x:Name="ExecPathTextBox" Grid.Column="1" MaxWidth="350" HorizontalAlignment="Left" MinWidth="250" VerticalAlignment="Center" Margin="0,0,8,0" TextChanged="ExecPathTextBox_TextChanged"
+                                     ToolTip="Executable or file path to run." />
                             <Button Content="Browse..." Padding="8,4" Grid.Column="2" Click="BrowseExecPath_Click" />
                         </Grid>
                         <Grid Margin="0,0,0,8">
@@ -147,7 +151,8 @@
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
                             <TextBlock Text="Args:" VerticalAlignment="Center" Grid.Column="0" />
-                            <TextBox x:Name="ExecArgsTextBox" Grid.Column="1" MaxWidth="400" HorizontalAlignment="Left" MinWidth="300" VerticalAlignment="Center" TextChanged="ExecArgsTextBox_TextChanged" />
+                            <TextBox x:Name="ExecArgsTextBox" Grid.Column="1" MaxWidth="400" HorizontalAlignment="Left" MinWidth="300" VerticalAlignment="Center" TextChanged="ExecArgsTextBox_TextChanged"
+                                     ToolTip="Optional arguments for the executable." />
                         </Grid>
                         <Grid Margin="0,0,0,8">
                             <Grid.ColumnDefinitions>
@@ -156,7 +161,8 @@
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <TextBlock Text="Cwd:" VerticalAlignment="Center" Grid.Column="0" />
-                            <TextBox x:Name="ExecCwdTextBox" Grid.Column="1" MaxWidth="350" HorizontalAlignment="Left" MinWidth="250" VerticalAlignment="Center" Margin="0,0,8,0" TextChanged="ExecCwdTextBox_TextChanged" />
+                            <TextBox x:Name="ExecCwdTextBox" Grid.Column="1" MaxWidth="350" HorizontalAlignment="Left" MinWidth="250" VerticalAlignment="Center" Margin="0,0,8,0" TextChanged="ExecCwdTextBox_TextChanged"
+                                     ToolTip="Optional working directory." />
                             <Button Content="Browse..." Padding="8,4" Grid.Column="2" Click="BrowseExecCwd_Click" />
                         </Grid>
                     </StackPanel>
@@ -167,7 +173,8 @@
                         <StackPanel x:Name="StepsContainer" Margin="12,0,0,8">
                             <!-- Steps will be added here dynamically -->
                         </StackPanel>
-                        <Button x:Name="AddStepButton" Content="+ Add Step" Padding="8,4" HorizontalAlignment="Left" Margin="12,0,0,0" Click="AddStepButton_Click" />
+                        <Button x:Name="AddStepButton" Content="+ Add Step" Padding="8,4" HorizontalAlignment="Left" Margin="12,0,0,0" Click="AddStepButton_Click"
+                            ToolTip="Add a step to the chain." />
                     </StackPanel>
 
                     <!-- SetTheme input -->
@@ -177,7 +184,8 @@
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock Text="Theme:" VerticalAlignment="Center" Grid.Column="0" />
-                        <ComboBox x:Name="ThemeIdCombo" Width="250" VerticalAlignment="Center" Grid.Column="1" IsEditable="True" SelectionChanged="ThemeIdCombo_SelectionChanged" PreviewMouseLeftButtonDown="ComboBox_PreviewMouseLeftButtonDown" />
+                        <ComboBox x:Name="ThemeIdCombo" Width="250" VerticalAlignment="Center" Grid.Column="1" IsEditable="True" SelectionChanged="ThemeIdCombo_SelectionChanged" PreviewMouseLeftButtonDown="ComboBox_PreviewMouseLeftButtonDown"
+                                  ToolTip="Theme id to apply." />
                     </Grid>
                 </StackPanel>
 
@@ -187,7 +195,8 @@
                     <StackPanel x:Name="ChildrenContainer" Margin="8,0,0,8">
                         <!-- Children bindings will be added here dynamically -->
                     </StackPanel>
-                    <Button x:Name="AddChildButton" Content="+ Add Binding" Padding="8,4" HorizontalAlignment="Left" Margin="8,0,0,0" Click="AddChildButton_Click" />
+                        <Button x:Name="AddChildButton" Content="+ Add Binding" Padding="8,4" HorizontalAlignment="Left" Margin="8,0,0,0" Click="AddChildButton_Click"
+                            ToolTip="Add a nested binding to this layer." />
                 </StackPanel>
             </StackPanel>
         </StackPanel>

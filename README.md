@@ -32,13 +32,6 @@ It’s designed to be:
 - **Themes**: JSON-based themes in `%APPDATA%\Glyph\themes\` with live selection from the Settings UI.
 - **Self-contained releases** for Windows (no separate .NET install required).
 
-## Quick start (from source)
-
-```powershell
-dotnet build Glyph.sln -c Debug
-dotnet run --project src/Glyph.App/Glyph.App.csproj -c Debug
-```
-
 ## Install
 
 ### Winget (recommended)
@@ -94,10 +87,11 @@ In the editor you can:
 - Per-app bindings apply when a matching process is focused; shared groups let you reuse bindings across related apps.
 - For a practical test map, see: [src/Glyph.App/Config/example_keymaps_tokens.yaml](src/Glyph.App/Config/example_keymaps_tokens.yaml)
 
-## Built-in actions
+## Contributing
 
-The built-in action ids live in [src/Glyph.Actions/ActionRuntime.cs](src/Glyph.Actions/ActionRuntime.cs).
-Tip: there is a helper action `logForeground` you can bind (for example to a key in your `bindings:`) to log the currently focused process name. Use it to discover the exact `process` string to put in `apps:`.
+- Start here: [docs/README.md](docs/README.md)
+- Contribution guidelines: [CONTRIBUTING.md](CONTRIBUTING.md)
+- Original vision/notes: [plan.md](plan.md)
 
 ## Releases
 
@@ -105,17 +99,12 @@ Tip: there is a helper action `logForeground` you can bind (for example to a key
 - Local publish helper: `scripts/publish.ps1`.
 - Release notes/instructions: [docs/release.md](docs/release.md)
 
-## Troubleshooting
+## Quick start (from source)
 
-- If `send`/`type` land in the wrong window: ensure the overlay has fully hidden and the target window is focused.
-- If an `exec` doesn’t launch: try the full GUI `.exe` path (not a CLI shim).
-- If an `action` does nothing: it may be unknown; check the built-in list in [src/Glyph.Actions/ActionRuntime.cs](src/Glyph.Actions/ActionRuntime.cs).
-
-## Contributing
-
-- Start here: [docs/README.md](docs/README.md)
-- Contribution guidelines: [CONTRIBUTING.md](CONTRIBUTING.md)
-- Original vision/notes: [plan.md](plan.md)
+```powershell
+dotnet build Glyph.sln -c Debug
+dotnet run --project src/Glyph.App/Glyph.App.csproj -c Debug
+```
 
 ## License
 

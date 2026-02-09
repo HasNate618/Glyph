@@ -40,6 +40,7 @@ public partial class SettingsWindow : Wpf.Ui.Controls.FluentWindow
         {
             LoadToUi();
             UpdateHeaderLogoSource();
+            Dispatcher.InvokeAsync(EnsureKeymapEditorCreated, DispatcherPriority.Background);
         };
 
         // Live-apply when the user changes theme or breadcrumbs
@@ -51,7 +52,7 @@ public partial class SettingsWindow : Wpf.Ui.Controls.FluentWindow
     }
 
     private KeymapEditorPage? _keymapEditorPage;
-    private ScrollViewer? _generalSettingsView;
+    private bool _suppressUiEvents = false;
 
     private void OpenKeymapEditorButton_Click(object? sender, RoutedEventArgs e)
     {
@@ -73,32 +74,31 @@ public partial class SettingsWindow : Wpf.Ui.Controls.FluentWindow
 
     private void NavigateToKeymapEditor()
     {
-        // Store reference to general settings view if not already stored
-        if (_generalSettingsView == null)
-        {
-            _generalSettingsView = ContentArea.Content as ScrollViewer;
-        }
-
-        if (_keymapEditorPage == null)
-        {
-            _keymapEditorPage = new KeymapEditorPage();
-        }
-        ContentArea.Content = _keymapEditorPage;
+        EnsureKeymapEditorCreated();
+        GeneralSettingsScrollViewer.Visibility = Visibility.Collapsed;
+        KeymapEditorHost.Visibility = Visibility.Visible;
         BackButton.Visibility = Visibility.Visible;
         Title = "Keymap Editor";
     }
 
     private void NavigateToGeneralSettings()
     {
-        if (_generalSettingsView != null)
-        {
-            ContentArea.Content = _generalSettingsView;
-        }
+        KeymapEditorHost.Visibility = Visibility.Collapsed;
+        GeneralSettingsScrollViewer.Visibility = Visibility.Visible;
         BackButton.Visibility = Visibility.Collapsed;
         Title = "Glyph Settings";
     }
 
-    private bool _suppressUiEvents = false;
+    private void EnsureKeymapEditorCreated()
+    {
+        if (_keymapEditorPage != null)
+        {
+            return;
+        }
+
+        _keymapEditorPage = new KeymapEditorPage();
+        KeymapEditorHost.Content = _keymapEditorPage;
+    }
 
     private void UpdateHeaderLogoSource()
     {
