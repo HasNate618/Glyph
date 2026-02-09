@@ -25,6 +25,7 @@ public sealed class YamlKeymapProvider : IKeymapProvider
     public string KeymapsPath { get; }
 
     private readonly string _repoDefaultPath;
+    private const string ProgramSpecificLayerActionId = "programSpecificLayer";
 
     public YamlKeymapProvider(string? keymapsPath = null, string? repoDefaultPath = null)
     {
@@ -83,6 +84,7 @@ public sealed class YamlKeymapProvider : IKeymapProvider
 
             if (root?.Apps is { Count: > 0 })
             {
+                var perAppPrefix = GetProgramSpecificPrefix(root, ref skippedInvalid);
                 foreach (var app in root.Apps)
                 {
                     var process = (app?.Process ?? string.Empty).Trim();
@@ -92,7 +94,7 @@ public sealed class YamlKeymapProvider : IKeymapProvider
                         continue;
                     }
 
-                    engine.SetPerAppPrefixDescription(process, "p", process);
+                    engine.SetPerAppPrefixDescription(process, perAppPrefix, process);
 
                     if (app?.Bindings is not { Count: > 0 })
                     {
@@ -101,13 +103,14 @@ public sealed class YamlKeymapProvider : IKeymapProvider
 
                     foreach (var node in app.Bindings)
                     {
-                        ApplyAppNode(engine, process, prefix: "p", node, ref applied, ref skippedUnknown, ref skippedInvalid);
+                        ApplyAppNode(engine, process, prefix: perAppPrefix, node, ref applied, ref skippedUnknown, ref skippedInvalid);
                     }
                 }
             }
 
             if (root?.Groups is { Count: > 0 })
             {
+                var perAppPrefix = GetProgramSpecificPrefix(root, ref skippedInvalid);
                 foreach (var group in root.Groups)
                 {
                     if (group is null || group.Processes is null || group.Processes.Count == 0 || group.Bindings is null || group.Bindings.Count == 0)
@@ -122,11 +125,11 @@ public sealed class YamlKeymapProvider : IKeymapProvider
                         if (proc.Length == 0) continue;
 
                         var label = string.IsNullOrWhiteSpace(group.Name) ? proc : group.Name;
-                        engine.SetPerAppPrefixDescription(proc, "p", label);
+                        engine.SetPerAppPrefixDescription(proc, perAppPrefix, label);
 
                         foreach (var node in group.Bindings)
                         {
-                            ApplyAppNode(engine, proc, prefix: "p", node, ref applied, ref skippedUnknown, ref skippedInvalid);
+                            ApplyAppNode(engine, proc, prefix: perAppPrefix, node, ref applied, ref skippedUnknown, ref skippedInvalid);
                         }
                     }
                 }
@@ -308,6 +311,12 @@ public sealed class YamlKeymapProvider : IKeymapProvider
             }
             else if (actionId.Length > 0)
             {
+                if (string.Equals(actionId, ProgramSpecificLayerActionId, StringComparison.OrdinalIgnoreCase))
+                {
+                    // Marker action: do not add a binding; used only to define per-app prefix.
+                    continue;
+                }
+
                 var isKnown = ActionRuntime.KnownActionIds.Contains(actionId)
                     || actionId.StartsWith("setTheme:", StringComparison.OrdinalIgnoreCase);
 
@@ -492,6 +501,47 @@ public sealed class YamlKeymapProvider : IKeymapProvider
                 }
             }
         }
+    }
+
+    private static string GetProgramSpecificPrefix(KeymapYamlRoot? root, ref int skippedInvalid)
+    {
+        const string fallback = "p";
+
+        if (root?.Bindings is not { Count: > 0 })
+        {
+            return fallback;
+        }
+
+        foreach (var node in root.Bindings)
+        {
+            if (!string.Equals(node.Action, ProgramSpecificLayerActionId, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            var key = (node.Key ?? string.Empty).Trim();
+            var keyTokens = node.KeyTokens;
+            if (key.Length == 0 && (keyTokens is null || keyTokens.Count == 0))
+            {
+                continue;
+            }
+
+            if (key.Any(char.IsWhiteSpace))
+            {
+                skippedInvalid++;
+                continue;
+            }
+
+            var keySeq = ParseKeySequence(key, keyTokens, ref skippedInvalid);
+            if (string.IsNullOrWhiteSpace(keySeq))
+            {
+                continue;
+            }
+
+            return keySeq;
+        }
+
+        return fallback;
     }
 
     private static IReadOnlyList<string> ExpandGenericModifierVariants(string seq)

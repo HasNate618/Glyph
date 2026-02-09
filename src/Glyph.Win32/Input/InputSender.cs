@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Runtime.InteropServices;
 
 using Glyph.Core.Logging;
@@ -14,46 +15,124 @@ public static class InputSender
             return true;
         }
 
-        var inputs = new List<NativeMethods.INPUT>(text.Length * 2);
-
-        foreach (var ch in text)
+        // Check if the foreground app is Notepad - it needs slower, batched input
+        var isNotepad = false;
+        try
         {
-            // key down
-            inputs.Add(new NativeMethods.INPUT
-            {
-                type = NativeMethods.INPUT_KEYBOARD,
-                U = new NativeMethods.InputUnion
-                {
-                    ki = new NativeMethods.KEYBDINPUT
-                    {
-                        wVk = 0,
-                        wScan = ch,
-                        dwFlags = NativeMethods.KEYEVENTF_UNICODE,
-                        time = 0,
-                        dwExtraInfo = IntPtr.Zero,
-                    },
-                },
-            });
-
-            // key up
-            inputs.Add(new NativeMethods.INPUT
-            {
-                type = NativeMethods.INPUT_KEYBOARD,
-                U = new NativeMethods.InputUnion
-                {
-                    ki = new NativeMethods.KEYBDINPUT
-                    {
-                        wVk = 0,
-                        wScan = ch,
-                        dwFlags = NativeMethods.KEYEVENTF_UNICODE | NativeMethods.KEYEVENTF_KEYUP,
-                        time = 0,
-                        dwExtraInfo = IntPtr.Zero,
-                    },
-                },
-            });
+            var active = Glyph.Win32.Windowing.ForegroundApp.TryGetProcessName();
+            isNotepad = string.Equals(active, "notepad", StringComparison.OrdinalIgnoreCase) ||
+                       string.Equals(active, "notepad.exe", StringComparison.OrdinalIgnoreCase);
+        }
+        catch
+        {
+            // If we can't detect, assume not Notepad and use fast path
         }
 
-        return SendInputs(inputs);
+        if (isNotepad)
+        {
+            // Notepad is slow - send in small batches with delays
+            const int batchSize = 10; // Send 10 characters at a time
+            var allInputs = new List<NativeMethods.INPUT>(text.Length * 2);
+
+            foreach (var ch in text)
+            {
+                // key down
+                allInputs.Add(new NativeMethods.INPUT
+                {
+                    type = NativeMethods.INPUT_KEYBOARD,
+                    U = new NativeMethods.InputUnion
+                    {
+                        ki = new NativeMethods.KEYBDINPUT
+                        {
+                            wVk = 0,
+                            wScan = ch,
+                            dwFlags = NativeMethods.KEYEVENTF_UNICODE,
+                            time = 0,
+                            dwExtraInfo = IntPtr.Zero,
+                        },
+                    },
+                });
+
+                // key up
+                allInputs.Add(new NativeMethods.INPUT
+                {
+                    type = NativeMethods.INPUT_KEYBOARD,
+                    U = new NativeMethods.InputUnion
+                    {
+                        ki = new NativeMethods.KEYBDINPUT
+                        {
+                            wVk = 0,
+                            wScan = ch,
+                            dwFlags = NativeMethods.KEYEVENTF_UNICODE | NativeMethods.KEYEVENTF_KEYUP,
+                            time = 0,
+                            dwExtraInfo = IntPtr.Zero,
+                        },
+                    },
+                });
+            }
+
+            // Send in batches with small delays
+            var success = true;
+            for (int i = 0; i < allInputs.Count; i += batchSize * 2) // *2 because each char has down+up
+            {
+                var batch = allInputs.Skip(i).Take(batchSize * 2).ToList();
+                if (batch.Count > 0)
+                {
+                    success &= SendInputs(batch);
+                    if (i + batchSize * 2 < allInputs.Count)
+                    {
+                        // Small delay between batches to let Notepad catch up
+                        System.Threading.Thread.Sleep(5);
+                    }
+                }
+            }
+
+            return success;
+        }
+        else
+        {
+            // Fast path for other apps - send all at once
+            var inputs = new List<NativeMethods.INPUT>(text.Length * 2);
+
+            foreach (var ch in text)
+            {
+                // key down
+                inputs.Add(new NativeMethods.INPUT
+                {
+                    type = NativeMethods.INPUT_KEYBOARD,
+                    U = new NativeMethods.InputUnion
+                    {
+                        ki = new NativeMethods.KEYBDINPUT
+                        {
+                            wVk = 0,
+                            wScan = ch,
+                            dwFlags = NativeMethods.KEYEVENTF_UNICODE,
+                            time = 0,
+                            dwExtraInfo = IntPtr.Zero,
+                        },
+                    },
+                });
+
+                // key up
+                inputs.Add(new NativeMethods.INPUT
+                {
+                    type = NativeMethods.INPUT_KEYBOARD,
+                    U = new NativeMethods.InputUnion
+                    {
+                        ki = new NativeMethods.KEYBDINPUT
+                        {
+                            wVk = 0,
+                            wScan = ch,
+                            dwFlags = NativeMethods.KEYEVENTF_UNICODE | NativeMethods.KEYEVENTF_KEYUP,
+                            time = 0,
+                            dwExtraInfo = IntPtr.Zero,
+                        },
+                    },
+                });
+            }
+
+            return SendInputs(inputs);
+        }
     }
 
     public static bool SendEnter()

@@ -14,6 +14,11 @@ public partial class App : System.Windows.Application
     private GlyphHost? _host;
     private TrayIconService? _tray;
 
+    public void ReloadKeymaps()
+    {
+        _host?.ReloadKeymaps();
+    }
+
     public void ApplyConfig(Glyph.App.Config.AppConfig cfg)
     {
         try
@@ -47,6 +52,24 @@ public partial class App : System.Windows.Application
         }
     }
 
+    /// <summary>
+    /// Apply the user's Windows system theme (light/dark) to Wpf.Ui controls.
+    /// </summary>
+    public static void ApplySystemTheme()
+    {
+        try
+        {
+            var theme = WindowsThemeHelper.IsLightTheme()
+                ? Wpf.Ui.Appearance.ApplicationTheme.Light
+                : Wpf.Ui.Appearance.ApplicationTheme.Dark;
+            Wpf.Ui.Appearance.ApplicationThemeManager.Apply(theme);
+        }
+        catch
+        {
+            // best-effort
+        }
+    }
+
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
@@ -56,6 +79,9 @@ public partial class App : System.Windows.Application
         ShutdownMode = System.Windows.ShutdownMode.OnExplicitShutdown;
 
         Logger.Info("Glyph.App starting (background mode)");
+
+        // Apply system light/dark theme to Wpf.Ui controls.
+        ApplySystemTheme();
 
         // Load user theme overrides (if present) and start hot-reload watcher.
         ThemeManager.Initialize();

@@ -39,6 +39,7 @@ public sealed class ActionRuntime
         "setTheme",
         "reloadKeymaps",
         "toggleBreadcrumbsMode",
+        "programSpecificLayer",
     };
 
 
@@ -122,6 +123,9 @@ public sealed class ActionRuntime
             "logForeground" => LogForegroundAsync(cancellationToken),
             "openLogs" => OpenLogsFolderAsync(cancellationToken),
             "openConfig" => OpenConfigFolderAsync(cancellationToken),
+
+            // Special layer marker - no-op
+            "programSpecificLayer" => Task.CompletedTask,
 
             _ => Task.CompletedTask,
         });

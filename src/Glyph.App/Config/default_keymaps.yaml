@@ -345,6 +345,7 @@ bindings:
   
   - key: p
     label: Program
+    action: programSpecificLayer
 
 apps:
   - process: Spotify

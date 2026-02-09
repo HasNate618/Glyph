@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Windows;
+using System.Windows.Controls;
 
 using Glyph.App.Overlay.Theming;
 using Glyph.Core.Logging;
@@ -7,15 +8,19 @@ using Glyph.App.Config;
 using Glyph.App.Startup;
 using System.Linq;
 using System.Windows.Input;
+using System.Windows.Navigation;
 using System.Windows.Threading;
 
 namespace Glyph.App.UI;
 
-public partial class SettingsWindow : Window
+public partial class SettingsWindow : Wpf.Ui.Controls.FluentWindow
 {
     public SettingsWindow()
     {
         InitializeComponent();
+
+        // Apply system theme to this window
+        Wpf.Ui.Appearance.SystemThemeWatcher.Watch(this);
 
         OpenThemesFolderButton.Click += (_, _) =>
         {
@@ -31,7 +36,12 @@ public partial class SettingsWindow : Window
 
         RecordButton.Click += (_, _) => ToggleRecording();
 
-        Loaded += (_, _) => LoadToUi();
+        Loaded += (_, _) =>
+        {
+            LoadToUi();
+            UpdateHeaderLogoSource();
+            Dispatcher.InvokeAsync(EnsureKeymapEditorCreated, DispatcherPriority.Background);
+        };
 
         // Live-apply when the user changes theme or breadcrumbs
         ThemeCombo.SelectionChanged += ThemeCombo_SelectionChanged;
@@ -41,7 +51,70 @@ public partial class SettingsWindow : Window
         StartWithWindowsCheckBox.Unchecked += StartWithWindowsCheckChanged;
     }
 
+    private KeymapEditorPage? _keymapEditorPage;
     private bool _suppressUiEvents = false;
+
+    private void OpenKeymapEditorButton_Click(object? sender, RoutedEventArgs e)
+    {
+        try
+        {
+            NavigateToKeymapEditor();
+        }
+        catch (Exception ex)
+        {
+            Logger.Error("Failed to open keymap editor", ex);
+            System.Windows.MessageBox.Show($"Failed to open keymap editor:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    private void BackButton_Click(object? sender, RoutedEventArgs e)
+    {
+        NavigateToGeneralSettings();
+    }
+
+    private void NavigateToKeymapEditor()
+    {
+        EnsureKeymapEditorCreated();
+        GeneralSettingsScrollViewer.Visibility = Visibility.Collapsed;
+        KeymapEditorHost.Visibility = Visibility.Visible;
+        BackButton.Visibility = Visibility.Visible;
+        Title = "Keymap Editor";
+    }
+
+    private void NavigateToGeneralSettings()
+    {
+        KeymapEditorHost.Visibility = Visibility.Collapsed;
+        GeneralSettingsScrollViewer.Visibility = Visibility.Visible;
+        BackButton.Visibility = Visibility.Collapsed;
+        Title = "Glyph Settings";
+    }
+
+    private void EnsureKeymapEditorCreated()
+    {
+        if (_keymapEditorPage != null)
+        {
+            return;
+        }
+
+        _keymapEditorPage = new KeymapEditorPage();
+        KeymapEditorHost.Content = _keymapEditorPage;
+    }
+
+    private void UpdateHeaderLogoSource()
+    {
+        try
+        {
+            if (HeaderLogo == null) return;
+            var logo = WindowsThemeHelper.IsLightTheme()
+                ? "pack://application:,,,/Glyph.App;component/Assets/LogoTextBlack.svg"
+                : "pack://application:,,,/Glyph.App;component/Assets/LogoTextWhite.svg";
+            HeaderLogo.Source = new Uri(logo, UriKind.Absolute);
+        }
+        catch
+        {
+            // best-effort only
+        }
+    }
 
     private static string GetConfigDir()
     {
@@ -69,6 +142,23 @@ public partial class SettingsWindow : Window
         }
     }
 
+    private void Hyperlink_RequestNavigate(object? sender, RequestNavigateEventArgs e)
+    {
+        try
+        {
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = e.Uri.AbsoluteUri,
+                UseShellExecute = true,
+            });
+        }
+        catch (Exception ex)
+        {
+            Logger.Error("Failed to launch help link", ex);
+        }
+        e.Handled = true;
+    }
+
     private void LoadToUi()
     {
         try
@@ -83,7 +173,6 @@ public partial class SettingsWindow : Window
             var leaderSeq = NormalizeGlyphSequence(cfg);
             CurrentGlyphText.Text = DescribeGlyphSequence(leaderSeq);
             // By default the recorded-glyph UI shows recording state, not the effective glyph.
-            RecordedGlyphText.Text = "(not recording)";
 
             LoadThemesIntoCombo(cfg.BaseTheme);
             BreadcrumbsModeCheckBox.IsChecked = cfg.BreadcrumbsMode;
@@ -108,6 +197,7 @@ public partial class SettingsWindow : Window
             {
                 app.ApplyConfig(cfg);
             }
+            UpdateHeaderLogoSource();
         }
         catch (Exception ex)
         {
@@ -285,7 +375,6 @@ public partial class SettingsWindow : Window
         {
             RecordButton.Content = "Stop Recording";
             _recordedGlyphSequence.Clear();
-            RecordedGlyphText.Text = "Recording: 0";
             this.PreviewKeyDown += SettingsWindow_PreviewKeyDown;
             this.Focus();
         }
@@ -295,11 +384,7 @@ public partial class SettingsWindow : Window
             this.PreviewKeyDown -= SettingsWindow_PreviewKeyDown;
             if (_recordedGlyphSequence.Count > 0)
             {
-                RecordedGlyphText.Text = DescribeGlyphSequence(_recordedGlyphSequence);
-            }
-            else
-            {
-                RecordedGlyphText.Text = "(not recording)";
+                CurrentGlyphText.Text = DescribeGlyphSequence(_recordedGlyphSequence);
             }
             // Persist and apply the new glyph sequence immediately when recording stops.
             try
@@ -338,7 +423,6 @@ public partial class SettingsWindow : Window
             if (step.VkCode != 0)
             {
                 _recordedGlyphSequence.Add(step);
-                RecordedGlyphText.Text = $"Recording: {_recordedGlyphSequence.Count}";
                 CurrentGlyphText.Text = DescribeGlyphSequence(_recordedGlyphSequence);
             }
         }
@@ -373,7 +457,7 @@ public partial class SettingsWindow : Window
     {
         if (seq.Count == 0)
         {
-            return "Glyph: Default (Ctrl+Shift+NumPad *)";
+            return "Glyph Key: Default (Ctrl+Shift+NumPad *)";
         }
 
         static string StepToString(GlyphKeyConfig s)
@@ -410,6 +494,6 @@ public partial class SettingsWindow : Window
         }
 
         var rendered = string.Join(", ", seq.Select(StepToString));
-        return $"Glyph: {rendered}";
+        return $"Glyph Key: {rendered}";
     }
 }

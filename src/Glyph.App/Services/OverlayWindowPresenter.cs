@@ -89,7 +89,9 @@ public sealed class OverlayWindowPresenter : IOverlayPresenter
             {
                 await System.Threading.Tasks.Task.Delay(TimeSpan.FromMilliseconds(sustainMs), token);
                 if (token.IsCancellationRequested) return;
-                System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
+                var app = System.Windows.Application.Current;
+                if (app == null) return;
+                _ = app.Dispatcher.BeginInvoke(() =>
                 {
                     if (_window.IsVisible) _window.Hide();
                 });
@@ -101,7 +103,9 @@ public sealed class OverlayWindowPresenter : IOverlayPresenter
 
     public void Dispose()
     {
-        System.Windows.Application.Current.Dispatcher.Invoke(() =>
+        var app = System.Windows.Application.Current;
+        if (app == null) return;
+        app.Dispatcher.Invoke(() =>
         {
             if (_window.IsVisible)
             {

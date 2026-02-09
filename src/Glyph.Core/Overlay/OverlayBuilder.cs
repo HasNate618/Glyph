@@ -6,6 +6,11 @@ namespace Glyph.Core.Overlay;
 
 public static class OverlayBuilder
 {
+    /// <summary>
+    /// Maximum depth for recursive lookahead through transparent intermediate nodes.
+    /// </summary>
+    private const int MaxLookaheadDepth = 8;
+
     public static OverlayModel Build(
         string buffer,
         string? activeProcessName,
@@ -57,28 +62,42 @@ public static class OverlayBuilder
                 continue;
             }
 
+            // Determine whether lookahead children should be shown at all.
+            // Blank intermediate: the parent key itself isn't visible, so show children
+            //   to give the user something to see.
+            // Disambiguation: the parent key completes an action but also continues,
+            //   so show children to help the user disambiguate.
+            var shouldIncludeBlankIntermediate = policy.ShowLookaheadForBlankIntermediates && !includeSingle;
+            var shouldIncludeDisambiguation = k.Completes;
+            var allowLookahead = shouldIncludeBlankIntermediate || shouldIncludeDisambiguation;
+
+            if (!allowLookahead) continue;
+
             var childLookup = lookup(buffer + k.Key);
             foreach (var child in childLookup.NextKeys)
             {
-                if (!child.Completes) continue;
+                var childKeyString = string.Concat(k.Key, child.Key);
 
-                var childDesc = child.Description;
-                if (string.IsNullOrWhiteSpace(childDesc)) continue;
-
-                var shouldIncludeBlankIntermediate = policy.ShowLookaheadForBlankIntermediates && !includeSingle;
-                var shouldIncludeDisambiguation = k.Completes;
-
-                if (!shouldIncludeBlankIntermediate && !shouldIncludeDisambiguation)
+                // Show completing children with descriptions (existing depth-1 behavior).
+                if (child.Completes && !string.IsNullOrWhiteSpace(child.Description))
                 {
-                    continue;
+                    byKey[childKeyString] = new OverlayOption(
+                        Key: childKeyString,
+                        Description: child.Description,
+                        IsLayer: child.Continues,
+                        IsAction: true);
                 }
 
-                var keyString = string.Concat(k.Key, child.Key);
-                byKey[keyString] = new OverlayOption(
-                    Key: keyString,
-                    Description: childDesc,
-                    IsLayer: child.Continues,
-                    IsAction: true);
+                // Recurse through "transparent" intermediates — nodes that don't
+                // complete an action AND don't have a description (they're not named
+                // layers). This surfaces 3+ character sequences like "rrr" without
+                // leaking named sublayer children (e.g. "ra", "rb") to parent layers.
+                if (child.Continues && !child.Completes
+                    && string.IsNullOrWhiteSpace(child.Description))
+                {
+                    CollectTransparentDescendants(
+                        buffer, childKeyString, lookup, byKey, MaxLookaheadDepth);
+                }
             }
         }
 
@@ -111,6 +130,48 @@ public static class OverlayBuilder
         }
 
         return new OverlayModel(title, options);
+    }
+
+    /// <summary>
+    /// Recursively walk descendants through "transparent" intermediate nodes
+    /// (nodes that don't complete an action and don't have a description/label).
+    /// This allows deeply-nested completions like 3+ character sequences to
+    /// surface in the overlay without leaking named sublayer children upward.
+    /// </summary>
+    private static void CollectTransparentDescendants(
+        string buffer,
+        string prefix,
+        Func<string, TrieLookupResult<ActionRequest>> lookup,
+        Dictionary<string, OverlayOption> byKey,
+        int maxDepth)
+    {
+        if (maxDepth <= 0) return;
+
+        var result = lookup(buffer + prefix);
+        foreach (var child in result.NextKeys)
+        {
+            var keyString = prefix + child.Key;
+
+            // Show any completing descendants.
+            if (child.Completes && !string.IsNullOrWhiteSpace(child.Description))
+            {
+                byKey[keyString] = new OverlayOption(
+                    Key: keyString,
+                    Description: child.Description,
+                    IsLayer: child.Continues,
+                    IsAction: true);
+            }
+
+            // Keep recursing only through transparent intermediates.
+            // Stop at nodes that complete (they're actions) or have
+            // descriptions (they're named layers the user navigates into).
+            if (child.Continues && !child.Completes
+                && string.IsNullOrWhiteSpace(child.Description))
+            {
+                CollectTransparentDescendants(
+                    buffer, keyString, lookup, byKey, maxDepth - 1);
+            }
+        }
     }
 
     internal static string BuildTitle(

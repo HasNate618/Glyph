@@ -1,0 +1,75 @@
+<Window x:Class="Glyph.App.Tray.TrayMenuWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="Glyph Tray Menu"
+    WindowStyle="None"
+    AllowsTransparency="True"
+    Background="Transparent"
+    ResizeMode="NoResize"
+    ShowInTaskbar="False"
+    Topmost="True"
+    SizeToContent="WidthAndHeight">
+    <Border x:Name="MenuBorder"
+        BorderThickness="1"
+        CornerRadius="6"
+        Padding="2"
+        Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}"
+        BorderBrush="{DynamicResource {x:Static SystemColors.ControlDarkBrushKey}}"
+        SizeChanged="MenuBorder_SizeChanged">
+        <StackPanel>
+            <TextBlock x:Name="OpenGuiText" 
+                       Text="Open GUI" 
+                       FontSize="12"
+                       Padding="6,4"
+                       Foreground="{DynamicResource {x:Static SystemColors.MenuTextBrushKey}}"
+                       Cursor="Hand"
+                       MouseDown="OpenGuiText_MouseDown"
+                       MouseEnter="MenuItem_MouseEnter"
+                       MouseLeave="MenuItem_MouseLeave" />
+
+            <TextBlock x:Name="StartOnStartupText" 
+                       Text="Start on startup" 
+                       FontSize="12"
+                       Padding="6,4"
+                       Foreground="{DynamicResource {x:Static SystemColors.MenuTextBrushKey}}"
+                       Cursor="Hand"
+                       MouseDown="StartOnStartupText_MouseDown"
+                       MouseEnter="MenuItem_MouseEnter"
+                       MouseLeave="MenuItem_MouseLeave" />
+
+            <Separator Margin="0,1" />
+
+            <TextBlock x:Name="OpenConfigText" 
+                       Text="Open Config Folder" 
+                       FontSize="12"
+                       Padding="6,4"
+                       Foreground="{DynamicResource {x:Static SystemColors.MenuTextBrushKey}}"
+                       Cursor="Hand"
+                       MouseDown="OpenConfigText_MouseDown"
+                       MouseEnter="MenuItem_MouseEnter"
+                       MouseLeave="MenuItem_MouseLeave" />
+            
+            <TextBlock x:Name="OpenLogsText" 
+                       Text="Open Logs Folder" 
+                       FontSize="12"
+                       Padding="6,4"
+                       Foreground="{DynamicResource {x:Static SystemColors.MenuTextBrushKey}}"
+                       Cursor="Hand"
+                       MouseDown="OpenLogsText_MouseDown"
+                       MouseEnter="MenuItem_MouseEnter"
+                       MouseLeave="MenuItem_MouseLeave" />
+
+            <Separator Margin="0,1" />
+
+            <TextBlock x:Name="ExitText" 
+                       Text="Exit" 
+                       FontSize="12"
+                       Padding="6,4"
+                       Foreground="{DynamicResource {x:Static SystemColors.MenuTextBrushKey}}"
+                       Cursor="Hand"
+                       MouseDown="ExitText_MouseDown"
+                       MouseEnter="MenuItem_MouseEnter"
+                       MouseLeave="MenuItem_MouseLeave" />
+        </StackPanel>
+    </Border>
+</Window>

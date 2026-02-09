@@ -16,6 +16,7 @@ namespace Glyph.App.Tray;
 public sealed class TrayIconService : IDisposable
 {
     private readonly System.Windows.Forms.NotifyIcon _notifyIcon;
+    private TrayMenuWindow? _menuWindow;
 
     public TrayIconService()
     {
@@ -25,10 +26,17 @@ public sealed class TrayIconService : IDisposable
             Text = "Glyph",
             Visible = false,
             Icon = LoadAppIcon() ?? SystemIcons.Application,
-            ContextMenuStrip = BuildMenu()
+            ContextMenuStrip = null
         };
 
         _notifyIcon.DoubleClick += (_, _) => OpenGui();
+        _notifyIcon.MouseUp += (_, e) =>
+        {
+            if (e.Button == System.Windows.Forms.MouseButtons.Right)
+            {
+                ShowTrayMenu();
+            }
+        };
     }
 
     public void Start()
@@ -43,6 +51,7 @@ public sealed class TrayIconService : IDisposable
         {
             _notifyIcon.Visible = false;
             _notifyIcon.Dispose();
+            _menuWindow?.ForceClose();
         }
         catch
         {
@@ -50,51 +59,47 @@ public sealed class TrayIconService : IDisposable
         }
     }
 
-    private System.Windows.Forms.ContextMenuStrip BuildMenu()
+    private void ShowTrayMenu()
     {
-        var menu = new System.Windows.Forms.ContextMenuStrip();
-
-        var openGui = new System.Windows.Forms.ToolStripMenuItem("Open GUI");
-        openGui.Click += (_, _) => OpenGui();
-
-        var startOnStartup = new System.Windows.Forms.ToolStripMenuItem("Open on startup")
+        System.Windows.Application.Current.Dispatcher.Invoke(() =>
         {
-            CheckOnClick = true,
-            Checked = AppConfig.Load().StartWithWindows
-        };
-        startOnStartup.CheckedChanged += (_, _) =>
-        {
+            if (_menuWindow == null)
+            {
+                _menuWindow = new TrayMenuWindow
+                {
+                    OpenGuiAction = OpenGui,
+                    OpenConfigAction = OpenConfigFolder,
+                    OpenLogsAction = OpenLogsFolder,
+                    ExitAction = Exit,
+                    ToggleStartupAction = ToggleStartup
+                };
+            }
+
             try
             {
-                var enabled = startOnStartup.Checked;
-                StartupManager.SetEnabled(enabled);
-                var cfg = AppConfig.Load();
-                cfg.StartWithWindows = enabled;
-                AppConfig.Save(cfg);
+                _menuWindow.SetStartupChecked(AppConfig.Load().StartWithWindows);
             }
             catch
             {
             }
-        };
 
-        var openConfig = new System.Windows.Forms.ToolStripMenuItem("Open Config Folder");
-        openConfig.Click += (_, _) => OpenConfigFolder();
+            var cursor = System.Windows.Forms.Cursor.Position;
+            _menuWindow.ShowAt(new System.Windows.Point(cursor.X, cursor.Y));
+        });
+    }
 
-        var openLogs = new System.Windows.Forms.ToolStripMenuItem("Open Logs Folder");
-        openLogs.Click += (_, _) => OpenLogsFolder();
-
-        var exit = new System.Windows.Forms.ToolStripMenuItem("Exit");
-        exit.Click += (_, _) => Exit();
-
-        menu.Items.Add(openGui);
-        menu.Items.Add(startOnStartup);
-        menu.Items.Add(new System.Windows.Forms.ToolStripSeparator());
-        menu.Items.Add(openConfig);
-        menu.Items.Add(openLogs);
-        menu.Items.Add(new System.Windows.Forms.ToolStripSeparator());
-        menu.Items.Add(exit);
-
-        return menu;
+    private static void ToggleStartup(bool enabled)
+    {
+        try
+        {
+            StartupManager.SetEnabled(enabled);
+            var cfg = AppConfig.Load();
+            cfg.StartWithWindows = enabled;
+            AppConfig.Save(cfg);
+        }
+        catch
+        {
+        }
     }
 
     private static Icon? LoadAppIcon()
