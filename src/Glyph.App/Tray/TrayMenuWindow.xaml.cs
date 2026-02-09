@@ -1,6 +1,7 @@
 using System;
 using System.ComponentModel;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Forms;
 
@@ -9,6 +10,7 @@ namespace Glyph.App.Tray;
 public partial class TrayMenuWindow : Window
 {
     private bool _allowClose;
+    private bool _startupEnabled;
 
     public Action? OpenGuiAction { get; set; }
     public Action? OpenConfigAction { get; set; }
@@ -21,11 +23,61 @@ public partial class TrayMenuWindow : Window
         InitializeComponent();
         Wpf.Ui.Appearance.SystemThemeWatcher.Watch(this);
         Deactivated += (_, _) => Hide();
+        Loaded += TrayMenuWindow_Loaded;
+        SourceInitialized += TrayMenuWindow_SourceInitialized;
+    }
+
+    private void TrayMenuWindow_SourceInitialized(object? sender, EventArgs e)
+    {
+        UpdateSystemColors();
+    }
+
+    private void TrayMenuWindow_Loaded(object sender, RoutedEventArgs e)
+    {
+        UpdateSystemColors();
+    }
+
+    private void UpdateSystemColors()
+    {
+        // Use ControlColor for background - it's more reliable across themes
+        // MenuColor can be black in dark mode, which isn't ideal for menus
+        var bgColor = System.Windows.SystemColors.ControlColor;
+        var textColor = System.Windows.SystemColors.ControlTextColor;
+        var borderColor = System.Windows.SystemColors.ControlDarkColor;
+        
+        MenuBorder.Background = new SolidColorBrush(bgColor);
+        MenuBorder.BorderBrush = new SolidColorBrush(borderColor);
+        
+        var textBrush = new SolidColorBrush(textColor);
+        OpenGuiText.Foreground = textBrush;
+        StartOnStartupText.Foreground = textBrush;
+        OpenConfigText.Foreground = textBrush;
+        OpenLogsText.Foreground = textBrush;
+        ExitText.Foreground = textBrush;
+    }
+
+    private void MenuBorder_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        if (sender is Border border)
+        {
+            border.Clip = new RectangleGeometry
+            {
+                Rect = new Rect(0, 0, border.ActualWidth, border.ActualHeight),
+                RadiusX = 6,
+                RadiusY = 6
+            };
+        }
     }
 
     public void SetStartupChecked(bool isChecked)
     {
-        StartOnStartupCheckBox.IsChecked = isChecked;
+        _startupEnabled = isChecked;
+        UpdateStartupText();
+    }
+
+    private void UpdateStartupText()
+    {
+        StartOnStartupText.Text = _startupEnabled ? "✓ Start on startup" : "Start on startup";
     }
 
     public void ShowAt(System.Windows.Point screenPoint)
@@ -35,6 +87,7 @@ public partial class TrayMenuWindow : Window
             Show();
         }
 
+        UpdateSystemColors();
         UpdateLayout();
 
         var dpi = VisualTreeHelper.GetDpi(this);
@@ -81,37 +134,52 @@ public partial class TrayMenuWindow : Window
         Close();
     }
 
-    private void OpenGuiButton_Click(object sender, RoutedEventArgs e)
+    private void OpenGuiText_MouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
     {
         OpenGuiAction?.Invoke();
         Hide();
     }
 
-    private void OpenConfigButton_Click(object sender, RoutedEventArgs e)
+    private void OpenConfigText_MouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
     {
         OpenConfigAction?.Invoke();
         Hide();
     }
 
-    private void OpenLogsButton_Click(object sender, RoutedEventArgs e)
+    private void OpenLogsText_MouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
     {
         OpenLogsAction?.Invoke();
         Hide();
     }
 
-    private void ExitButton_Click(object sender, RoutedEventArgs e)
+    private void ExitText_MouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
     {
         ExitAction?.Invoke();
         ForceClose();
     }
 
-    private void StartOnStartupCheckBox_Checked(object sender, RoutedEventArgs e)
+    private void StartOnStartupText_MouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
     {
-        ToggleStartupAction?.Invoke(true);
+        _startupEnabled = !_startupEnabled;
+        UpdateStartupText();
+        ToggleStartupAction?.Invoke(_startupEnabled);
     }
 
-    private void StartOnStartupCheckBox_Unchecked(object sender, RoutedEventArgs e)
+    private void MenuItem_MouseEnter(object sender, System.Windows.Input.MouseEventArgs e)
     {
-        ToggleStartupAction?.Invoke(false);
+        if (sender is TextBlock textBlock)
+        {
+            textBlock.Background = new SolidColorBrush(System.Windows.SystemColors.HighlightColor);
+            textBlock.Foreground = new SolidColorBrush(System.Windows.SystemColors.HighlightTextColor);
+        }
+    }
+
+    private void MenuItem_MouseLeave(object sender, System.Windows.Input.MouseEventArgs e)
+    {
+        if (sender is TextBlock textBlock)
+        {
+            textBlock.Background = System.Windows.Media.Brushes.Transparent;
+            textBlock.Foreground = new SolidColorBrush(System.Windows.SystemColors.ControlTextColor);
+        }
     }
 }

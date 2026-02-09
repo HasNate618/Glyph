@@ -1,33 +1,75 @@
 <Window x:Class="Glyph.App.Tray.TrayMenuWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     Title="Glyph Tray Menu"
     WindowStyle="None"
-    AllowsTransparency="False"
-    Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+    AllowsTransparency="True"
+    Background="Transparent"
     ResizeMode="NoResize"
     ShowInTaskbar="False"
     Topmost="True"
     SizeToContent="WidthAndHeight">
-    <Border CornerRadius="10"
-        Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
-        BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}"
+    <Border x:Name="MenuBorder"
         BorderThickness="1"
-        Padding="8">
+        CornerRadius="6"
+        Padding="2"
+        Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}"
+        BorderBrush="{DynamicResource {x:Static SystemColors.ControlDarkBrushKey}}"
+        SizeChanged="MenuBorder_SizeChanged">
         <StackPanel>
-            <ui:Button x:Name="OpenGuiButton" Content="Open GUI" Icon="{ui:SymbolIcon Settings24}" Appearance="Secondary" Margin="0,0,0,4" Click="OpenGuiButton_Click" />
+            <TextBlock x:Name="OpenGuiText" 
+                       Text="Open GUI" 
+                       FontSize="12"
+                       Padding="6,4"
+                       Foreground="{DynamicResource {x:Static SystemColors.MenuTextBrushKey}}"
+                       Cursor="Hand"
+                       MouseDown="OpenGuiText_MouseDown"
+                       MouseEnter="MenuItem_MouseEnter"
+                       MouseLeave="MenuItem_MouseLeave" />
 
-            <CheckBox x:Name="StartOnStartupCheckBox" Content="Open on startup" Margin="6,4,0,6" Checked="StartOnStartupCheckBox_Checked" Unchecked="StartOnStartupCheckBox_Unchecked" />
+            <TextBlock x:Name="StartOnStartupText" 
+                       Text="Start on startup" 
+                       FontSize="12"
+                       Padding="6,4"
+                       Foreground="{DynamicResource {x:Static SystemColors.MenuTextBrushKey}}"
+                       Cursor="Hand"
+                       MouseDown="StartOnStartupText_MouseDown"
+                       MouseEnter="MenuItem_MouseEnter"
+                       MouseLeave="MenuItem_MouseLeave" />
 
-            <Separator Margin="0,4" />
+            <Separator Margin="0,1" />
 
-            <ui:Button x:Name="OpenConfigButton" Content="Open Config Folder" Icon="{ui:SymbolIcon FolderOpen24}" Appearance="Secondary" Margin="0,0,0,4" Click="OpenConfigButton_Click" />
-            <ui:Button x:Name="OpenLogsButton" Content="Open Logs Folder" Icon="{ui:SymbolIcon FolderOpen24}" Appearance="Secondary" Margin="0,0,0,4" Click="OpenLogsButton_Click" />
+            <TextBlock x:Name="OpenConfigText" 
+                       Text="Open Config Folder" 
+                       FontSize="12"
+                       Padding="6,4"
+                       Foreground="{DynamicResource {x:Static SystemColors.MenuTextBrushKey}}"
+                       Cursor="Hand"
+                       MouseDown="OpenConfigText_MouseDown"
+                       MouseEnter="MenuItem_MouseEnter"
+                       MouseLeave="MenuItem_MouseLeave" />
+            
+            <TextBlock x:Name="OpenLogsText" 
+                       Text="Open Logs Folder" 
+                       FontSize="12"
+                       Padding="6,4"
+                       Foreground="{DynamicResource {x:Static SystemColors.MenuTextBrushKey}}"
+                       Cursor="Hand"
+                       MouseDown="OpenLogsText_MouseDown"
+                       MouseEnter="MenuItem_MouseEnter"
+                       MouseLeave="MenuItem_MouseLeave" />
 
-            <Separator Margin="0,4" />
+            <Separator Margin="0,1" />
 
-            <ui:Button x:Name="ExitButton" Content="Exit" Icon="{ui:SymbolIcon Dismiss24}" Appearance="Danger" Click="ExitButton_Click" />
+            <TextBlock x:Name="ExitText" 
+                       Text="Exit" 
+                       FontSize="12"
+                       Padding="6,4"
+                       Foreground="{DynamicResource {x:Static SystemColors.MenuTextBrushKey}}"
+                       Cursor="Hand"
+                       MouseDown="ExitText_MouseDown"
+                       MouseEnter="MenuItem_MouseEnter"
+                       MouseLeave="MenuItem_MouseLeave" />
         </StackPanel>
     </Border>
 </Window>
