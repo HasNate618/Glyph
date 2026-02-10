@@ -4,6 +4,7 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using System.Windows.Threading;
 using WpfControls = System.Windows.Controls;
 using System.Windows.Input;
 
@@ -52,22 +53,47 @@ public partial class KeymapBindingEditor : WpfControls.UserControl
 
         if (_isExpanded)
         {
-            DetailPanel.Visibility = Visibility.Visible;
-            DetailPanel.Opacity = 0;
-            DetailPanel.RenderTransform = new TranslateTransform(0, -4);
-            var fadeIn = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(150));
-            var slideIn = new DoubleAnimation(-4, 0, TimeSpan.FromMilliseconds(150));
-            DetailPanel.BeginAnimation(UIElement.OpacityProperty, fadeIn);
-            ((TranslateTransform)DetailPanel.RenderTransform).BeginAnimation(TranslateTransform.YProperty, slideIn);
+            BeginDetailExpandAnimation();
         }
         else
         {
-            var fadeOut = new DoubleAnimation(1, 0, TimeSpan.FromMilliseconds(120));
-            fadeOut.Completed += (_, _) => DetailPanel.Visibility = Visibility.Collapsed;
-            DetailPanel.BeginAnimation(UIElement.OpacityProperty, fadeOut);
-            if (DetailPanel.RenderTransform is TranslateTransform tt)
-                tt.BeginAnimation(TranslateTransform.YProperty, new DoubleAnimation(0, -4, TimeSpan.FromMilliseconds(120)));
+            BeginDetailCollapseAnimation();
         }
+    }
+
+    private void BeginDetailExpandAnimation()
+    {
+        DetailPanel.RenderTransformOrigin = new System.Windows.Point(0.5, 0);
+        var scale = new ScaleTransform(1, 0);
+        DetailPanel.RenderTransform = scale;
+        DetailPanel.Opacity = 0;
+        DetailPanel.Visibility = Visibility.Visible;
+
+        void StartAnimation()
+        {
+            var fadeIn = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(90));
+            var scaleIn = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(120));
+            DetailPanel.BeginAnimation(UIElement.OpacityProperty, fadeIn);
+            scale.BeginAnimation(ScaleTransform.ScaleYProperty, scaleIn);
+        }
+
+        DetailPanel.Dispatcher.BeginInvoke((Action)StartAnimation, DispatcherPriority.Render);
+    }
+
+    private void BeginDetailCollapseAnimation()
+    {
+        DetailPanel.RenderTransformOrigin = new System.Windows.Point(0.5, 0);
+        if (DetailPanel.RenderTransform is not ScaleTransform scale)
+        {
+            scale = new ScaleTransform(1, 1);
+            DetailPanel.RenderTransform = scale;
+        }
+
+        var fadeOut = new DoubleAnimation(1, 0, TimeSpan.FromMilliseconds(80));
+        var scaleOut = new DoubleAnimation(1, 0, TimeSpan.FromMilliseconds(110));
+        scaleOut.Completed += (_, _) => DetailPanel.Visibility = Visibility.Collapsed;
+        DetailPanel.BeginAnimation(UIElement.OpacityProperty, fadeOut);
+        scale.BeginAnimation(ScaleTransform.ScaleYProperty, scaleOut);
     }
 
     /// <summary>
@@ -331,7 +357,25 @@ public partial class KeymapBindingEditor : WpfControls.UserControl
             }
         };
 
-        var deleteButton = new WpfControls.Button { Content = "🗑️", Padding = new Thickness(4), Width = 30, Height = 30 };
+        var deleteBrush = new SolidColorBrush(System.Windows.Media.Color.FromRgb(0xC4, 0x2B, 0x1C));
+        var deleteButton = new Wpf.Ui.Controls.Button
+        {
+            Appearance = Wpf.Ui.Controls.ControlAppearance.Secondary,
+            Padding = new Thickness(4),
+            Width = 28,
+            Height = 28,
+            VerticalAlignment = VerticalAlignment.Center,
+            Background = deleteBrush,
+            BorderBrush = deleteBrush,
+            Foreground = System.Windows.Media.Brushes.White,
+            ToolTip = "Delete step"
+        };
+        deleteButton.Content = new Wpf.Ui.Controls.SymbolIcon
+        {
+            Symbol = Wpf.Ui.Controls.SymbolRegular.Delete24,
+            FontSize = 14,
+            Foreground = System.Windows.Media.Brushes.White
+        };
         deleteButton.Click += (_, _) =>
         {
             StepsContainer.Children.Remove(container);
