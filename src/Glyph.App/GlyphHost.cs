@@ -223,29 +223,53 @@ public sealed class GlyphHost : IDisposable
             }
 
             Logger.Info($"Action triggered: {result.Action.ActionId} (app={activeProcess ?? "?"})");
-                    if (string.Equals(result.Action.ActionId, "openGlyphGui", StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(result.Action.ActionId, "openGlyphKeymapEditor", StringComparison.OrdinalIgnoreCase))
+            {
+                System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
+                {
+                    var window = System.Windows.Application.Current.Windows.OfType<UI.SettingsWindow>().FirstOrDefault() ?? new UI.SettingsWindow();
+
+                    if (!window.IsVisible)
                     {
-                        System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
-                        {
-                            var window = System.Windows.Application.Current.Windows.OfType<UI.SettingsWindow>().FirstOrDefault() ?? new UI.SettingsWindow();
-
-                            if (!window.IsVisible)
-                            {
-                                window.Show();
-                            }
-
-                            if (window.WindowState == WindowState.Minimized)
-                            {
-                                window.WindowState = WindowState.Normal;
-                            }
-
-                            window.Activate();
-                            window.Topmost = true;
-                            window.Topmost = false;
-                            window.Focus();
-                        });
-                        return;
+                        window.Show();
                     }
+
+                    if (window.WindowState == WindowState.Minimized)
+                    {
+                        window.WindowState = WindowState.Normal;
+                    }
+
+                    window.Activate();
+                    window.Topmost = true;
+                    window.Topmost = false;
+                    window.Focus();
+                    window.OpenKeymapEditorFromAction();
+                });
+                return;
+            }
+            if (string.Equals(result.Action.ActionId, "openGlyphGui", StringComparison.OrdinalIgnoreCase))
+            {
+                System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
+                {
+                    var window = System.Windows.Application.Current.Windows.OfType<UI.SettingsWindow>().FirstOrDefault() ?? new UI.SettingsWindow();
+
+                    if (!window.IsVisible)
+                    {
+                        window.Show();
+                    }
+
+                    if (window.WindowState == WindowState.Minimized)
+                    {
+                        window.WindowState = WindowState.Normal;
+                    }
+
+                    window.Activate();
+                    window.Topmost = true;
+                    window.Topmost = false;
+                    window.Focus();
+                });
+                return;
+            }
             if (string.Equals(result.Action.ActionId, "quitGlyph", StringComparison.OrdinalIgnoreCase))
             {
                 System.Windows.Application.Current.Dispatcher.BeginInvoke(() => System.Windows.Application.Current.Shutdown());

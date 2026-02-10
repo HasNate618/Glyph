@@ -14,28 +14,20 @@ public sealed class ActionRuntime
 {
     public static readonly IReadOnlySet<string> KnownActionIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     {
-        "launchChrome",
         "openBrowser",
-
         "mediaPlayPause",
         "mediaNext",
         "mediaPrev",
         "volumeMute",
         "openSpotify",
         "mediaShuffle",
-
         "logForeground",
         "openLogs",
         "openConfig",
-
         "windowMinimize",
-        
-        
-
-        "typeNvimDot",
         "openGlyphGui",
+        "openGlyphKeymapEditor",
         "quitGlyph",
-        // Theme action family (parameterized): setTheme:<ThemeId>
         "setTheme",
         "reloadKeymaps",
         "toggleBreadcrumbsMode",

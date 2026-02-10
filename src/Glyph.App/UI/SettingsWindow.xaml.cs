@@ -55,7 +55,7 @@ public partial class SettingsWindow : Wpf.Ui.Controls.FluentWindow
     private KeymapEditorPage? _keymapEditorPage;
     private bool _suppressUiEvents = false;
 
-    private void OpenKeymapEditorButton_Click(object? sender, RoutedEventArgs e)
+    internal void OpenKeymapEditorFromAction()
     {
         try
         {
@@ -66,6 +66,11 @@ public partial class SettingsWindow : Wpf.Ui.Controls.FluentWindow
             Logger.Error("Failed to open keymap editor", ex);
             System.Windows.MessageBox.Show($"Failed to open keymap editor:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
+    }
+
+    private void OpenKeymapEditorButton_Click(object? sender, RoutedEventArgs e)
+    {
+        OpenKeymapEditorFromAction();
     }
 
     private void BackButton_Click(object? sender, RoutedEventArgs e)

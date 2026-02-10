@@ -223,6 +223,9 @@ bindings:
       - key: o
         label: Open Glyph GUI
         action: openGlyphGui
+      - key: k
+        label: Open Keymap Editor
+        action: openGlyphKeymapEditor
       - key: c
         label: Open Config Folder
         action: openConfig
@@ -279,11 +282,6 @@ bindings:
         steps:
           - type: git add .
           - send: Enter
-      - key: aa
-        label: Add All (Enter)
-        steps:
-          - type: git add .
-          - send: Enter
       - key: c
         label: Commit
         steps:
@@ -294,18 +292,8 @@ bindings:
         steps:
           - type: git push
           - send: Enter
-      - key: pp
-        label: Push (Enter)
-        steps: 
-          - type: git push
-          - send: Enter
       - key: l
         label: Pull
-        steps:
-          - type: git pull
-          - send: Enter
-      - key: ll
-        label: Pull (Enter)
         steps:
           - type: git pull
           - send: Enter
@@ -321,14 +309,10 @@ bindings:
           - send: Enter
       - key: m
         label: Merge
-        steps:
-          - type: git merge 
-          - send: Left
+        type: git merge
       - key: r
         label: Rebase
-        steps:
-          - type: git rebase 
-          - send: Left
+        type: git rebase
       - key: d
         label: Diff
         steps:
@@ -336,8 +320,7 @@ bindings:
           - send: Enter
       - key: co
         label: Checkout
-        steps:
-          - type: git checkout 
+        type: git checkout
 
   - key: ss
     label: Screenshot
@@ -359,6 +342,101 @@ apps:
       - key: b
         label: Previous Track
         action: mediaPrev
+      - key: k
+        label: Search
+        send: Ctrl+K
+      - key: s
+        label: Shuffle
+        send: Ctrl+S
+      - key: r
+        label: Repeat
+        send: Ctrl+R
+      - key: q
+        label: Queue
+        send: Ctrl+Q
+      - key: u
+        label: Jump to Playing Now
+        send: Ctrl+U
+
+  - process: Blender
+    bindings:
+      - key: r
+        label: Render
+        send: F12
+      - key: R
+        label: Render in Viewport
+        send: Shift+Z
+      - key: Tab
+        label: Toggle Edit/Object Mode
+        send: Tab
+      # Transform operations (grab, scale, rotate, delete, duplicate + reset)
+      - key: t
+        label: Transform
+        children:
+          - key: g
+            label: Grab/Move
+            send: G
+          - key: s
+            label: Scale
+            send: S
+          - key: r
+            label: Rotate
+            send: R
+          - key: x
+            label: Delete
+            send: X
+          - key: d
+            label: Duplicate
+            send: Shift+D
+          # Reset transforms with Alt
+          - key: G
+            label: Reset Location
+            send: Alt+G
+          - key: S
+            label: Reset Scale
+            send: Alt+S
+          - key: R
+            label: Reset Rotation
+            send: Alt+R
+      # View/Viewport operations
+      - key: z
+        label: View
+        children:
+          - key: z
+            label: Viewport Shading
+            send: Z
+          - key: '.'
+            label: Frame Selected
+            send: NumpadPeriod
+          - key: '/'
+            label: Toggle Wireframe
+            send: Z
+      # Visibility and hide operations
+      - key: h
+        label: Visibility
+        children:
+          - key: h
+            label: Hide Selected
+            send: H
+          - key: H
+            label: Hide Unselected
+            send: Shift+H
+          - key: a
+            label: Show All
+            send: Alt+H
+      # Hierarchy and linking operations
+      - key: p
+        label: Hierarchy
+        children:
+          - key: m
+            label: Mirror
+            send: Ctrl+M
+          - key: p
+            label: Parent
+            send: Ctrl+P
+          - key: l
+            label: Link/Make Library
+            send: Ctrl+L
 
   - process: Discord
     bindings:
@@ -402,8 +480,30 @@ apps:
         label: Close Tab
         send: Ctrl+Shift+W
 
-  - process: Code
+  - name: VSCode
+    processes: [ Code, cursor ]
     bindings:
+      - key: P
+        label: Command Palette
+        send: Ctrl+Shift+P
+      - key: p
+        label: Quick Open File
+        send: Ctrl+P
+      - key: g
+        label: Go to Line
+        send: Ctrl+G
+      - key: e
+        label: Toggle Explorer
+        send: Ctrl+Shift+E
+      - key: f
+        label: Find
+        send: Ctrl+F
+      - key: F
+        label: Find in Files
+        send: Ctrl+Shift+F
+      - key: h
+        label: Replace
+        send: Ctrl+H
       - key: s
         label: Save All
         send: Ctrl+K S
@@ -414,13 +514,26 @@ apps:
         label: Toggle Secondary Side Bar
         send: Ctrl+Alt+B
       - key: j
-        label: Toggle Panel
+        label: Toggle Bottom Panel
         send: Ctrl+J
-      - key: np
-        label: npm run dev
-        steps:
-          - type: 'npm run dev'
-          - send: Enter
+      - key: '`'
+        label: Toggle Terminal
+        send: Ctrl+`
+      - key: d
+        label: Debug
+        send: Ctrl+Shift+D
+      - key: G
+        label: Source Control
+        send: Ctrl+Shift+G
+      - key: X
+        label: Extensions
+        send: Ctrl+Shift+X
+      - key: ','
+        label: Settings
+        send: Ctrl+,
+      - key: K
+        label: Keyboard Shortcuts
+        send: Ctrl+K Ctrl+S
       - key: n
         label: New File
         send: Ctrl+Alt+Win+N
@@ -432,15 +545,24 @@ groups:
   - name: Browser
     processes: [ chrome, msedge, firefox, brave, opera, zen ]
     bindings:
-      - key: '['
-        label: Toggle Side Bar
-        send: Ctrl+S
       - key: t
         label: New Tab
         send: Ctrl+T
+      - key: n
+        label: New Window
+        send: Ctrl+N
       - key: w
         label: Close Tab
         send: Ctrl+W
+      - key: l
+        label: Focus Address Bar
+        send: Ctrl+L
+      - key: r
+        label: Reload
+        send: Ctrl+R
+      - key: R
+        label: Hard Reload
+        send: Ctrl+Shift+R
       - key: f
         label: Find
         send: Ctrl+F
@@ -450,27 +572,21 @@ groups:
       - key: u
         label: Reopen Closed Tab
         send: Ctrl+Shift+T
-      - key: r
-        label: Reload
-        send: Ctrl+R
-      - key: l
-        label: Focus Address Bar
-        send: Alt+D
-      - key: s
-        label: Save Page
-        send: Ctrl+Alt+Shift+S
-      - key: p
-        label: Print Page
-        send: Ctrl+P
       - key: d
         label: Bookmark Page
         send: Ctrl+D
       - key: j
         label: Downloads
         send: Ctrl+J
-      - key: ']'
-        label: Switch Workspace
-        send: Ctrl+Alt+Left
+      - key: c
+        label: Settings
+        send: Ctrl+,
+      - key: p
+        label: Print
+        send: Ctrl+P
+      - key: F
+        label: Fullscreen
+        send: F11
 
   - name: JetBrains
     processes: [ idea64, pycharm64, webstorm64, datagrip64, clion64, studio64 ]
